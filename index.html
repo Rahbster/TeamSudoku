@@ -95,6 +95,14 @@
 
                         </div>
                     </div>
+                    <div class="container">
+                        <div class="column">
+                            <p>2. Scan the Answer QR code from Player 2.</p>
+                            <button onclick="startQrScannerHost()">Start QR Scanner</button>
+                            <div id="qr-reader-host" style="width: 300px; margin: 0 auto;"></div>
+                            <p id="scanner-status-host">Status: Ready to scan.</p>
+                        </div>
+                    </div>
                     <div class="container">
                         <div class="column">
                             <p id="p1-qr-status">Status: Disconnected</p>
@@ -111,6 +119,9 @@
                             <div id="qr-reader" style="width: 300px; margin: 0 auto;"></div>
                             <p>Or, if Player 1 has scanned your answer, show this code:</p>
                             <div id="qr-code-display-answer" class="qr-display-area"></div>
+                            <br>
+                            <button id="prev-qr" onclick="showPrevChunk()">Previous</button>
+                            <button id="next-qr" onclick="showNextChunk()">Next</button>
                         </div>
                     </div>
                     <div class="container">
