@@ -1,673 +1,650 @@
+//==============================
+//Global Variables and DOM Elements
+//==============================
+let peerConnection;
+let dataChannel;
+let qrScanner = null;
 
+//State object to manage application state
+const appState = {
+    isInitiator: false,
+    isAnswer: false,
+    initialSudokuState: [],
+    activeCell: null,
+    //QR state
+    offerChunks: [],
+    currentOfferChunkIndex: 0,
+    answerChunks: [],
+    currentAnswerChunkIndex: 0,
+    scannedChunks: [],
+    totalChunksToScan: 0,
+    //Input state
+    isLongPressActive: false,
+    lastEventTimestamp: 0
+};
+
+//Cache DOM elements for faster access
+const dom = {
+    offerTextarea: document.getElementById('offer-text'),
+    receivedOfferTextarea: document.getElementById('received-offer-text'),
+    answerTextarea: document.getElementById('answer-text'),
+    receivedAnswerTextarea: document.getElementById('received-answer-text'),
+    p1Status: document.getElementById('p1-status'),
+    p2Status: document.getElementById('p2-status'),
+    p1QrStatus: document.getElementById('p1-qr-status'),
+    p2QrStatus: document.getElementById('p2-qr-status'),
+    sudokuGrid: document.getElementById('sudoku-grid'),
+    sudokuGridArea: document.getElementById('sudoku-grid-area'),
+    signalingArea: document.getElementById('signaling-area'),
+    manualSignalingArea: document.getElementById('manual-signaling-area'),
+    qrSignalingArea: document.getElementById('qr-signaling-area'),
+    p1ManualArea: document.getElementById('p1-manual-area'),
+    p2ManualArea: document.getElementById('p2-manual-area'),
+    p1QrArea: document.getElementById('p1-qr-area'),
+    p2QrArea: document.getElementById('p2-qr-area'),
+    qrCodeDisplay: document.getElementById('qr-code-display'),
+    qrCodeAnswerDisplay: document.getElementById('qr-code-display-answer'),
+    chunkStatus: document.getElementById('chunk-status'),
+    prevQrBtn: document.getElementById('prev-qr'),
+    nextQrBtn: document.getElementById('next-qr'),
+    scannerStatus: document.getElementById('scanner-status'),
+    playerRoleSelect: document.getElementById('player-role'),
+    signalingMethodSelect: document.getElementById('signaling-method')
+};
+
+//==============================
+//WebRTC and Signaling Logic
+//==============================
+
+//Initializes the WebRTC PeerConnection
+function initializeWebRTC() {
+    peerConnection = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            console.log('New ICE candidate:', event.candidate);
+        }
+    };
+
+    peerConnection.onconnectionstatechange = () => {
+        if (peerConnection.connectionState === 'connected') {
+            console.log('WebRTC connection established!');
+            hideSignalingUI(); //Hide all signaling UI when connected
+        }
+    };
     
+    peerConnection.ondatachannel = event => {
+        dataChannel = event.channel;
+        setupDataChannel(dataChannel);
+    };
+}
 
-        let peerConnection;
-        let dataChannel;
-        let isInitiator = false;
-        let initialSudokuState = [];
-        let activeCell = null;
-        let qrScanner = null;
+//Sets up the event handlers for the data channel
+function setupDataChannel(channel) {
+    channel.onopen = () => {
+        console.log('Data Channel is open!');
+        dom.p1Status.textContent = 'Status: Connected!';
+        dom.p2Status.textContent = 'Status: Connected!';
+        dom.p1QrStatus.textContent = 'Status: Connected!';
+        dom.p2QrStatus.textContent = 'Status: Connected!';
+        toggleSignalingArea();
+    };
 
-        // New global variables for chunking
-        let offerChunks = [];
-        let currentChunkIndex = 0;
-        let scannedChunks = [];
-        let totalChunksToScan = 0;
-        let isAnswer = false;
-
-        const offerTextarea = document.getElementById('offer-text');
-        const receivedOfferTextarea = document.getElementById('received-offer-text');
-        const answerTextarea = document.getElementById('answer-text');
-        const receivedAnswerTextarea = document.getElementById('received-answer-text');
-        const p1Status = document.getElementById('p1-status');
-        const p2Status = document.getElementById('p2-status');
-        const p1QrStatus = document.getElementById('p1-qr-status');
-        const p2QrStatus = document.getElementById('p2-qr-status');
-        const sudokuGrid = document.getElementById('sudoku-grid');
-        const sudokuGridArea = document.getElementById('sudoku-grid-area');
-        const signalingArea = document.getElementById('signaling-area');
-        const manualSignalingArea = document.getElementById('manual-signaling-area');
-        const qrSignalingArea = document.getElementById('qr-signaling-area');
-        const p1ManualArea = document.getElementById('p1-manual-area');
-        const p2ManualArea = document.getElementById('p2-manual-area');
-        const p1QrArea = document.getElementById('p1-qr-area');
-        const p2QrArea = document.getElementById('p2-qr-area');
-        const qrCodeDisplay = document.getElementById('qr-code-display');
-        const qrCodeAnswerDisplay = document.getElementById('qr-code-display-answer');
-        const chunkStatus = document.getElementById('chunk-status');
-        const prevQrBtn = document.getElementById('prev-qr');
-        const nextQrBtn = document.getElementById('next-qr');
-        const scannerStatus = document.getElementById('scanner-status');
-
-        let pressTimer;
-        let isLongPressActive = false; // New global flag
-        let lastEventTimestamp = 0;
-
-        //Initializes the WebRTC PeerConnection
-        function initializeWebRTC() {
-            peerConnection = new RTCPeerConnection({
-                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-            });
-
-            peerConnection.onicecandidate = event => {
-                if (event.candidate) {
-                    console.log('New ICE candidate:', event.candidate);
-                }
-            };
-            
-            peerConnection.ondatachannel = event => {
-                dataChannel = event.channel;
-                setupDataChannel(dataChannel);
-            };
-        }
-
-        function setupDataChannel(channel) {
-            channel.onopen = () => {
-                console.log('Data Channel is open!');
-                p1Status.textContent = 'Status: Connected!';
-                p2Status.textContent = 'Status: Connected!';
-                p1QrStatus.textContent = 'Status: Connected!';
-                p2QrStatus.textContent = 'Status: Connected!';
-                toggleSignalingArea();
-            };
-
-            channel.onmessage = event => {
-                const data = JSON.parse(event.data);
-                if (data.type === 'move') {
-                    const cell = document.getElementById(`cell-${data.row}-${data.col}`);
-                    if (cell) {
-                        cell.textContent = data.value;
-                    }
-                    checkGridState();
-                } else if (data.type === 'initial-state') {
-                    loadPuzzle(data.state);
-                }
-            };
-        }
-
-        // --- Signaling Functions (Manual Copy/Paste) ---
-        async function createOfferManual() {
-            isInitiator = true;
-            initializeWebRTC();
-            
-            dataChannel = peerConnection.createDataChannel('sudoku-game');
-            setupDataChannel(dataChannel);
-
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            
-            peerConnection.onicegatheringstatechange = () => {
-                if (peerConnection.iceGatheringState === 'complete') {
-                    offerTextarea.value = JSON.stringify(peerConnection.localDescription);
-                }
-            };
-        }
-
-        async function createAnswerManual() {
-            initializeWebRTC();
-            const offer = JSON.parse(receivedOfferTextarea.value);
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-            
-            peerConnection.onicegatheringstatechange = () => {
-                if (peerConnection.iceGatheringState === 'complete') {
-                    answerTextarea.value = JSON.stringify(peerConnection.localDescription);
-                }
-            };
-        }
-
-        async function addAnswerManual() {
-            const answer = JSON.parse(receivedAnswerTextarea.value);
-            if (peerConnection.signalingState !== 'stable') {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    channel.onmessage = event => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'move') {
+            const cell = document.getElementById(`cell-${data.row}-${data.col}`);
+            if (cell) {
+                cell.textContent = data.value;
             }
+            checkGridState();
+        } else if (data.type === 'initial-state') {
+            loadPuzzle(data.state);
         }
+    };
+}
 
-        // --- Signaling Functions (QR Code) ---
-        async function createOfferQr() {
-            isInitiator = true;
-            isAnswer = false;
-            initializeWebRTC();
-            
-            dataChannel = peerConnection.createDataChannel('sudoku-game');
-            setupDataChannel(dataChannel);
-
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            
-            peerConnection.onicegatheringstatechange = () => {
-                if (peerConnection.iceGatheringState === 'complete') {
-                    const sdpString = JSON.stringify(peerConnection.localDescription);
-                    const base64Sdp = btoa(sdpString);
-                    offerChunks = createQrCodeChunks(base64Sdp);
-                    currentChunkIndex = 0;
-                    displayCurrentChunk();
-                    p1QrStatus.textContent = 'Status: Offer created. Show codes to Player 2.';
-                }
-            };
+//Handles manual offer creation
+async function createOfferManual() {
+    appState.isInitiator = true;
+    initializeWebRTC();
+    dataChannel = peerConnection.createDataChannel('sudoku-game');
+    setupDataChannel(dataChannel);
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    
+    peerConnection.onicegatheringstatechange = () => {
+        if (peerConnection.iceGatheringState === 'complete') {
+            dom.offerTextarea.value = JSON.stringify(peerConnection.localDescription);
         }
-        
+    };
+}
+
+//Handles manual answer creation
+async function createAnswerManual() {
+    initializeWebRTC();
+    const offer = JSON.parse(dom.receivedOfferTextarea.value);
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    
+    peerConnection.onicegatheringstatechange = () => {
+        if (peerConnection.iceGatheringState === 'complete') {
+            dom.answerTextarea.value = JSON.stringify(peerConnection.localDescription);
+        }
+    };
+}
+
+//Handles adding a manual answer to an offer
+async function addAnswerManual() {
+    const answer = JSON.parse(dom.receivedAnswerTextarea.value);
+    if (peerConnection.signalingState !== 'stable') {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    }
+}
+
+//Handles QR code offer creation
+async function createOfferQr() {
+    appState.isInitiator = true;
+    appState.isAnswer = false;
+    initializeWebRTC();
+    dataChannel = peerConnection.createDataChannel('sudoku-game');
+    setupDataChannel(dataChannel);
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    
+    peerConnection.onicegatheringstatechange = () => {
+        if (peerConnection.iceGatheringState === 'complete') {
+            const sdpString = JSON.stringify(peerConnection.localDescription);
+            const base64Sdp = btoa(sdpString);
+            appState.offerChunks = createQrCodeChunks(base64Sdp);
+            appState.currentOfferChunkIndex = 0;
+            displayQrChunk(appState.offerChunks, appState.currentOfferChunkIndex);
+            dom.p1QrStatus.textContent = 'Status: Offer created. Show codes to Player 2.';
+        }
+    };
+}
+
+//Handles QR code answer creation
 async function createAnswerQr() {
-    isAnswer = true;
+    appState.isAnswer = true;
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
 
     peerConnection.onicegatheringstatechange = () => {
         if (peerConnection.iceGatheringState === 'complete') {
             const answerSdp = JSON.stringify(peerConnection.localDescription);
-            const answerChunks = createQrCodeChunks(answerSdp);
-
-            // Display all answer chunks and navigation for Player 1 to scan
-            qrCodeAnswerDisplay.innerHTML = '';
-            let currentAnswerChunkIndex = 0;
-
-            const displayAnswerChunk = () => {
-                qrCodeAnswerDisplay.innerHTML = '';
-                new QRCode(qrCodeAnswerDisplay, {
-                    text: answerChunks[currentAnswerChunkIndex],
-                    width: 256,
-                    height: 256
-                });
-                p2QrStatus.textContent = `Status: Showing chunk ${currentAnswerChunkIndex + 1} of ${answerChunks.length}.`;
-            };
-
-            // This is a temporary way to show the first QR. A proper solution would use navigation buttons like the offer.
-            displayAnswerChunk();
-
-            p2QrStatus.textContent = 'Status: Answer created. Show QR code(s) to Player 1.';
+            const base64Sdp = btoa(answerSdp);
+            appState.answerChunks = createQrCodeChunks(base64Sdp);
+            appState.currentAnswerChunkIndex = 0;
+            displayQrChunk(appState.answerChunks, appState.currentAnswerChunkIndex);
+            dom.p2QrStatus.textContent = 'Status: Answer created. Show QR code(s) to Player 1.';
         }
     };
 }
-        function startQrScanner() {
-            //Destroy any previous scanner to prevent multiple camera feeds
-            if (qrScanner) {
-                qrScanner.stop();
-                qrScanner = null;
-            }
-            
-            scannedChunks = [];
-            totalChunksToScan = 0;
-            scannerStatus.textContent = 'Status: Scanning first QR code...';
-            
-            qrScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} });
-            qrScanner.render(onScanSuccess, onScanFailure);
-        }
 
+//Starts the QR code scanner
+function startQrScanner() {
+    if (qrScanner) {
+        qrScanner.stop().then(() => {
+            qrScanner = null;
+        });
+    }
+    
+    appState.scannedChunks = [];
+    appState.totalChunksToScan = 0;
+    dom.scannerStatus.textContent = 'Status: Scanning first QR code...';
+    
+    qrScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} });
+    qrScanner.render(onScanSuccess, onScanFailure);
+}
+
+//Handles successful QR code scan
 async function onScanSuccess(decodedText) {
-    console.log(`QR code detected: ${decodedText}`);
-
-    // Regular expression to parse the new chunk format: [INDEX/TOTAL]:DATA
     const regex = /^\[(\d+)\/(\d+)\]:(.*)$/;
     const match = decodedText.match(regex);
 
     if (!match) {
-        console.warn('Scanned text does not match expected QR chunk format.');
         return; // Ignore invalid QR codes
     }
-
+    
     const chunkIndex = parseInt(match[1], 10);
     const totalChunks = parseInt(match[2], 10);
     const chunkData = match[3];
 
-    // Check if we've already scanned this chunk
-    if (scannedChunks.some(chunk => chunk.index === chunkIndex)) {
-        console.log(`Ignoring duplicate scan for chunk ${chunkIndex}.`);
-        return;
+    if (appState.scannedChunks.some(chunk => chunk.index === chunkIndex)) {
+        return; // Ignore duplicate scans
     }
 
-    // Add the new chunk to our list
-    scannedChunks.push({ index: chunkIndex, data: chunkData });
-    scannerStatus.textContent = `Status: Scanned chunk ${scannedChunks.length} of ${totalChunks}.`;
+    appState.scannedChunks.push({ index: chunkIndex, data: chunkData });
+    dom.scannerStatus.textContent = `Status: Scanned chunk ${appState.scannedChunks.length} of ${totalChunks}.`;
 
-    // Check if all chunks have been scanned
-    if (scannedChunks.length === totalChunks) {
-        // Stop the scanner
+    if (appState.scannedChunks.length === totalChunks) {
         if (qrScanner) {
-            qrScanner.stop().then(() => {
-                document.getElementById('qr-reader').innerHTML = '';
-                document.getElementById('qr-reader').style.display = 'none';
-            }).catch(err => console.error(err));
+            qrScanner.clear();
         }
 
-        // Sort the chunks by index and reconstruct the original data
-        scannedChunks.sort((a, b) => a.index - b.index);
-        const fullSdp = scannedChunks.map(chunk => chunk.data).join('');
+        appState.scannedChunks.sort((a, b) => a.index - b.index);
+        const fullSdp = atob(appState.scannedChunks.map(chunk => chunk.data).join(''));
         const sdp = JSON.parse(fullSdp);
 
         if (sdp.type === 'offer') {
-            // This is Player 2. Process the full offer and create an answer.
             initializeWebRTC();
             await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
             await createAnswerQr();
-            p2QrStatus.textContent = 'Status: All chunks scanned. Answer created.';
-        } else if (sdp.type === 'answer' && isInitiator) {
-            // This is Player 1. Process the full answer and connect.
+            dom.p2QrStatus.textContent = 'Status: All chunks scanned. Answer created.';
+        } else if (sdp.type === 'answer' && appState.isInitiator) {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-            p1QrStatus.textContent = 'Status: Answer received. Connecting...';
+            dom.p1QrStatus.textContent = 'Status: Answer received. Connecting...';
         }
     }
 }
-        
-        function onScanFailure(error) {
-            console.warn(`QR code scan error: ${error}`);
-        }
 
-        // New functions for navigating chunks
-        function showNextChunk() {
-            if (currentChunkIndex < offerChunks.length - 1) {
-                currentChunkIndex++;
-                displayCurrentChunk();
-            }
-        }
+//Handles QR code scan failures
+function onScanFailure(error) {
+    console.warn(`QR code scan error: ${error}`);
+}
 
-        function showPrevChunk() {
-            if (currentChunkIndex > 0) {
-                currentChunkIndex--;
-                displayCurrentChunk();
-            }
-        }
-
-        function displayCurrentChunk() {
-            // Clear old QR code
-            qrCodeDisplay.innerHTML = '';
-            
-            // Check if this is a QR code for the answer.
-            //This is a comment.
-            const textToEncode = offerChunks[currentChunkIndex];
-            
-            try {
-                new QRCode(qrCodeDisplay, {
-                           text: textToEncode,
-                           width: 256,
-                           height: 256
-                });
-            } catch (error) {
-              // Code to handle the error
-              alert("An error occurred:" + error.message);
-            }
-            chunkStatus.textContent = `Chunk ${currentChunkIndex + 1} of ${offerChunks.length}`;
-            
-            // Enable/disable navigation buttons
-            prevQrBtn.disabled = (currentChunkIndex === 0);
-            nextQrBtn.disabled = (currentChunkIndex === offerChunks.length - 1);
-        }
-
-//This function is now more robust.
-//It embeds the chunk index and total number of chunks into each QR code.
+//Creates QR code chunks with embedded index and total count.
 function createQrCodeChunks(data) {
-    const MAX_CHUNK_SIZE = 128; // A safe value for a single QR code
+    const MAX_CHUNK_SIZE = 128; 
     const chunks = [];
-    const fullChunks = Math.ceil(data.length / MAX_CHUNK_SIZE);
+    const totalChunks = Math.ceil(data.length / MAX_CHUNK_SIZE);
     
-    for (let i = 0; i < fullChunks; i++) {
+    for (let i = 0; i < totalChunks; i++) {
         const chunkData = data.substring(i * MAX_CHUNK_SIZE, (i + 1) * MAX_CHUNK_SIZE);
-        // Format each chunk as "[INDEX/TOTAL]:DATA"
-        chunks.push(`[${i + 1}/${fullChunks}]:${chunkData}`);
+        chunks.push(`[${i + 1}/${totalChunks}]:${chunkData}`);
     }
     return chunks;
 }
 
-        /**
-         * Reconstructs the original data from an array of scanned chunks.
-         * @param {string[]} scannedChunks The array of chunk strings, including the metadata chunk.
-         * @returns {string} The reconstructed full data string.
-         */
-        function reconstructFromChunks(scannedChunks) {
-            // The first chunk contains the metadata; we slice it off before joining
-            return scannedChunks.slice(1).join('');
-        }
+//Displays a single QR code chunk and updates navigation button states.
+function displayQrChunk(chunks, index) {
+    dom.qrCodeDisplay.innerHTML = '';
+    dom.qrCodeAnswerDisplay.innerHTML = '';
+    
+    const displayTarget = appState.isAnswer ? dom.qrCodeAnswerDisplay : dom.qrCodeDisplay;
+    const textToEncode = chunks[index];
+    
+    try {
+        new QRCode(displayTarget, {
+            text: textToEncode,
+            width: 256,
+            height: 256
+        });
+    } catch (error) {
+        alert("An error occurred:" + error.message);
+    }
+    
+    dom.chunkStatus.textContent = `Chunk ${index + 1} of ${chunks.length}`;
+    
+    dom.prevQrBtn.disabled = (index === 0);
+    dom.nextQrBtn.disabled = (index === chunks.length - 1);
+}
 
-        // --- Clipboard Functions ---
-        function copyToClipboard(elementId) {
-            const element = document.getElementById(elementId);
-            element.select();
-            document.execCommand('copy');
-            alert('Copied to clipboard!');
-        }
-        
-        // --- Game Logic (Sudoku Grid) ---
-        function createGrid() {
-            if (sudokuGrid.firstChild) {
-                while (sudokuGrid.firstChild) {
-                    sudokuGrid.removeChild(sudokuGrid.firstChild);
-                }
-            }
-            for (let row = 0; row < 9; row++) {
-                for (let col = 0; col < 9; col++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'grid-cell';
-                    cell.id = `cell-${row}-${col}`;
-                    cell.textContent = ''; 
-                    if ((col + 1) % 3 === 0 && col < 8) {
-                        cell.classList.add('subgrid-border-right');
-                    }
-                    if ((row + 1) % 3 === 0 && row < 8) {
-                        cell.classList.add('subgrid-border-bottom');
-                    }
-                    
-                    // --- New Long-Press and Click Logic ---
-                    cell.addEventListener('mousedown', startPressTimer);
-                    cell.addEventListener('touchstart', startPressTimer);
-                    cell.addEventListener('mouseup', handleCellClick);
-                    cell.addEventListener('touchend', handleCellClick);
-                    cell.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+//Shows the next QR code chunk in the sequence.
+function showNextChunk() {
+    const chunks = appState.isAnswer ? appState.answerChunks : appState.offerChunks;
+    let currentIndex = appState.isAnswer ? appState.currentAnswerChunkIndex : appState.currentOfferChunkIndex;
 
-                    sudokuGrid.appendChild(cell);
-                }
-            }
+    if (currentIndex < chunks.length - 1) {
+        currentIndex++;
+        if (appState.isAnswer) {
+            appState.currentAnswerChunkIndex = currentIndex;
+        } else {
+            appState.currentOfferChunkIndex = currentIndex;
         }
-        
-        function startPressTimer(event) {
-            clearTimeout(pressTimer); // Clear any existing timer
-            isLongPressActive = false; // Reset the flag
+        displayQrChunk(chunks, currentIndex);
+    }
+}
+
+//Shows the previous QR code chunk in the sequence.
+function showPrevChunk() {
+    const chunks = appState.isAnswer ? appState.answerChunks : appState.offerChunks;
+    let currentIndex = appState.isAnswer ? appState.currentAnswerChunkIndex : appState.currentOfferChunkIndex;
+
+    if (currentIndex > 0) {
+        currentIndex--;
+        if (appState.isAnswer) {
+            appState.currentAnswerChunkIndex = currentIndex;
+        } else {
+            appState.currentOfferChunkIndex = currentIndex;
+        }
+        displayQrChunk(chunks, currentIndex);
+    }
+}
+
+//==============================
+//Game UI and Logic
+//==============================
+
+//Creates the Sudoku grid
+function createGrid() {
+    if (dom.sudokuGrid.firstChild) {
+        while (dom.sudokuGrid.firstChild) {
+            dom.sudokuGrid.removeChild(dom.sudokuGrid.firstChild);
+        }
+    }
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.id = `cell-${row}-${col}`;
+            cell.textContent = '';
             
-            const cell = event.currentTarget;
-            pressTimer = setTimeout(() => {
-                handleLongPress(cell);
-            }, 500); // 500ms for a long press
-        }
-        
-        function handleCellClick(event) {
-            clearTimeout(pressTimer);
-            const currentTime = new Date().getTime();
-            if (currentTime - lastEventTimestamp < 100) {
-                lastEventTimestamp = 0;
-                return;
+            if ((col + 1) % 3 === 0 && col < 8) {
+                cell.classList.add('subgrid-border-right');
             }
-            lastEventTimestamp = currentTime;
-
-            if (isLongPressActive) {
-                isLongPressActive = false;
-                return;
-            }
-            const cell = event.currentTarget;
-            // Handle clicks on a preloaded cell.
-            if (cell.classList.contains('preloaded-cell')) {
-                const value = cell.textContent.trim();
-                if (value !== '') {
-                    clearAllHighlights();
-                    highlightMatchingCells(value);
-                }
-                return;
-            }
-            // NEW LOGIC: Check if the clicked cell is already active
-            if (activeCell === cell) {
-                // If the cell is already active, toggle its value
-                const currentValue = cell.textContent.trim();
-                let newValue;
-                
-                if (currentValue === '9') {
-                    newValue = '';
-                } else if (currentValue === '') {
-                    newValue = 1;
-                } else {
-                    newValue = parseInt(currentValue, 10) + 1;
-                }
-                
-                cell.textContent = newValue;
-                const move = {
-                    type: 'move',
-                    row: cell.id.split('-')[1],
-                    col: cell.id.split('-')[2],
-                    value: newValue
-                };
-                if (dataChannel && dataChannel.readyState === 'open') {
-                    dataChannel.send(JSON.stringify(move));
-                    console.log(`Sent move: Row ${move.row}, Col ${move.col}, Value ${move.value}`);
-                }
-                
-                // After changing the value, update highlights and state
-                clearAllHighlights();
-                highlightMatchingCells(newValue.toString());
-                checkGridState();
-                
-            } else {
-                // If a different cell is clicked, make it the active one
-                if (activeCell) {
-                    activeCell.classList.remove('active-cell');
-                }
-                activeCell = cell;
-                cell.classList.add('active-cell');
-                // Clear all previous highlights and apply new ones
-                clearAllHighlights();
-                const value = cell.textContent.trim();
-                if (value !== '') {
-                    highlightMatchingCells(value);
-                }
-            }
-        }
-        
-        function handleLongPress(cell) {
-            isLongPressActive = true; // Set the flag
-            const value = cell.textContent.trim();
-            if (value !== '') {
-                clearAllHighlights();
-                highlightMatchingCells(value);
-            }
-        }
-        
-        function highlightMatchingCells(value) {
-            const allCells = document.querySelectorAll('.grid-cell');
-            allCells.forEach(cell => {
-                if (cell.textContent.trim() === value && !cell.classList.contains('invalid-cell') && !cell.classList.contains('solved-puzzle')) {
-                    cell.classList.add('highlight-cell');
-                }
-            });
-        }
-        
-        function clearAllHighlights() {
-            const allCells = document.querySelectorAll('.grid-cell');
-            allCells.forEach(cell => {
-                cell.classList.remove('highlight-cell');
-            });
-        }
-
-        async function loadPuzzle(puzzleData) {
-            createGrid();
-
-            let puzzle = puzzleData;
-            let isRemoteLoad = false;
-            
-            if (puzzleData) {
-                isRemoteLoad = true;
-            } else {
-                try {
-                    const response = await fetch('https://sugoku.onrender.com/board?difficulty=easy');
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
-                    puzzle = data.board;
-                    initialSudokuState = puzzle;
-                } catch (error) {
-                    console.error('Failed to load puzzle:', error);
-                    alert('Failed to load puzzle. Please ensure you are running a local web server to avoid CORS issues.');
-                    return;
-                }
+            if ((row + 1) % 3 === 0 && row < 8) {
+                cell.classList.add('subgrid-border-bottom');
             }
             
-            for (let row = 0; row < 9; row++) {
-                for (let col = 0; col < 9; col++) {
-                    const cell = document.getElementById(`cell-${row}-${col}`);
-                    const value = puzzle[row][col];
-                    cell.textContent = value === 0 ? '' : value;
-                    // NEW LOGIC: Add the preloaded-cell class to non-empty cells
-                    if (value !== 0) {
-                        cell.classList.add('preloaded-cell');
-                    }
-                }
-            }
-            
-            checkGridState();
-            if (!isRemoteLoad && dataChannel && dataChannel.readyState === 'open') {
-                const puzzleMessage = { type: 'initial-state', state: puzzle };
-                dataChannel.send(JSON.stringify(puzzleMessage));
-                console.log('Sent new puzzle to connected peer.');
-            }
+            cell.addEventListener('mousedown', startPressTimer);
+            cell.addEventListener('touchstart', startPressTimer);
+            cell.addEventListener('mouseup', handleCellClick);
+            cell.addEventListener('touchend', handleCellClick);
+            cell.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+
+            dom.sudokuGrid.appendChild(cell);
+        }
+    }
+}
+
+//Starts the timer for a long press
+function startPressTimer(event) {
+    clearTimeout(pressTimer);
+    appState.isLongPressActive = false;
+    const cell = event.currentTarget;
+    pressTimer = setTimeout(() => {
+        handleLongPress(cell);
+    }, 500);
+}
+
+//Handles a cell click or tap
+function handleCellClick(event) {
+    clearTimeout(pressTimer);
+    const currentTime = new Date().getTime();
+    if (currentTime - appState.lastEventTimestamp < 100) {
+        appState.lastEventTimestamp = 0;
+        return;
+    }
+    appState.lastEventTimestamp = currentTime;
+
+    if (appState.isLongPressActive) {
+        appState.isLongPressActive = false;
+        return;
+    }
+    const cell = event.currentTarget;
+    if (cell.classList.contains('preloaded-cell')) {
+        const value = cell.textContent.trim();
+        if (value !== '') {
+            clearAllHighlights();
+            highlightMatchingCells(value);
+        }
+        return;
+    }
+    if (appState.activeCell === cell) {
+        const currentValue = cell.textContent.trim();
+        let newValue;
+        if (currentValue === '9') {
+            newValue = '';
+        } else if (currentValue === '') {
+            newValue = 1;
+        } else {
+            newValue = parseInt(currentValue, 10) + 1;
         }
         
-        // New function to show/hide the signaling area
-        function toggleSignalingArea() {
-            signalingArea.classList.toggle('hidden');
-            sudokuGridArea.classList.toggle('hidden');
+        cell.textContent = newValue;
+        const move = {
+            type: 'move',
+            row: cell.id.split('-')[1],
+            col: cell.id.split('-')[2],
+            value: newValue
+        };
+        if (dataChannel && dataChannel.readyState === 'open') {
+            dataChannel.send(JSON.stringify(move));
+        }
+        clearAllHighlights();
+        highlightMatchingCells(newValue.toString());
+        checkGridState();
+        
+    } else {
+        if (appState.activeCell) {
+            appState.activeCell.classList.remove('active-cell');
+        }
+        appState.activeCell = cell;
+        cell.classList.add('active-cell');
+        clearAllHighlights();
+        const value = cell.textContent.trim();
+        if (value !== '') {
+            highlightMatchingCells(value);
+        }
+    }
+}
 
-            if (signalingArea.classList.contains('hidden')) {
-                sudokuGridArea.scrollIntoView({ behavior: 'smooth' });
+//Handles a cell long-press
+function handleLongPress(cell) {
+    appState.isLongPressActive = true;
+    const value = cell.textContent.trim();
+    if (value !== '') {
+        clearAllHighlights();
+        highlightMatchingCells(value);
+    }
+}
+
+//Highlights all cells with a matching value
+function highlightMatchingCells(value) {
+    const allCells = document.querySelectorAll('.grid-cell');
+    allCells.forEach(cell => {
+        if (cell.textContent.trim() === value && !cell.classList.contains('invalid-cell') && !cell.classList.contains('solved-puzzle')) {
+            cell.classList.add('highlight-cell');
+        }
+    });
+}
+
+//Removes all highlight classes
+function clearAllHighlights() {
+    const allCells = document.querySelectorAll('.grid-cell');
+    allCells.forEach(cell => {
+        cell.classList.remove('highlight-cell');
+    });
+}
+
+//Fetches and loads a new puzzle
+async function loadPuzzle(puzzleData) {
+    createGrid();
+    let puzzle = puzzleData;
+    let isRemoteLoad = !!puzzleData;
+    
+    if (!isRemoteLoad) {
+        try {
+            const response = await fetch('https://sugoku.onrender.com/board?difficulty=easy');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-            else {
-                signalingArea.scrollIntoView({ behavior: 'smooth' });
+            const data = await response.json();
+            puzzle = data.board;
+            appState.initialSudokuState = puzzle;
+        } catch (error) {
+            console.error('Failed to load puzzle:', error);
+            alert('Failed to load puzzle. Please ensure you are running a local web server to avoid CORS issues.');
+            return;
+        }
+    }
+    
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            const cell = document.getElementById(`cell-${row}-${col}`);
+            const value = puzzle[row][col];
+            cell.textContent = value === 0 ? '' : value;
+            if (value !== 0) {
+                cell.classList.add('preloaded-cell');
+            }
+        }
+    }
+    
+    checkGridState();
+    if (!isRemoteLoad && dataChannel && dataChannel.readyState === 'open') {
+        const puzzleMessage = { type: 'initial-state', state: puzzle };
+        dataChannel.send(JSON.stringify(puzzleMessage));
+    }
+}
+
+//Validates the entire puzzle grid for conflicts and completeness
+function validatePuzzle() {
+    const invalidCells = new Set();
+    let isComplete = true;
+    const gridValues = [];
+
+    for (let row = 0; row < 9; row++) {
+        const rowValues = [];
+        for (let col = 0; col < 9; col++) {
+            const cellValue = document.getElementById(`cell-${row}-${col}`).textContent.trim();
+            rowValues.push(cellValue);
+            if (cellValue === '') {
+                isComplete = false;
+            }
+        }
+        gridValues.push(rowValues);
+    }
+    
+    const checkConflicts = (arr) => {
+        const seen = new Set();
+        for (const num of arr) {
+            if (num !== '' && seen.has(num)) {
+                return true;
+            }
+            if (num !== '') {
+                seen.add(num);
+            }
+        }
+        return false;
+    };
+
+    // Check rows, columns, and subgrids
+    for (let i = 0; i < 9; i++) {
+        const rowValues = gridValues[i];
+        const colValues = [];
+        for (let j = 0; j < 9; j++) {
+            colValues.push(gridValues[j][i]);
+        }
+        
+        if (checkConflicts(rowValues)) {
+            for (let j = 0; j < 9; j++) {
+                if (gridValues[i][j] !== '') invalidCells.add(`cell-${i}-${j}`);
+            }
+        }
+        if (checkConflicts(colValues)) {
+            for (let j = 0; j < 9; j++) {
+                if (gridValues[j][i] !== '') invalidCells.add(`cell-${j}-${i}`);
             }
         }
 
-        // Function to handle the change event on both dropdowns
-function toggleSignalingUI() {
-    const signalingMethod = document.getElementById('signaling-method').value;
-    const playerRole = document.getElementById('player-role').value;
-
-    // Hide all possible sections first
-    manualSignalingArea.classList.add('hidden');
-    qrSignalingArea.classList.add('hidden');
-    p1ManualArea.classList.add('hidden');
-    p2ManualArea.classList.add('hidden');
-    p1QrArea.classList.add('hidden');
-    p2QrArea.classList.add('hidden');
-
-    // Then, show only the correct one based on the combination
-    if (signalingMethod === 'manual') {
-        manualSignalingArea.classList.remove('hidden');
-        if (playerRole === 'host') {
-            p1ManualArea.classList.remove('hidden');
-        } else if (playerRole === 'joiner') {
-            p2ManualArea.classList.remove('hidden');
+        const subgridValues = [];
+        const startRow = Math.floor(i / 3) * 3;
+        const startCol = (i % 3) * 3;
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                subgridValues.push(gridValues[startRow + row][startCol + col]);
+            }
         }
-    } else if (signalingMethod === 'qr') {
-        qrSignalingArea.classList.remove('hidden');
-        if (playerRole === 'host') {
-            p1QrArea.classList.remove('hidden');
-        } else if (playerRole === 'joiner') {
-            p2QrArea.classList.remove('hidden');
+        if (checkConflicts(subgridValues)) {
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 3; col++) {
+                    if (gridValues[startRow + row][startCol + col] !== '') invalidCells.add(`cell-${startRow + row}-${startCol + col}`);
+                }
+            }
         }
     }
 
-    //This is a comment
+    document.querySelectorAll('.grid-cell').forEach(cell => {
+        const isPreloaded = cell.classList.contains('preloaded-cell');
+        if (!isPreloaded) {
+            cell.classList.remove('invalid-cell', 'solved-puzzle');
+            if (invalidCells.has(cell.id)) {
+                cell.classList.add('invalid-cell');
+            }
+        }
+    });
+    return { isValid: invalidCells.size === 0, isComplete: isComplete };
 }
 
-// Initial setup to correctly set the UI state on page load
-// The function must be called after the HTML and all JavaScript is loaded.
+//Checks the current state of the grid for a win condition
+function checkGridState() {
+    const { isValid, isComplete } = validatePuzzle();
+    if (isComplete && isValid) {
+        document.querySelectorAll('.grid-cell').forEach(cell => {
+            cell.classList.add('solved-puzzle');
+        });
+        alert("Congratulations! The puzzle is solved!");
+    }
+}
+
+//==============================
+//UI State Management
+//==============================
+
+//Toggles visibility of signaling areas
+function toggleSignalingArea() {
+    dom.signalingArea.classList.toggle('hidden');
+    dom.sudokuGridArea.classList.toggle('hidden');
+    if (dom.signalingArea.classList.contains('hidden')) {
+        dom.sudokuGridArea.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        dom.signalingArea.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+//Toggles visibility of specific signaling sections
+function toggleSignalingUI() {
+    const signalingMethod = dom.signalingMethodSelect.value;
+    const playerRole = dom.playerRoleSelect.value;
+
+    dom.manualSignalingArea.classList.add('hidden');
+    dom.qrSignalingArea.classList.add('hidden');
+    dom.p1ManualArea.classList.add('hidden');
+    dom.p2ManualArea.classList.add('hidden');
+    dom.p1QrArea.classList.add('hidden');
+    dom.p2QrArea.classList.add('hidden');
+
+    if (signalingMethod === 'manual') {
+        dom.manualSignalingArea.classList.remove('hidden');
+        if (playerRole === 'host') {
+            dom.p1ManualArea.classList.remove('hidden');
+        } else if (playerRole === 'joiner') {
+            dom.p2ManualArea.classList.remove('hidden');
+        }
+    } else if (signalingMethod === 'qr') {
+        dom.qrSignalingArea.classList.remove('hidden');
+        if (playerRole === 'host') {
+            dom.p1QrArea.classList.remove('hidden');
+        } else if (playerRole === 'joiner') {
+            dom.p2QrArea.classList.remove('hidden');
+        }
+    }
+}
+
+//Hides the signaling UI completely and shows the game
+function hideSignalingUI() {
+    dom.signalingArea.style.display = 'none';
+    dom.sudokuGridArea.classList.remove('hidden');
+}
+
+//==============================
+//Initial Setup
+//==============================
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Other setup functions can be called here if needed
-    toggleSignalingUI(); 
-
-    // Disable the navigation buttons on page load
-    document.getElementById('prev-qr').disabled = true;
-    document.getElementById('next-qr').disabled = true;
+    dom.prevQrBtn.disabled = true;
+    dom.nextQrBtn.disabled = true;
+    
+    createGrid();
+    loadPuzzle();
+    
+    dom.signalingMethodSelect.addEventListener('change', toggleSignalingUI);
+    dom.playerRoleSelect.addEventListener('change', toggleSignalingUI);
+    
+    toggleSignalingUI();
 });
-
-        // New validation functions
-        function checkForConflicts(arr) {
-            const seen = new Set();
-            for (const num of arr) {
-                if (num !== '' && seen.has(num)) {
-                    return true;
-                }
-                if (num !== '') {
-                    seen.add(num);
-                }
-            }
-            return false;
-        }
-
-        function validatePuzzle() {
-            const invalidCells = new Set();
-            let isComplete = true;
-            const gridValues = [];
-
-            // Get current grid state and check for completeness
-            for (let row = 0; row < 9; row++) {
-                const rowValues = [];
-                for (let col = 0; col < 9; col++) {
-                    const cellValue = document.getElementById(`cell-${row}-${col}`).textContent.trim();
-                    rowValues.push(cellValue);
-                    if (cellValue === '') {
-                        isComplete = false;
-                    }
-                }
-                gridValues.push(rowValues);
-            }
-
-            // Check rows
-            for (let row = 0; row < 9; row++) {
-                if (checkForConflicts(gridValues[row])) {
-                    for (let col = 0; col < 9; col++) {
-                        if (gridValues[row][col] !== '') {
-                            invalidCells.add(`cell-${row}-${col}`);
-                        }
-                    }
-                }
-            }
-
-            // Check columns
-            for (let col = 0; col < 9; col++) {
-                const colValues = [];
-                for (let row = 0; row < 9; row++) {
-                    colValues.push(gridValues[row][col]);
-                }
-                if (checkForConflicts(colValues)) {
-                    for (let row = 0; row < 9; row++) {
-                        if (gridValues[row][col] !== '') {
-                            invalidCells.add(`cell-${row}-${col}`);
-                        }
-                    }
-                }
-            }
-
-            // Check 3x3 subgrids
-            for (let blockRow = 0; blockRow < 3; blockRow++) {
-                for (let blockCol = 0; blockCol < 3; blockCol++) {
-                    const subgridValues = [];
-                    for (let row = 0; row < 3; row++) {
-                        for (let col = 0; col < 3; col++) {
-                            subgridValues.push(gridValues[blockRow * 3 + row][blockCol * 3 + col]);
-                        }
-                    }
-                    if (checkForConflicts(subgridValues)) {
-                        for (let row = 0; row < 3; row++) {
-                            for (let col = 0; col < 3; col++) {
-                                if (gridValues[blockRow * 3 + row][blockCol * 3 + col] !== '') {
-                                    invalidCells.add(`cell-${blockRow * 3 + row}-${blockCol * 3 + col}`);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Apply coloring based on validation
-            document.querySelectorAll('.grid-cell').forEach(cell => {
-                const isPreloaded = cell.classList.contains('preloaded-cell');
-                if (!isPreloaded) {
-                    cell.classList.remove('invalid-cell', 'solved-puzzle');
-                    if (invalidCells.has(cell.id)) {
-                        cell.classList.add('invalid-cell');
-                    }
-                }
-            });
-            return { isValid: invalidCells.size === 0, isComplete: isComplete };
-        }
-
-        function checkGridState() {
-            const { isValid, isComplete } = validatePuzzle();
-            if (isComplete && isValid) {
-                document.querySelectorAll('.grid-cell').forEach(cell => {
-                    cell.classList.add('solved-puzzle');
-                });
-                alert("Congratulations! The puzzle is solved!");
-            }
-        }
-        
-        // Initial setup on page load
-        createGrid();
-        loadPuzzle();
-
-
