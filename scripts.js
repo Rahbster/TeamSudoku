@@ -1,7 +1,6 @@
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     
-    <script>
+
         let peerConnection;
         let dataChannel;
         let isInitiator = false;
@@ -654,4 +653,4 @@
         createGrid();
         loadPuzzle();
 
-    </script>
+
