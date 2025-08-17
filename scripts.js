@@ -148,31 +148,37 @@
             };
         }
         
-        async function createAnswerQr() {
-            isAnswer = true;
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
+async function createAnswerQr() {
+    isAnswer = true;
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
 
-            peerConnection.onicegatheringstatechange = () => {
-                if (peerConnection.iceGatheringState === 'complete') {
-                    const answerSdp = JSON.stringify(peerConnection.localDescription);
-                    const answerChunks = createQrCodeChunks(answerSdp);
-                    
-                    // Display the first chunk of the answer for Player 1 to scan
-                    qrCodeAnswerDisplay.innerHTML = '';
-                    new QRCode(qrCodeAnswerDisplay, {
-                        text: answerChunks[0],
-                        width: 256,
-                        height: 256
-                    });
-                    
-                    // NOTE: In a real-world app, you would need to display and handle
-                    // the other answer chunks similarly to the offer chunks.
-                    p2QrStatus.textContent = 'Status: Answer created. Show this QR to Player 1.';
-                }
+    peerConnection.onicegatheringstatechange = () => {
+        if (peerConnection.iceGatheringState === 'complete') {
+            const answerSdp = JSON.stringify(peerConnection.localDescription);
+            const answerChunks = createQrCodeChunks(answerSdp);
+
+            // Display all answer chunks and navigation for Player 1 to scan
+            qrCodeAnswerDisplay.innerHTML = '';
+            let currentAnswerChunkIndex = 0;
+
+            const displayAnswerChunk = () => {
+                qrCodeAnswerDisplay.innerHTML = '';
+                new QRCode(qrCodeAnswerDisplay, {
+                    text: answerChunks[currentAnswerChunkIndex],
+                    width: 256,
+                    height: 256
+                });
+                p2QrStatus.textContent = `Status: Showing chunk ${currentAnswerChunkIndex + 1} of ${answerChunks.length}.`;
             };
-        }
 
+            // This is a temporary way to show the first QR. A proper solution would use navigation buttons like the offer.
+            displayAnswerChunk();
+
+            p2QrStatus.textContent = 'Status: Answer created. Show QR code(s) to Player 1.';
+        }
+    };
+}
         function startQrScanner() {
             //Destroy any previous scanner to prevent multiple camera feeds
             if (qrScanner) {
@@ -188,55 +194,60 @@
             qrScanner.render(onScanSuccess, onScanFailure);
         }
 
-        async function onScanSuccess(decodedText) {
-            console.log(`QR code detected: ${decodedText}`);
-            
-            // Check if this is the first chunk containing metadata
-            if (decodedText.startsWith('TOTAL_CHUNKS:')) {
-                // If it's the first chunk, parse the total number of chunks
-                const metadata = decodedText.split(':');
-                totalChunksToScan = parseInt(metadata[1]);
-                scannedChunks.push(decodedText);
-                scannerStatus.textContent = `Status: Scanned chunk 1 of ${totalChunksToScan}. Please scan the next QR code.`;
-            } else {
-                // It's a data chunk, add it to the list
-                scannedChunks.push(decodedText);
-                scannerStatus.textContent = `Status: Scanned chunk ${scannedChunks.length} of ${totalChunksToScan}.`;
-            }
+async function onScanSuccess(decodedText) {
+    console.log(`QR code detected: ${decodedText}`);
 
-            // Check if all chunks have been scanned
-            if (scannedChunks.length === totalChunksToScan) {
-                // Stop the scanner
-                if (qrScanner) {
-                    qrScanner.stop().then(() => {
-                        document.getElementById('qr-reader').innerHTML = '';
-                        document.getElementById('qr-reader').style.display = 'none';
-                    }).catch(err => console.error(err));
-                }
-                
-                const fullSdp = reconstructFromChunks(scannedChunks);
-                const sdp = JSON.parse(fullSdp);
+    // Regular expression to parse the new chunk format: [INDEX/TOTAL]:DATA
+    const regex = /^\[(\d+)\/(\d+)\]:(.*)$/;
+    const match = decodedText.match(regex);
 
-                if (sdp.type === 'offer') {
-                    // This is Player 2. Process the full offer and create an answer.
-                    initializeWebRTC();
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-                    await createAnswerQr(); // This function will now handle creating and displaying the answer QR codes
-                    p2QrStatus.textContent = 'Status: All chunks scanned. Answer created.';
-                } else if (sdp.type === 'answer' && isInitiator) {
-                    // This is Player 1. Process the full answer and connect.
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-                    p1QrStatus.textContent = 'Status: Answer received. Connecting...';
-                }
-            } else {
-                // Not all chunks received yet, so we re-render the scanner to wait for the next QR code
-                // NOTE: This re-render might cause a brief flicker or camera reset on some browsers.
-                // A more robust solution might use a single, persistent scanner and handle the chunks in the onScanSuccess function itself.
-                qrScanner.stop().then(() => {
-                    qrScanner.start();
-                });
-            }
+    if (!match) {
+        console.warn('Scanned text does not match expected QR chunk format.');
+        return; // Ignore invalid QR codes
+    }
+
+    const chunkIndex = parseInt(match[1], 10);
+    const totalChunks = parseInt(match[2], 10);
+    const chunkData = match[3];
+
+    // Check if we've already scanned this chunk
+    if (scannedChunks.some(chunk => chunk.index === chunkIndex)) {
+        console.log(`Ignoring duplicate scan for chunk ${chunkIndex}.`);
+        return;
+    }
+
+    // Add the new chunk to our list
+    scannedChunks.push({ index: chunkIndex, data: chunkData });
+    scannerStatus.textContent = `Status: Scanned chunk ${scannedChunks.length} of ${totalChunks}.`;
+
+    // Check if all chunks have been scanned
+    if (scannedChunks.length === totalChunks) {
+        // Stop the scanner
+        if (qrScanner) {
+            qrScanner.stop().then(() => {
+                document.getElementById('qr-reader').innerHTML = '';
+                document.getElementById('qr-reader').style.display = 'none';
+            }).catch(err => console.error(err));
         }
+
+        // Sort the chunks by index and reconstruct the original data
+        scannedChunks.sort((a, b) => a.index - b.index);
+        const fullSdp = scannedChunks.map(chunk => chunk.data).join('');
+        const sdp = JSON.parse(fullSdp);
+
+        if (sdp.type === 'offer') {
+            // This is Player 2. Process the full offer and create an answer.
+            initializeWebRTC();
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+            await createAnswerQr();
+            p2QrStatus.textContent = 'Status: All chunks scanned. Answer created.';
+        } else if (sdp.type === 'answer' && isInitiator) {
+            // This is Player 1. Process the full answer and connect.
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+            p1QrStatus.textContent = 'Status: Answer received. Connecting...';
+        }
+    }
+}
         
         function onScanFailure(error) {
             console.warn(`QR code scan error: ${error}`);
@@ -277,27 +288,25 @@
             }
             chunkStatus.textContent = `Chunk ${currentChunkIndex + 1} of ${offerChunks.length}`;
             
-            // Show/hide navigation buttons
-            prevQrBtn.classList.toggle('hidden', currentChunkIndex === 0);
-            nextQrBtn.classList.toggle('hidden', currentChunkIndex === offerChunks.length - 1);
+            // Enable/disable navigation buttons
+            prevQrBtn.disabled = (currentChunkIndex === 0);
+            nextQrBtn.disabled = (currentChunkIndex === offerChunks.length - 1);
         }
 
-        function createQrCodeChunks(data) {
-          const MAX_CHUNK_SIZE = 128; // A safe value; adjust based on testing
-          const chunks = [];
-          const nChunks = Math.ceil(data.length / MAX_CHUNK_SIZE) + 1;
-
-          // Header chunk for metadata
-          const firstChunkData = `TOTAL_CHUNKS:${nChunks}`;
-          chunks.push(firstChunkData);
-
-          // Split the rest of the data into chunks
-          for (let i = 0; i < data.length; i += MAX_CHUNK_SIZE) {
-            const chunk = data.substring(i, i + MAX_CHUNK_SIZE);
-            chunks.push(chunk);
-          }
-          return chunks;
-        }
+//This function is now more robust.
+//It embeds the chunk index and total number of chunks into each QR code.
+function createQrCodeChunks(data) {
+    const MAX_CHUNK_SIZE = 128; // A safe value for a single QR code
+    const chunks = [];
+    const fullChunks = Math.ceil(data.length / MAX_CHUNK_SIZE);
+    
+    for (let i = 0; i < fullChunks; i++) {
+        const chunkData = data.substring(i * MAX_CHUNK_SIZE, (i + 1) * MAX_CHUNK_SIZE);
+        // Format each chunk as "[INDEX/TOTAL]:DATA"
+        chunks.push(`[${i + 1}/${fullChunks}]:${chunkData}`);
+    }
+    return chunks;
+}
 
         /**
          * Reconstructs the original data from an array of scanned chunks.
@@ -511,41 +520,49 @@
             }
         }
 
-        //New function to toggle signaling method UI
-        function toggleSignalingMethod() {
-            const method = document.getElementById('signaling-method').value;
-            manualSignalingArea.classList.add('hidden');
-            qrSignalingArea.classList.add('hidden');
-            
-            if (method === 'manual') {
-                manualSignalingArea.classList.remove('hidden');
-            } else if (method === 'qr') {
-                qrSignalingArea.classList.remove('hidden');
-            }
-            
-            // Re-run role toggle to ensure correct sub-area is displayed
-            togglePlayerRole();
-        }
+        // Function to handle the change event on both dropdowns
+function toggleSignalingUI() {
+    const signalingMethod = document.getElementById('signaling-method').value;
+    const playerRole = document.getElementById('player-role').value;
 
-        // New function to toggle player role UI
-        function togglePlayerRole() {
-            const role = document.getElementById('player-role').value;
-            
-            // Hide all role-specific sections first
-            p1ManualArea.classList.add('hidden');
-            p2ManualArea.classList.add('hidden');
-            p1QrArea.classList.add('hidden');
-            p2QrArea.classList.add('hidden');
+    // Hide all possible sections first
+    manualSignalingArea.classList.add('hidden');
+    qrSignalingArea.classList.add('hidden');
+    p1ManualArea.classList.add('hidden');
+    p2ManualArea.classList.add('hidden');
+    p1QrArea.classList.add('hidden');
+    p2QrArea.classList.add('hidden');
 
-            // Then show the relevant one
-            if (role === 'host') {
-                p1ManualArea.classList.remove('hidden');
-                p1QrArea.classList.remove('hidden');
-            } else if (role === 'joiner') {
-                p2ManualArea.classList.remove('hidden');
-                p2QrArea.classList.remove('hidden');
-            }
+    // Then, show only the correct one based on the combination
+    if (signalingMethod === 'manual') {
+        manualSignalingArea.classList.remove('hidden');
+        if (playerRole === 'host') {
+            p1ManualArea.classList.remove('hidden');
+        } else if (playerRole === 'joiner') {
+            p2ManualArea.classList.remove('hidden');
         }
+    } else if (signalingMethod === 'qr') {
+        qrSignalingArea.classList.remove('hidden');
+        if (playerRole === 'host') {
+            p1QrArea.classList.remove('hidden');
+        } else if (playerRole === 'joiner') {
+            p2QrArea.classList.remove('hidden');
+        }
+    }
+
+    //This is a comment
+}
+
+// Initial setup to correctly set the UI state on page load
+// The function must be called after the HTML and all JavaScript is loaded.
+document.addEventListener('DOMContentLoaded', () => {
+    // Other setup functions can be called here if needed
+    toggleSignalingUI(); 
+
+    // Disable the navigation buttons on page load
+    document.getElementById('prev-qr').disabled = true;
+    document.getElementById('next-qr').disabled = true;
+});
 
         // New validation functions
         function checkForConflicts(arr) {
