@@ -57,6 +57,9 @@ const dom = {
     signalingMethodSelect: document.getElementById('signaling-method')
 };
 
+const themeSelector = document.getElementById('theme-select');
+const body = document.body;
+
 //==============================
 //WebRTC and Signaling Logic
 //==============================
@@ -730,4 +733,18 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.playerRoleSelect.addEventListener('change', toggleSignalingUI);
     
     toggleSignalingUI();
+});
+
+// Add an event listener to the theme selector
+themeSelector.addEventListener('change', (event) => {
+    // Get the selected theme from the dropdown
+    const selectedTheme = event.target.value;
+    
+    // Remove any existing theme classes
+    body.classList.remove('banished', 'unsc', 'forerunner');
+    
+    // Add the new theme class if it's not the default
+    if (selectedTheme !== 'default') {
+        body.classList.add(selectedTheme);
+    }
 });

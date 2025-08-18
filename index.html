@@ -10,11 +10,20 @@
     <main>
         <section id="sudoku-grid-area">
             <div class="header-container">
-                <h2>The Game</h2>
                 <button onclick="loadPuzzle()">Load New Puzzle</button>
+
+                    <div class="theme-selector">
+                        <label for="theme-select">Choose a Theme:</label>
+                        <select id="theme-select">
+                            <option value="default">Default</option>
+                            <option value="banished">Banished</option>
+                            <option value="forerunner">Forerunner</option>
+                            <option value="unsc">UNSC</option>
+                        </select>
+                    </div>
+
             </div>
             <p>Once connected, click on a grid cell to change its value. The change will appear on the other player's screen.</p>
-
             <div id="sudoku-grid"></div>
         </section>
 

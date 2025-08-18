@@ -143,3 +143,109 @@ textarea {
     display: inline-block;
     margin-top: 10px;
 }
+
+/*==============================Banished Theme==============================*/
+body.banished {
+    background-color: #2C2E2A; /* Dark metallic gray */
+    color: #F0F0F0;
+}
+
+body.banished #sudoku-grid {
+    border-color: #BC3908; /* Crimson red */
+}
+
+body.banished .grid-cell {
+    border-color: #7A7F85;
+}
+
+body.banished .preloaded-cell {
+    background-color: #4C4A45;
+    color: #F0F0F0; /* Light gray for contrast */
+}
+
+body.banished .highlight-cell {
+    background-color: #4C4A45;
+}
+
+body.banished .active-cell {
+    background-color: #BC3908; /* Crimson red */
+    color: #fff;
+}
+
+body.banished .invalid-cell {
+    background-color: #FF0000; /* Bright red for error */
+}
+
+body.banished .solved-puzzle {
+    background-color: #2D6A4F; /* Darker green for a subtle "solved" look */
+}
+
+/*==============================UNSC Theme==============================*/
+body.unsc {
+    background-color: #1A1A1A; /* Dark military gray */
+    color: #CDCFCC;
+}
+
+body.unsc #sudoku-grid {
+    border-color: #CDCFCC; /* Light gray */
+}
+
+body.unsc .grid-cell {
+    border-color: #CDCFCC;
+}
+
+body.unsc .preloaded-cell {
+    background-color: #4C4A45;
+    color: #EFB82A; /* Gold/yellow for preloaded numbers */
+}
+
+body.unsc .highlight-cell {
+    background-color: #4C4A45;
+}
+
+body.unsc .active-cell {
+    background-color: #2D6A4F; /* Military green */
+}
+
+body.unsc .invalid-cell {
+    background-color: #B53835; /* Muted red */
+}
+
+body.unsc .solved-puzzle {
+    background-color: #CDCFCC; /* A bright, clean look */
+}
+
+/*==============================Forerunner Theme==============================*/
+body.forerunner {
+    background-color: #0E0E1A; /* Very dark blue/purple */
+    color: #E6E6FA; /* Light purple/white */
+}
+
+body.forerunner #sudoku-grid {
+    border-color: #4D4D99; /* A medium blue/purple */
+}
+
+body.forerunner .grid-cell {
+    border-color: #4D4D99;
+}
+
+body.forerunner .preloaded-cell {
+    background-color: #1A1A33;
+    color: #E6E6FA; /* Light numbers */
+}
+
+body.forerunner .highlight-cell {
+    background-color: #1A1A33;
+}
+
+body.forerunner .active-cell {
+    background-color: #4D4D99;
+}
+
+body.forerunner .invalid-cell {
+    background-color: #E60073; /* Bright magenta */
+}
+
+body.forerunner .solved-puzzle {
+    background-color: #33CCFF; /* Bright cyan */
+}
