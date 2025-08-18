@@ -4,6 +4,8 @@
 let peerConnection;
 let dataChannel;
 let qrScanner = null;
+let qrScannerHost = null;
+let pressTimer = null; // Declare pressTimer globally
 
 //State object to manage application state
 const appState = {
@@ -47,7 +49,10 @@ const dom = {
     chunkStatus: document.getElementById('chunk-status'),
     prevQrBtn: document.getElementById('prev-qr'),
     nextQrBtn: document.getElementById('next-qr'),
+    prevQrAnswerBtn: document.getElementById('prev-qr-answer'),
+    nextQrAnswerBtn: document.getElementById('next-qr-answer'),
     scannerStatus: document.getElementById('scanner-status'),
+    scannerStatusHost: document.getElementById('scanner-status-host'),
     playerRoleSelect: document.getElementById('player-role'),
     signalingMethodSelect: document.getElementById('signaling-method')
 };
@@ -185,7 +190,7 @@ async function createAnswerQr() {
     };
 }
 
-//Starts the QR code scanner
+//Starts the Joiner's QR code scanner
 function startQrScanner() {
     if (qrScanner) {
         qrScanner.stop().then(() => {
@@ -201,7 +206,23 @@ function startQrScanner() {
     qrScanner.render(onScanSuccess, onScanFailure);
 }
 
-//Handles successful QR code scan
+//Starts the Host QR code scanner
+function startQrScannerHost() {
+    if (qrScannerHost) {
+        qrScannerHost.stop().then(() => {
+            qrScannerHost = null;
+        });
+    }
+    
+    appState.scannedChunks = [];
+    appState.totalChunksToScan = 0;
+    dom.scannerStatusHost.textContent = 'Status: Scanning first QR code...';
+    
+    qrScannerHost = new Html5QrcodeScanner("qr-reader-host", { fps: 10, qrbox: {width: 250, height: 250} });
+    qrScannerHost.render(onHostScanSuccess, onHostScanFailure);
+}
+
+//Handles successful QR code scan for the Joiner
 async function onScanSuccess(decodedText) {
     const regex = /^\[(\d+)\/(\d+)\]:(.*)$/;
     const match = decodedText.match(regex);
@@ -235,15 +256,53 @@ async function onScanSuccess(decodedText) {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
             await createAnswerQr();
             dom.p2QrStatus.textContent = 'Status: All chunks scanned. Answer created.';
-        } else if (sdp.type === 'answer' && appState.isInitiator) {
+        }
+    }
+}
+
+//Handles QR code scan failures for the Joiner
+function onScanFailure(error) {
+    console.warn(`QR code scan error: ${error}`);
+}
+
+//Handles successful QR code scan for the Host
+async function onHostScanSuccess(decodedText) {
+    const regex = /^\[(\d+)\/(\d+)\]:(.*)$/;
+    const match = decodedText.match(regex);
+
+    if (!match) {
+        return; // Ignore invalid QR codes
+    }
+    
+    const chunkIndex = parseInt(match[1], 10);
+    const totalChunks = parseInt(match[2], 10);
+    const chunkData = match[3];
+
+    if (appState.scannedChunks.some(chunk => chunk.index === chunkIndex)) {
+        return; // Ignore duplicate scans
+    }
+
+    appState.scannedChunks.push({ index: chunkIndex, data: chunkData });
+    dom.scannerStatusHost.textContent = `Status: Scanned chunk ${appState.scannedChunks.length} of ${totalChunks}.`;
+
+    if (appState.scannedChunks.length === totalChunks) {
+        if (qrScannerHost) {
+            qrScannerHost.clear();
+        }
+
+        appState.scannedChunks.sort((a, b) => a.index - b.index);
+        const fullSdp = atob(appState.scannedChunks.map(chunk => chunk.data).join(''));
+        const sdp = JSON.parse(fullSdp);
+
+        if (sdp.type === 'answer' && appState.isInitiator) {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
             dom.p1QrStatus.textContent = 'Status: Answer received. Connecting...';
         }
     }
 }
 
-//Handles QR code scan failures
-function onScanFailure(error) {
+//Handles QR code scan failures for the Host
+function onHostScanFailure(error) {
     console.warn(`QR code scan error: ${error}`);
 }
 
@@ -278,43 +337,65 @@ function displayQrChunk(chunks, index) {
         alert("An error occurred:" + error.message);
     }
     
-    dom.chunkStatus.textContent = `Chunk ${index + 1} of ${chunks.length}`;
-    
-    dom.prevQrBtn.disabled = (index === 0);
-    dom.nextQrBtn.disabled = (index === chunks.length - 1);
+    if (appState.isAnswer) {
+        dom.chunkStatus.textContent = ''; // Clear Host's status text
+        dom.prevQrAnswerBtn.disabled = (index === 0);
+        dom.nextQrAnswerBtn.disabled = (index === chunks.length - 1);
+    } else {
+        dom.chunkStatus.textContent = `Chunk ${index + 1} of ${chunks.length}`;
+        dom.prevQrBtn.disabled = (index === 0);
+        dom.nextQrBtn.disabled = (index === chunks.length - 1);
+    }
 }
 
-//Shows the next QR code chunk in the sequence.
+//Shows the next QR code chunk for the Host or Joiner
 function showNextChunk() {
-    const chunks = appState.isAnswer ? appState.answerChunks : appState.offerChunks;
-    let currentIndex = appState.isAnswer ? appState.currentAnswerChunkIndex : appState.currentOfferChunkIndex;
+    const chunks = appState.offerChunks;
+    let currentIndex = appState.currentOfferChunkIndex;
 
     if (currentIndex < chunks.length - 1) {
         currentIndex++;
-        if (appState.isAnswer) {
-            appState.currentAnswerChunkIndex = currentIndex;
-        } else {
-            appState.currentOfferChunkIndex = currentIndex;
-        }
+        appState.currentOfferChunkIndex = currentIndex;
         displayQrChunk(chunks, currentIndex);
     }
 }
 
-//Shows the previous QR code chunk in the sequence.
+//Shows the previous QR code chunk for the Host or Joiner
 function showPrevChunk() {
-    const chunks = appState.isAnswer ? appState.answerChunks : appState.offerChunks;
-    let currentIndex = appState.isAnswer ? appState.currentAnswerChunkIndex : appState.currentOfferChunkIndex;
+    const chunks = appState.offerChunks;
+    let currentIndex = appState.currentOfferChunkIndex;
 
     if (currentIndex > 0) {
         currentIndex--;
-        if (appState.isAnswer) {
-            appState.currentAnswerChunkIndex = currentIndex;
-        } else {
-            appState.currentOfferChunkIndex = currentIndex;
-        }
+        appState.currentOfferChunkIndex = currentIndex;
         displayQrChunk(chunks, currentIndex);
     }
 }
+
+//Shows the next Answer QR code chunk for the Joiner
+function showNextAnswerChunk() {
+    const chunks = appState.answerChunks;
+    let currentIndex = appState.currentAnswerChunkIndex;
+
+    if (currentIndex < chunks.length - 1) {
+        currentIndex++;
+        appState.currentAnswerChunkIndex = currentIndex;
+        displayQrChunk(chunks, currentIndex);
+    }
+}
+
+//Shows the previous Answer QR code chunk for the Joiner
+function showPrevAnswerChunk() {
+    const chunks = appState.answerChunks;
+    let currentIndex = appState.currentAnswerChunkIndex;
+
+    if (currentIndex > 0) {
+        currentIndex--;
+        appState.currentAnswerChunkIndex = currentIndex;
+        displayQrChunk(chunks, currentIndex);
+    }
+}
+
 
 //==============================
 //Game UI and Logic
@@ -639,6 +720,8 @@ function hideSignalingUI() {
 document.addEventListener('DOMContentLoaded', () => {
     dom.prevQrBtn.disabled = true;
     dom.nextQrBtn.disabled = true;
+    dom.prevQrAnswerBtn.disabled = true;
+    dom.nextQrAnswerBtn.disabled = true;
     
     createGrid();
     loadPuzzle();
