@@ -1,6 +1,4 @@
-/*==============================
-General & Layout
-==============================*/
+/*==============================General & Layout==============================*/
 body {
     font-family: sans-serif;
     background-image: url('http://googleusercontent.com/image_generation_content/51');
@@ -34,9 +32,7 @@ body {
     display: none;
 }
 
-/*==============================
-Sudoku Grid
-==============================*/
+/*==============================Sudoku Grid==============================*/
 #sudoku-grid {
     display: grid;
     grid-template-columns: repeat(9, 36px);
@@ -71,9 +67,7 @@ Sudoku Grid
     cursor: default;
 }
 
-/*==============================
-Cell Coloring & States
-==============================*/
+/*==============================Cell Coloring & States==============================*/
 .highlight-cell {
     background-color: lightgray;
 }
@@ -90,9 +84,7 @@ Cell Coloring & States
     background-color: lightgreen;
 }
 
-/*==============================
-Buttons and Form Elements
-==============================*/
+/*==============================Buttons and Form Elements==============================*/
 button, select {
     background-color: #007bff;
     color: #fff;
@@ -140,9 +132,7 @@ textarea {
     height: 100px;
 }
 
-/*==============================
-QR Code
-==============================*/
+/*==============================QR Code==============================*/
 #qr-signaling-area {
     text-align: center;
 }
