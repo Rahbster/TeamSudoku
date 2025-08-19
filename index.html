@@ -38,12 +38,12 @@
             </div>
             <br/>
             <div class="header-container">
-                <button onclick="loadPuzzle()">Load New Puzzle</button>
+                <button class="theme-button" onclick="loadPuzzle()">Load New Puzzle</button>
             </div>
             <br/>
         </section>
 
-        <button onclick="toggleSignalingArea()">Toggle P2P Configuration</button>
+        <button class="theme-button" onclick="toggleSignalingArea()">Toggle P2P Configuration</button>
         <p>Once connected, click on a grid cell to change its value. The change will appear on the other player's screen.</p>
         <section id="signaling-area" class="hidden">
             <h1>P2P Sudoku PoC</h1>
@@ -68,10 +68,10 @@
                     <div class="container">
                         <div class="column">
                             <h2>Player 1 (Host)</h2>
-                            <button onclick="createOfferManual()">1. Create Offer</button>
+                            <button class="theme-button" onclick="createOfferManual()">1. Create Offer</button>
                             <p>Copy the text below and paste it into the "Received Offer" box for Player 2.</p>
                             <textarea id="offer-text" readonly></textarea>
-                            <button onclick="copyToClipboard('offer-text')">Copy Offer</button>
+                            <button class="theme-button" onclick="copyToClipboard('offer-text')">Copy Offer</button>
                         </div>
                     </div>
                     <div class="container">
@@ -79,7 +79,7 @@
                             <h2>Player 1 (Final Step)</h2>
                             <p>Paste Answer from Player 2 into the box below:</p>
                             <textarea id="received-answer-text"></textarea>
-                            <button onclick="addAnswerManual()">Add Answer & Connect</button>
+                            <button class="theme-button" onclick="addAnswerManual()">Add Answer & Connect</button>
                             <p id="p1-status">Status: Disconnected</p>
                         </div>
                     </div>
@@ -90,10 +90,10 @@
                             <h2>Player 2 (Joiner)</h2>
                             <p>1. Paste Offer from Player 1 into the box below:</p>
                             <textarea id="received-offer-text"></textarea>
-                            <button onclick="createAnswerManual()">2. Create Answer</button>
+                            <button class="theme-button" onclick="createAnswerManual()">2. Create Answer</button>
                             <p>Copy the text below and paste it into the "Received Answer" box for Player 1.</p>
                             <textarea id="answer-text" readonly></textarea>
-                            <button onclick="copyToClipboard('answer-text')">Copy Answer</button>
+                            <button class="theme-button" onclick="copyToClipboard('answer-text')">Copy Answer</button>
                         </div>
                     </div>
                     <div class="container">
@@ -111,20 +111,20 @@
                         <div class="column">
                             <h2>Player 1 (Host)</h2>
                             <p>1. Create Offer and show the QR codes to Player 2.</p>
-                            <button onclick="createOfferQr()">Create QR Codes</button>
+                            <button class="theme-button" onclick="createOfferQr()">Create QR Codes</button>
 
                             <p id="chunk-status">Generate chunks to begin.</p>
                             <div id="qr-code-display" class="qr-display-area"></div>
                             <br>
-                            <button id="prev-qr" onclick="showPrevChunk()">Previous</button>
-                            <button id="next-qr" onclick="showNextChunk()">Next</button>
+                            <button class="theme-button" id="prev-qr" onclick="showPrevChunk()">Previous</button>
+                            <button class="theme-button" id="next-qr" onclick="showNextChunk()">Next</button>
 
                         </div>
                     </div>
                     <div class="container">
                         <div class="column">
                             <p>2. Scan the Answer QR code from Player 2.</p>
-                            <button onclick="startQrScannerHost()">Start QR Scanner</button>
+                            <button class="theme-button" onclick="startQrScannerHost()">Start QR Scanner</button>
                             <div id="qr-reader-host" style="width: 300px; margin: 0 auto;"></div>
                             <p id="scanner-status-host">Status: Ready to scan.</p>
                         </div>
@@ -141,13 +141,13 @@
                             <h2>Player 2 (Joiner)</h2>
                             <p>1. Scan the QR code from Player 1.</p>
                             <p id="scanner-status">Status: Ready to scan.</p>
-                            <button onclick="startQrScanner()">Start QR Scanner</button>
+                            <button class="theme-button" onclick="startQrScanner()">Start QR Scanner</button>
                             <div id="qr-reader" style="width: 300px; margin: 0 auto;"></div>
                             <p>Or, if Player 1 has scanned your answer, show this code:</p>
                             <div id="qr-code-display-answer" class="qr-display-area"></div>
                             <br>
-                            <button id="prev-qr-answer" onclick="showPrevAnswerChunk()">Previous</button>
-                            <button id="next-qr-answer" onclick="showNextAnswerChunk()">Next</button>
+                            <button class="theme-button" id="prev-qr-answer" onclick="showPrevAnswerChunk()">Previous</button>
+                            <button class="theme-button" id="next-qr-answer" onclick="showNextAnswerChunk()">Next</button>
                         </div>
                     </div>
                     <div class="container">

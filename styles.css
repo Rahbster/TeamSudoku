@@ -348,3 +348,30 @@ body.forerunner .number-btn {
 #empty-btn:hover {
     background-color: #c82333;
 }
+
+body.banished .theme-button,
+body.banished #signaling-method,
+body.banished #player-role,
+body.banished #theme-select {
+    background-color: #BC3908;
+    color: #F0F0F0;
+    border-color: #BC3908;
+}
+
+body.unsc .theme-button,
+body.unsc #signaling-method,
+body.unsc #player-role,
+body.unsc #theme-select {
+    background-color: #4C4A45;
+    color: #CDCFCC;
+    border-color: #2D6A4F;
+}
+
+body.forerunner .theme-button,
+body.forerunner #signaling-method,
+body.forerunner #player-role,
+body.forerunner #theme-select {
+    background-color: #4D4D99;
+    color: #E6E6FA;
+    border-color: #33CCFF;
+}
