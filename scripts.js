@@ -731,9 +731,6 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.prevQrAnswerBtn.disabled = true;
     dom.nextQrAnswerBtn.disabled = true;
     
-    createGrid();
-    loadPuzzle();
-    
     dom.signalingMethodSelect.addEventListener('change', toggleSignalingUI);
     dom.playerRoleSelect.addEventListener('change', toggleSignalingUI);
     
@@ -774,6 +771,18 @@ numberPad.addEventListener('click', (event) => {
         
         // Set the content of the active cell to the determined value
         appState.activeCell.textContent = value;
+
+        // Create the message object to send to the other player
+        const move = {
+            type: 'move',
+            row: appState.activeCell.id.split('-')[1],
+            col: appState.activeCell.id.split('-')[2],
+            value: value
+        };
+        // Check if the data channel is open and send the message
+        if (dataChannel && dataChannel.readyState === 'open') {
+            dataChannel.send(JSON.stringify(move));
+        }
         
         // Remove active class from the old cell to avoid confusion
         appState.activeCell.classList.remove('active-cell');
@@ -799,5 +808,33 @@ function toggleSignalingArea() {
         dom.sudokuGridArea.scrollIntoView({ behavior: 'smooth' });
     } else {
         dom.signalingArea.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Copies the offer or answer to the clipboard
+async function copyToClipboard(elementId) {
+    const textToCopy = document.getElementById(elementId).value;
+    try {
+        await navigator.clipboard.writeText(textToCopy);
+        console.log('Content copied to clipboard!');
+        alert('Text copied to clipboard!'); // Provide user feedback
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = textToCopy;
+        textarea.style.position = 'fixed'; // Prevents scrolling
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            alert('Text copied to clipboard!');
+        } catch (execErr) {
+            console.error('Fallback copy failed: ', execErr);
+            alert('Failed to copy. Please copy manually.');
+        } finally {
+            document.body.removeChild(textarea);
+        }
     }
 }
