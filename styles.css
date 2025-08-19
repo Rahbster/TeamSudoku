@@ -299,16 +299,16 @@ body.forerunner .solved-puzzle {
 /* Media Query                                */
 /* ------------------------------------------ */
 
-/* This rule will only apply to screens with a min-max width of 0px - 499px. */
-@media (max-width: 499px) {
+/* This rule will only apply to screens with a min-max width of 0px - 390px. */
+@media (max-width: 390px) {
     #number-pad {
         gap: 5px; /* Adjust the gap for a tighter fit */
         margin-top: 10px;
     }
 
     .number-btn {
-        width: 18%; /* Use a percentage to make the buttons responsive */
-        max-width: 96px; /* Limits the size of the button */
+        width: 19%; /* Use a percentage to make the buttons responsive */
+        max-width: 74px; /* Limits the size of the button */
     }
 }
 
