@@ -309,7 +309,7 @@ body.forerunner .solved-puzzle {
 
     .number-btn {
         width: 19%; /* Use a percentage to make the buttons responsive */
-        max-width: 68px; /* Limits the size of the button */
+        max-width: 62px; /* Limits the size of the button */
     }
 }
 
