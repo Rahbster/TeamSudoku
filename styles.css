@@ -317,22 +317,27 @@ body.forerunner .number-btn {
 #number-pad {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 5px;
     margin-top: 20px;
     flex-wrap: wrap; /* Allows buttons to wrap to a new line on smaller screens */
 }
 
 .number-btn {
-    width: 40px;
+    width: 18%;
+    max-width: 40px;
     height: 40px;
     border-radius: 5px;
     font-size: 1.2em;
     font-weight: bold;
     cursor: pointer;
-    background-color: #007bff;
-    color: #fff;
     border: none;
     transition: transform 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #007bff;
+    color: #fff;
+
 }
 
 .number-btn:hover {
@@ -340,11 +345,19 @@ body.forerunner .number-btn {
 }
 
 #empty-btn {
+    width: 18%;
+    max-width: 40px;
+    height: 40px;
+    border-radius: 5px;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background-color: #dc3545; /* A red color to signify "clear" or "delete" */
-    color: #fff;
-    width: auto;
-    padding: 0 10px;
-    font-size: 1em;
 }
 
 #empty-btn:hover {
