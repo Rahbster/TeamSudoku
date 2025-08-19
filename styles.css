@@ -87,7 +87,9 @@ body.connection-background #background-image-container {
 
 /*==============================Cell Coloring & States==============================*/
 .highlight-cell {
-    background-color: lightgray;
+    background-color: black;
+    color: #f0f0f0;
+;
 }
 
 .active-cell {
@@ -139,7 +141,7 @@ select {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    min-width: 150px;
+    min-width: 200px;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>');
     background-repeat: no-repeat;
     background-position: right 10px center;
@@ -182,7 +184,8 @@ body.banished .preloaded-cell {
 }
 
 body.banished .highlight-cell {
-    background-color: #4C4A45;
+    background-color: #A0A0A0; /* Light gray for contrast */
+    color: #4C4A45;
 }
 
 body.banished .active-cell {
@@ -218,7 +221,8 @@ body.unsc .preloaded-cell {
 }
 
 body.unsc .highlight-cell {
-    background-color: #4C4A45;
+    background-color: #EFB82A;
+    color: #4C4A45;
 }
 
 body.unsc .active-cell {
@@ -254,7 +258,8 @@ body.forerunner .preloaded-cell {
 }
 
 body.forerunner .highlight-cell {
-    background-color: #1A1A33; /* Use the old preloaded color for highlights */
+    background-color: #2D0063; /* A dark purple for high contrast */
+    color: #B2B2FF; /* A light, icy blue/purple */
 }
 
 body.forerunner .active-cell {
