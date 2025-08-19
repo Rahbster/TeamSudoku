@@ -72,6 +72,7 @@
                             <p>Copy the text below and paste it into the "Received Offer" box for Player 2.</p>
                             <textarea id="offer-text" readonly></textarea>
                             <button class="theme-button" onclick="copyToClipboard('offer-text')">Copy Offer</button>
+                            <button class="theme-button" onclick="clearTextbox('offer-text')">Clear</button>
                         </div>
                     </div>
                     <div class="container">
@@ -80,6 +81,7 @@
                             <p>Paste Answer from Player 2 into the box below:</p>
                             <textarea id="received-answer-text"></textarea>
                             <button class="theme-button" onclick="addAnswerManual()">Add Answer & Connect</button>
+                            <button class="theme-button" onclick="clearTextbox('received-answer-text')">Clear</button>
                             <p id="p1-status">Status: Disconnected</p>
                         </div>
                     </div>
@@ -91,9 +93,11 @@
                             <p>1. Paste Offer from Player 1 into the box below:</p>
                             <textarea id="received-offer-text"></textarea>
                             <button class="theme-button" onclick="createAnswerManual()">2. Create Answer</button>
+                            <button class="theme-button" onclick="clearTextbox('received-offer-text')">Clear</button>
                             <p>Copy the text below and paste it into the "Received Answer" box for Player 1.</p>
                             <textarea id="answer-text" readonly></textarea>
                             <button class="theme-button" onclick="copyToClipboard('answer-text')">Copy Answer</button>
+                            <button class="theme-button" onclick="clearTextbox('received-offer-text')">Clear</button>
                         </div>
                     </div>
                     <div class="container">

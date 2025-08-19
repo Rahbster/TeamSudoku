@@ -838,3 +838,11 @@ async function copyToClipboard(elementId) {
         }
     }
 }
+
+// Function to clear the content of a specific textarea
+function clearTextbox(id) {
+    const textarea = document.getElementById(id);
+    if (textarea) {
+        textarea.value = '';
+    }
+}
