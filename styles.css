@@ -299,8 +299,8 @@ body.forerunner .solved-puzzle {
 /* Media Query                                */
 /* ------------------------------------------ */
 
-/* This rule will only apply to screens with a min-max width of 0px - 390px. */
-@media (max-width: 390px) {
+/* This rule will only apply to screens with a min-max width of 0px - 400px. */
+@media (max-width: 400px) {
     #number-pad {
         flex-wrap: wrap; /* Allows buttons to wrap to a new line on smaller screens */
         gap: 5px; /* Adjust the gap for a tighter fit */
