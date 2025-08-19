@@ -139,7 +139,7 @@ select {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    min-width: 250px;
+    min-width: 150px;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>');
     background-repeat: no-repeat;
     background-position: right 10px center;
@@ -273,7 +273,7 @@ body.forerunner .solved-puzzle {
 #number-pad {
     display: flex;
     justify-content: center;
-    flex-wrap: wrap; /* Allows buttons to wrap to a new line on smaller screens */
+    flex-wrap: nowrap;
     gap: 10px;
     margin-top: 20px;
 }
@@ -299,9 +299,10 @@ body.forerunner .solved-puzzle {
 /* Media Query                                */
 /* ------------------------------------------ */
 
-/* This rule will only apply to screens with a min-max width of 0px - 390px. */
-@media (max-width: 390px) {
+/* This rule will only apply to screens with a min-max width of 0px - 400px. */
+@media (max-width: 400px) {
     #number-pad {
+        flex-wrap: wrap; /* Allows buttons to wrap to a new line on smaller screens */
         gap: 5px; /* Adjust the gap for a tighter fit */
         margin-top: 10px;
     }
