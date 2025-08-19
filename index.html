@@ -26,20 +26,21 @@
             <br/>
             <div id="sudoku-grid"></div>
             <br/>
+            <label for="theme-select">Choose a Theme.</label>
+            <div class="theme-selector">
+                <select id="theme-select">
+                    <option value="default">Default</option>
+                    <option value="banished">Banished</option>
+                    <option value="forerunner">Forerunner</option>
+                    <option value="unsc">UNSC</option>
+                </select>
+                
+            </div>
+            <br/>
             <div class="header-container">
                 <button onclick="loadPuzzle()">Load New Puzzle</button>
-
-                    <div class="theme-selector">
-                        <label for="theme-select">Choose a Theme:</label>
-                        <select id="theme-select">
-                            <option value="default">Default</option>
-                            <option value="banished">Banished</option>
-                            <option value="forerunner">Forerunner</option>
-                            <option value="unsc">UNSC</option>
-                        </select>
-                    </div>
-
             </div>
+            <br/>
         </section>
 
         <button onclick="toggleSignalingArea()">Toggle P2P Configuration</button>
