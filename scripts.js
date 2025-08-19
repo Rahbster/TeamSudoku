@@ -495,13 +495,18 @@ function handleCellClick(event) {
         checkGridState();
         
     } else {
+        // Check if there is an existing active cell and remove the class
         if (appState.activeCell) {
             appState.activeCell.classList.remove('active-cell');
+            // Clear any previous highlights
+            clearAllHighlights();
         }
+        // Set the new active cell
         appState.activeCell = cell;
+        // Add the active-cell class
         cell.classList.add('active-cell');
-        clearAllHighlights();
-        const value = cell.textContent.trim();
+        // Highlight matching cells for the new active cell
+        const value = appState.activeCell.textContent.trim();
         if (value !== '') {
             highlightMatchingCells(value);
         }
@@ -748,3 +753,51 @@ themeSelector.addEventListener('change', (event) => {
         body.classList.add(selectedTheme);
     }
 });
+
+// Add an event listener to the number pad
+const numberPad = document.getElementById('number-pad');
+numberPad.addEventListener('click', (event) => {
+    // Check if a number button or the empty button was clicked and if a cell is active
+    if (event.target.classList.contains('number-btn') && appState.activeCell) {
+        // Check if the cell is a preloaded cell (you should not be able to change it)
+        if (appState.activeCell.classList.contains('preloaded-cell')) {
+            return;
+        }
+
+        let value;
+        // Check if the empty button was clicked
+        if (event.target.id === 'empty-btn') {
+            value = '';
+        } else {
+            value = event.target.textContent;
+        }
+        
+        // Set the content of the active cell to the determined value
+        appState.activeCell.textContent = value;
+        
+        // Remove active class from the old cell to avoid confusion
+        appState.activeCell.classList.remove('active-cell');
+        
+        // Clear all highlights and check grid state after a change
+        clearAllHighlights();
+        checkGridState();
+        
+        // Reset the active cell
+        appState.activeCell = null;
+    }
+});
+
+//Toggles visibility of signaling areas
+function toggleSignalingArea() {
+    dom.signalingArea.classList.toggle('hidden');
+    dom.sudokuGridArea.classList.toggle('hidden');
+
+    // Toggle the 'connection-background' class on the body
+    document.body.classList.toggle('connection-background');
+
+    if (dom.signalingArea.classList.contains('hidden')) {
+        dom.sudokuGridArea.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        dom.signalingArea.scrollIntoView({ behavior: 'smooth' });
+    }
+}

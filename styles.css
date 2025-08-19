@@ -1,14 +1,32 @@
 /*==============================General & Layout==============================*/
 body {
     font-family: sans-serif;
-    background-image: url('http://googleusercontent.com/image_generation_content/51');
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: cover;
-    background-attachment: fixed;
     color: #333;
     margin: 0;
     padding: 20px;
+    background-color: white; /* Set a default color that is visible in the background */
+
+}
+
+#background-image-container {
+    position: fixed;
+    opacity: .25;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* This places the div behind all other content */
+    transition: opacity 0.5s ease-in-out; /* Add a smooth transition */
+    background-image: url('assets/ActiveSudoku.png');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover; /* This makes the image cover the entire container */
+}
+
+/* This rule applies when the connection UI is visible */
+body.connection-background #background-image-container {
+    background-image: url('assets/StageConnection.png');
+    opacity: 0.25;
 }
 
 .container {
@@ -215,27 +233,28 @@ body.unsc .solved-puzzle {
     background-color: #CDCFCC; /* A bright, clean look */
 }
 
-/*==============================Forerunner Theme==============================*/
+/*==============================Forerunner Theme - Revised==============================*/
 body.forerunner {
     background-color: #0E0E1A; /* Very dark blue/purple */
-    color: #E6E6FA; /* Light purple/white */
+    color: #E6E6FA; /* Light purple/white for input numbers */
 }
 
 body.forerunner #sudoku-grid {
-    border-color: #4D4D99; /* A medium blue/purple */
+    border-color: #4D4D99;
 }
 
 body.forerunner .grid-cell {
     border-color: #4D4D99;
 }
 
+/* Updated Preloaded Cell */
 body.forerunner .preloaded-cell {
-    background-color: #1A1A33;
-    color: #E6E6FA; /* Light numbers */
+    background-color: #B2B2FF; /* A light, icy blue/purple */
+    color: #2D0063; /* A dark purple for high contrast */
 }
 
 body.forerunner .highlight-cell {
-    background-color: #1A1A33;
+    background-color: #1A1A33; /* Use the old preloaded color for highlights */
 }
 
 body.forerunner .active-cell {
@@ -243,9 +262,91 @@ body.forerunner .active-cell {
 }
 
 body.forerunner .invalid-cell {
-    background-color: #E60073; /* Bright magenta */
+    background-color: #E60073;
 }
 
 body.forerunner .solved-puzzle {
-    background-color: #33CCFF; /* Bright cyan */
+    background-color: #33CCFF;
+}
+
+/*==============================Number Pad==============================*/
+#number-pad {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.number-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 5px;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    transition: transform 0.2s;
+}
+
+.number-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Optional: Add theme-specific styles for the number pad */
+body.banished .number-btn {
+    background-color: #BC3908;
+    color: #F0F0F0;
+    border: 2px solid #BC3908;
+}
+
+body.unsc .number-btn {
+    background-color: #4C4A45;
+    color: #CDCFCC;
+    border: 2px solid #2D6A4F;
+}
+
+body.forerunner .number-btn {
+    background-color: #4D4D99;
+    color: #E6E6FA;
+    border: 2px solid #33CCFF;
+}
+
+/*==============================Number Pad==============================*/
+#number-pad {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap; /* Allows buttons to wrap to a new line on smaller screens */
+}
+
+.number-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 5px;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    transition: transform 0.2s;
+}
+
+.number-btn:hover {
+    transform: scale(1.1);
+}
+
+#empty-btn {
+    background-color: #dc3545; /* A red color to signify "clear" or "delete" */
+    color: #fff;
+    width: auto;
+    padding: 0 10px;
+    font-size: 1em;
+}
+
+#empty-btn:hover {
+    background-color: #c82333;
 }

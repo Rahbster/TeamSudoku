@@ -3,10 +3,11 @@
 <head>
     <title>Sudoku P2P Proof-of-Concept (Pure HTML/JS)</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="assets/sudokuicon.png" type="image/png">
 </head>
 
 <body>
-
+    <div id="background-image-container"></div>
     <main>
         <section id="sudoku-grid-area">
             <div class="header-container">
@@ -25,6 +26,18 @@
             </div>
             <p>Once connected, click on a grid cell to change its value. The change will appear on the other player's screen.</p>
             <div id="sudoku-grid"></div>
+            <div id="number-pad">
+                <button class="number-btn">1</button>
+                <button class="number-btn">2</button>
+                <button class="number-btn">3</button>
+                <button class="number-btn">4</button>
+                <button class="number-btn">5</button>
+                <button class="number-btn">6</button>
+                <button class="number-btn">7</button>
+                <button class="number-btn">8</button>
+                <button class="number-btn">9</button>
+                <button class="number-btn" id="empty-btn">✖</button>
+            </div>
         </section>
 
         <button onclick="toggleSignalingArea()">Toggle P2P Configuration</button>
