@@ -73,7 +73,9 @@ export const dom = {
     scannerStatusHost: document.getElementById('scanner-status-host'),
     scanOverlayMessage: document.getElementById('scan-overlay-message'),
     playerRoleSelect: document.getElementById('player-role'),
-    signalingMethodSelect: document.getElementById('signaling-method')
+    signalingMethodSelect: document.getElementById('signaling-method'),
+    newPuzzleButton = document.getElementById('new-puzzle-btn'),
+    hostButton = document.getElementById('host-btn')
 };
 
 const themeSelector = document.getElementById('theme-select');
@@ -553,6 +555,10 @@ async function joinOfferBluetooth() {
 function toggleSignalingArea() {
     dom.signalingArea.classList.toggle('hidden');
     dom.sudokuGridArea.classList.toggle('hidden');
+
+    // Toggle the 'connection-background' class on the body
+    document.body.classList.toggle('connection-background');
+
     if (dom.signalingArea.classList.contains('hidden')) {
         dom.sudokuGridArea.scrollIntoView({ behavior: 'smooth' });
     } else {
@@ -608,6 +614,13 @@ function hideSignalingUI() {
 //==============================
 //Initial Setup
 //==============================
+newPuzzleButton.addEventListener('click', () => {
+  loadPuzzle();
+});
+
+hostButton.addEventListener('click', () => {
+  toggleSignalingArea();
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     dom.prevQrBtn.disabled = true;
@@ -679,21 +692,6 @@ numberPad.addEventListener('click', (event) => {
         appState.activeCell = null;
     }
 });
-
-//Toggles visibility of signaling areas
-function toggleSignalingArea() {
-    dom.signalingArea.classList.toggle('hidden');
-    dom.sudokuGridArea.classList.toggle('hidden');
-
-    // Toggle the 'connection-background' class on the body
-    document.body.classList.toggle('connection-background');
-
-    if (dom.signalingArea.classList.contains('hidden')) {
-        dom.sudokuGridArea.scrollIntoView({ behavior: 'smooth' });
-    } else {
-        dom.signalingArea.scrollIntoView({ behavior: 'smooth' });
-    }
-}
 
 // Copies the offer or answer to the clipboard
 async function copyToClipboard(elementId) {
