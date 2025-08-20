@@ -661,12 +661,40 @@ function validatePuzzle() {
 
 //Checks the current state of the grid for a win condition
 function checkGridState() {
+    // Call the new function to update button states
+    updateNumberPadState();
+
     const { isValid, isComplete } = validatePuzzle();
     if (isComplete && isValid) {
         document.querySelectorAll('.grid-cell').forEach(cell => {
             cell.classList.add('solved-puzzle');
         });
         alert("Congratulations! The puzzle is solved!");
+    }
+}
+
+// Function to update the disabled state of the number pad buttons
+function updateNumberPadState() {
+    const counts = {};
+    for (let i = 1; i <= 9; i++) {
+        counts[i] = 0;
+    }
+    
+    // Count all numbers currently on the grid
+    const allCells = document.querySelectorAll('.grid-cell');
+    allCells.forEach(cell => {
+        const value = parseInt(cell.textContent.trim(), 10);
+        if (value >= 1 && value <= 9) {
+            counts[value]++;
+        }
+    });
+
+    // Disable the button if a number has been used 9 times
+    for (const number in counts) {
+        const button = document.getElementById(`number-btn-${number}`);
+        if (button) {
+            button.disabled = counts[number] === 9;
+        }
     }
 }
 
