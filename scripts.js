@@ -494,47 +494,21 @@ function handleCellClick(event) {
         }
         return;
     }
-    if (appState.activeCell === cell) {
-        const currentValue = cell.textContent.trim();
-        let newValue;
-        if (currentValue === '9') {
-            newValue = '';
-        } else if (currentValue === '') {
-            newValue = 1;
-        } else {
-            newValue = parseInt(currentValue, 10) + 1;
-        }
-        
-        cell.textContent = newValue;
-        const move = {
-            type: 'move',
-            row: cell.id.split('-')[1],
-            col: cell.id.split('-')[2],
-            value: newValue
-        };
-        if (dataChannel && dataChannel.readyState === 'open') {
-            dataChannel.send(JSON.stringify(move));
-        }
+    
+    // Check if there is an existing active cell and remove the class
+    if (appState.activeCell) {
+        appState.activeCell.classList.remove('active-cell');
+        // Clear any previous highlights
         clearAllHighlights();
-        highlightMatchingCells(newValue.toString());
-        checkGridState();
-        
-    } else {
-        // Check if there is an existing active cell and remove the class
-        if (appState.activeCell) {
-            appState.activeCell.classList.remove('active-cell');
-            // Clear any previous highlights
-            clearAllHighlights();
-        }
-        // Set the new active cell
-        appState.activeCell = cell;
-        // Add the active-cell class
-        cell.classList.add('active-cell');
-        // Highlight matching cells for the new active cell
-        const value = appState.activeCell.textContent.trim();
-        if (value !== '') {
-            highlightMatchingCells(value);
-        }
+    }
+    // Set the new active cell
+    appState.activeCell = cell;
+    // Add the active-cell class
+    cell.classList.add('active-cell');
+    // Highlight matching cells for the new active cell
+    const value = appState.activeCell.textContent.trim();
+    if (value !== '') {
+        highlightMatchingCells(value);
     }
 }
 
