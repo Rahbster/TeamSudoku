@@ -9,57 +9,71 @@ let pressTimer = null; // Declare pressTimer globally
 
 //State object to manage application state
 const appState = {
-    isInitiator: false,
-    isAnswer: false,
-    initialSudokuState: [],
-    activeCell: null,
-    //QR state
-    offerChunks: [],
-    currentOfferChunkIndex: 0,
-    answerChunks: [],
-    currentAnswerChunkIndex: 0,
-    scannedChunks: [],
-    totalChunksToScan: 0,
-    //Input state
-    isLongPressActive: false,
-    lastEventTimestamp: 0
+    isInitiator: false,
+    isAnswer: false,
+    initialSudokuState: [],
+    activeCell: null,
+    //QR state
+    offerChunks: [],
+    currentOfferChunkIndex: 0,
+    answerChunks: [],
+    currentAnswerChunkIndex: 0,
+    scannedChunks: [],
+    totalChunksToScan: 0,
+    //Input state
+    isLongPressActive: false,
+    lastEventTimestamp: 0
 };
 
 //Cache DOM elements for faster access
 const dom = {
-    offerTextarea: document.getElementById('offer-text'),
-    receivedOfferTextarea: document.getElementById('received-offer-text'),
-    answerTextarea: document.getElementById('answer-text'),
-    receivedAnswerTextarea: document.getElementById('received-answer-text'),
-    p1Status: document.getElementById('p1-status'),
-    p2Status: document.getElementById('p2-status'),
-    p1QrStatus: document.getElementById('p1-qr-status'),
-    p2QrStatus: document.getElementById('p2-qr-status'),
-    sudokuGrid: document.getElementById('sudoku-grid'),
-    sudokuGridArea: document.getElementById('sudoku-grid-area'),
-    signalingArea: document.getElementById('signaling-area'),
-    manualSignalingArea: document.getElementById('manual-signaling-area'),
-    qrSignalingArea: document.getElementById('qr-signaling-area'),
-    p1ManualArea: document.getElementById('p1-manual-area'),
-    p2ManualArea: document.getElementById('p2-manual-area'),
-    p1QrArea: document.getElementById('p1-qr-area'),
-    p2QrArea: document.getElementById('p2-qr-area'),
-    qrCodeDisplay: document.getElementById('qr-code-display'),
-    qrCodeAnswerDisplay: document.getElementById('qr-code-display-answer'),
-    chunkStatus: document.getElementById('chunk-status'),
-    prevQrBtn: document.getElementById('prev-qr'),
-    nextQrBtn: document.getElementById('next-qr'),
-    prevQrAnswerBtn: document.getElementById('prev-qr-answer'),
-    nextQrAnswerBtn: document.getElementById('next-qr-answer'),
-    scannerStatus: document.getElementById('scanner-status'),
-    scannerStatusHost: document.getElementById('scanner-status-host'),
-    scanOverlayMessage: document.getElementById('scan-overlay-message'),
-    playerRoleSelect: document.getElementById('player-role'),
-    signalingMethodSelect: document.getElementById('signaling-method')
+    offerTextarea: document.getElementById('offer-text'),
+    receivedOfferTextarea: document.getElementById('received-offer-text'),
+    answerTextarea: document.getElementById('answer-text'),
+    receivedAnswerTextarea: document.getElementById('received-answer-text'),
+    p1Status: document.getElementById('p1-status'),
+    p2Status: document.getElementById('p2-status'),
+    p1QrStatus: document.getElementById('p1-qr-status'),
+    p2QrStatus: document.getElementById('p2-qr-status'),
+    sudokuGrid: document.getElementById('sudoku-grid'),
+    sudokuGridArea: document.getElementById('sudoku-grid-area'),
+    signalingArea: document.getElementById('signaling-area'),
+    manualSignalingArea: document.getElementById('manual-signaling-area'),
+    qrSignalingArea: document.getElementById('qr-signaling-area'),
+    bluetoothSignalingArea: document.getElementById('bluetooth-signaling-area'), // NEW
+    p1ManualArea: document.getElementById('p1-manual-area'),
+    p2ManualArea: document.getElementById('p2-manual-area'),
+    p1QrArea: document.getElementById('p1-qr-area'),
+    p2QrArea: document.getElementById('p2-qr-area'),
+    p1BluetoothArea: document.getElementById('p1-bluetooth-area'), // NEW
+    p2BluetoothArea: document.getElementById('p2-bluetooth-area'), // NEW
+    p1BluetoothStatus: document.getElementById('p1-bluetooth-status'), // NEW
+    p2BluetoothStatus: document.getElementById('p2-bluetooth-status'), // NEW
+    qrCodeDisplay: document.getElementById('qr-code-display'),
+    qrCodeAnswerDisplay: document.getElementById('qr-code-display-answer'),
+    chunkStatus: document.getElementById('chunk-status'),
+    prevQrBtn: document.getElementById('prev-qr'),
+    nextQrBtn: document.getElementById('next-qr'),
+    prevQrAnswerBtn: document.getElementById('prev-qr-answer'),
+    nextQrAnswerBtn: document.getElementById('next-qr-answer'),
+    scannerStatus: document.getElementById('scanner-status'),
+    scannerStatusHost: document.getElementById('scanner-status-host'),
+    scanOverlayMessage: document.getElementById('scan-overlay-message'),
+    playerRoleSelect: document.getElementById('player-role'),
+    signalingMethodSelect: document.getElementById('signaling-method')
 };
 
 const themeSelector = document.getElementById('theme-select');
 const body = document.body;
+
+//==============================
+//Bluetooth Constants
+//==============================
+// Define a unique UUID for the custom Sudoku service and characteristics
+// These are not official UUIDs, but are for demonstration purposes
+const SUDOKU_SERVICE_UUID = '00001815-0000-1000-8000-00805f9b34fb';
+const SUDOKU_OFFER_CHARACTERISTIC_UUID = '00002a5c-0000-1000-8000-00805f9b34fb';
+const SUDOKU_ANSWER_CHARACTERISTIC_UUID = '00002a46-0000-1000-8000-00805f9b34fb';
 
 //==============================
 //WebRTC and Signaling Logic
@@ -67,363 +81,456 @@ const body = document.body;
 
 //Initializes the WebRTC PeerConnection
 function initializeWebRTC() {
-    peerConnection = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    });
+    peerConnection = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
 
-    peerConnection.onicecandidate = event => {
-        if (event.candidate) {
-            console.log('New ICE candidate:', event.candidate);
-        }
-    };
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            console.log('New ICE candidate:', event.candidate);
+        }
+    };
 
-    peerConnection.onconnectionstatechange = () => {
-        if (peerConnection.connectionState === 'connected') {
-            console.log('WebRTC connection established!');
-            hideSignalingUI(); //Hide all signaling UI when connected
-        }
-    };
-    
-    peerConnection.ondatachannel = event => {
-        dataChannel = event.channel;
-        setupDataChannel(dataChannel);
-    };
+    peerConnection.onconnectionstatechange = () => {
+        if (peerConnection.connectionState === 'connected') {
+            console.log('WebRTC connection established!');
+            hideSignalingUI(); //Hide all signaling UI when connected
+        }
+    };
+    
+    peerConnection.ondatachannel = event => {
+        dataChannel = event.channel;
+        setupDataChannel(dataChannel);
+    };
 }
 
 //Sets up the event handlers for the data channel
 function setupDataChannel(channel) {
-    channel.onopen = () => {
-        console.log('Data Channel is open!');
-        dom.p1Status.textContent = 'Status: Connected!';
-        dom.p2Status.textContent = 'Status: Connected!';
-        dom.p1QrStatus.textContent = 'Status: Connected!';
-        dom.p2QrStatus.textContent = 'Status: Connected!';
-        toggleSignalingArea();
-    };
+    channel.onopen = () => {
+        console.log('Data Channel is open!');
+        dom.p1Status.textContent = 'Status: Connected!';
+        dom.p2Status.textContent = 'Status: Connected!';
+        dom.p1QrStatus.textContent = 'Status: Connected!';
+        dom.p2QrStatus.textContent = 'Status: Connected!';
+        dom.p1BluetoothStatus.textContent = 'Status: Connected!'; // NEW
+        dom.p2BluetoothStatus.textContent = 'Status: Connected!'; // NEW
+        toggleSignalingArea();
+    };
 
-    channel.onmessage = event => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'move') {
-            const cell = document.getElementById(`cell-${data.row}-${data.col}`);
-            if (cell) {
-                cell.textContent = data.value;
-            }
-            checkGridState();
-        } else if (data.type === 'initial-state') {
-            loadPuzzle(data.state);
-        }
-    };
+    channel.onmessage = event => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'move') {
+            const cell = document.getElementById(`cell-${data.row}-${data.col}`);
+            if (cell) {
+                cell.textContent = data.value;
+            }
+            checkGridState();
+        } else if (data.type === 'initial-state') {
+            loadPuzzle(data.state);
+        }
+    };
 }
 
 //Handles manual offer creation
 async function createOfferManual() {
-    appState.isInitiator = true;
-    initializeWebRTC();
-    dataChannel = peerConnection.createDataChannel('sudoku-game');
-    setupDataChannel(dataChannel);
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    
-    peerConnection.onicegatheringstatechange = () => {
-        if (peerConnection.iceGatheringState === 'complete') {
-            dom.offerTextarea.value = JSON.stringify(peerConnection.localDescription);
-        }
-    };
+    appState.isInitiator = true;
+    initializeWebRTC();
+    dataChannel = peerConnection.createDataChannel('sudoku-game');
+    setupDataChannel(dataChannel);
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    
+    peerConnection.onicegatheringstatechange = () => {
+        if (peerConnection.iceGatheringState === 'complete') {
+            dom.offerTextarea.value = JSON.stringify(peerConnection.localDescription);
+        }
+    };
 }
 
 //Handles manual answer creation
 async function createAnswerManual() {
-    initializeWebRTC();
-    const offer = JSON.parse(dom.receivedOfferTextarea.value);
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
-    
-    peerConnection.onicegatheringstatechange = () => {
-        if (peerConnection.iceGatheringState === 'complete') {
-            dom.answerTextarea.value = JSON.stringify(peerConnection.localDescription);
-        }
-    };
+    initializeWebRTC();
+    const offer = JSON.parse(dom.receivedOfferTextarea.value);
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    
+    peerConnection.onicegatheringstatechange = () => {
+        if (peerConnection.iceGatheringState === 'complete') {
+            dom.answerTextarea.value = JSON.stringify(peerConnection.localDescription);
+        }
+    };
 }
 
 //Handles adding a manual answer to an offer
 async function addAnswerManual() {
-    const answer = JSON.parse(dom.receivedAnswerTextarea.value);
-    if (peerConnection.signalingState !== 'stable') {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-    }
+    const answer = JSON.parse(dom.receivedAnswerTextarea.value);
+    if (peerConnection.signalingState !== 'stable') {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    }
 }
 
 //Handles QR code offer creation
 async function createOfferQr() {
-    appState.isInitiator = true;
-    appState.isAnswer = false;
-    initializeWebRTC();
-    dataChannel = peerConnection.createDataChannel('sudoku-game');
-    setupDataChannel(dataChannel);
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    
-    peerConnection.onicegatheringstatechange = () => {
-        if (peerConnection.iceGatheringState === 'complete') {
-            const sdpString = JSON.stringify(peerConnection.localDescription);
-            const base64Sdp = btoa(sdpString);
-            appState.offerChunks = createQrCodeChunks(base64Sdp);
-            appState.currentOfferChunkIndex = 0;
-            displayQrChunk(appState.offerChunks, appState.currentOfferChunkIndex);
-            dom.p1QrStatus.textContent = 'Status: Offer created. Show codes to Player 2.';
-        }
-    };
+    appState.isInitiator = true;
+    appState.isAnswer = false;
+    initializeWebRTC();
+    dataChannel = peerConnection.createDataChannel('sudoku-game');
+    setupDataChannel(dataChannel);
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    
+    peerConnection.onicegatheringstatechange = () => {
+        if (peerConnection.iceGatheringState === 'complete') {
+            const sdpString = JSON.stringify(peerConnection.localDescription);
+            const base64Sdp = btoa(sdpString);
+            appState.offerChunks = createQrCodeChunks(base64Sdp);
+            appState.currentOfferChunkIndex = 0;
+            displayQrChunk(appState.offerChunks, appState.currentOfferChunkIndex);
+            dom.p1QrStatus.textContent = 'Status: Offer created. Show codes to Player 2.';
+        }
+    };
 }
 
 //Handles QR code answer creation
 async function createAnswerQr() {
-    appState.isAnswer = true;
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
+    appState.isAnswer = true;
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
 
-    peerConnection.onicegatheringstatechange = () => {
-        if (peerConnection.iceGatheringState === 'complete') {
-            const answerSdp = JSON.stringify(peerConnection.localDescription);
-            const base64Sdp = btoa(answerSdp);
-            appState.answerChunks = createQrCodeChunks(base64Sdp);
-            appState.currentAnswerChunkIndex = 0;
-            displayQrChunk(appState.answerChunks, appState.currentAnswerChunkIndex);
-            dom.p2QrStatus.textContent = 'Status: Answer created. Show QR code(s) to Player 1.';
-        }
-    };
+    peerConnection.onicegatheringstatechange = () => {
+        if (peerConnection.iceGatheringState === 'complete') {
+            const answerSdp = JSON.stringify(peerConnection.localDescription);
+            const base64Sdp = btoa(answerSdp);
+            appState.answerChunks = createQrCodeChunks(base64Sdp);
+            appState.currentAnswerChunkIndex = 0;
+            displayQrChunk(appState.answerChunks, appState.currentAnswerChunkIndex);
+            dom.p2QrStatus.textContent = 'Status: Answer created. Show QR code(s) to Player 1.';
+        }
+    };
 }
 
 //Starts the Joiner's QR code scanner
 function startQrScanner() {
-    if (qrScanner) {
-        qrScanner.stop().then(() => {
-            qrScanner = null;
-        });
-    }
-    
-    appState.scannedChunks = [];
-    appState.totalChunksToScan = 0;
-    dom.scannerStatus.textContent = 'Status: Scanning first QR code...';
-    
-    qrScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} });
-    qrScanner.render(onScanSuccess, onScanFailure);
+    if (qrScanner) {
+        qrScanner.stop().then(() => {
+            qrScanner = null;
+        });
+    }
+    
+    appState.scannedChunks = [];
+    appState.totalChunksToScan = 0;
+    dom.scannerStatus.textContent = 'Status: Scanning first QR code...';
+    
+    qrScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} });
+    qrScanner.render(onScanSuccess, onScanFailure);
 }
 
 //Starts the Host QR code scanner
 function startQrScannerHost() {
-    if (qrScannerHost) {
-        qrScannerHost.stop().then(() => {
-            qrScannerHost = null;
-        });
-    }
-    
-    appState.scannedChunks = [];
-    appState.totalChunksToScan = 0;
-    dom.scannerStatusHost.textContent = 'Status: Scanning first QR code...';
-    
-    qrScannerHost = new Html5QrcodeScanner("qr-reader-host", { fps: 10, qrbox: {width: 250, height: 250} });
-    qrScannerHost.render(onHostScanSuccess, onHostScanFailure);
+    if (qrScannerHost) {
+        qrScannerHost.stop().then(() => {
+            qrScannerHost = null;
+        });
+    }
+    
+    appState.scannedChunks = [];
+    appState.totalChunksToScan = 0;
+    dom.scannerStatusHost.textContent = 'Status: Scanning first QR code...';
+    
+    qrScannerHost = new Html5QrcodeScanner("qr-reader-host", { fps: 10, qrbox: {width: 250, height: 250} });
+    qrScannerHost.render(onHostScanSuccess, onHostScanFailure);
 }
 
 //Handles successful QR code scan for the Joiner
 async function onScanSuccess(decodedText) {
-    const regex = /^\[(\d+)\/(\d+)\]:(.*)$/;
-    const match = decodedText.match(regex);
+    const regex = /^\[(\d+)\/(\d+)\]:(.*)$/;
+    const match = decodedText.match(regex);
 
-    if (!match) {
-        return; // Ignore invalid QR codes
-    }
-    
-    const chunkIndex = parseInt(match[1], 10);
-    const totalChunks = parseInt(match[2], 10);
-    const chunkData = match[3];
+    if (!match) {
+        return; // Ignore invalid QR codes
+    }
+    
+    const chunkIndex = parseInt(match[1], 10);
+    const totalChunks = parseInt(match[2], 10);
+    const chunkData = match[3];
 
-    if (appState.scannedChunks.some(chunk => chunk.index === chunkIndex)) {
-        return; // Ignore duplicate scans
-    }
+    if (appState.scannedChunks.some(chunk => chunk.index === chunkIndex)) {
+        return; // Ignore duplicate scans
+    }
 
-    appState.scannedChunks.push({ index: chunkIndex, data: chunkData });
-    dom.scannerStatus.textContent = `Status: Scanned chunk ${appState.scannedChunks.length} of ${totalChunks}.`;
+    appState.scannedChunks.push({ index: chunkIndex, data: chunkData });
+    dom.scannerStatus.textContent = `Status: Scanned chunk ${appState.scannedChunks.length} of ${totalChunks}.`;
 
-    // Play a beep and display the status for 2 seconds
-    playBeepSound();
+    // Play a beep and display the status for 2 seconds
+    playBeepSound();
 
-    // Display the new overlay message
-    dom.scanOverlayMessage.textContent = `${appState.scannedChunks.length} of ${totalChunks}`;
-    dom.scanOverlayMessage.classList.remove('hidden');
+    // Display the new overlay message
+    dom.scanOverlayMessage.textContent = `${appState.scannedChunks.length} of ${totalChunks}`;
+    dom.scanOverlayMessage.classList.remove('hidden');
 
-    // Hide the overlay message after 2 seconds
-    setTimeout(() => {
-        dom.scanOverlayMessage.classList.add('hidden');
-    }, 2000);
-    
-    if (appState.scannedChunks.length === totalChunks) {
-        if (qrScanner) {
-            qrScanner.clear();
-        }
+    // Hide the overlay message after 2 seconds
+    setTimeout(() => {
+        dom.scanOverlayMessage.classList.add('hidden');
+    }, 2000);
+    
+    if (appState.scannedChunks.length === totalChunks) {
+        if (qrScanner) {
+            qrScanner.clear();
+        }
 
-        appState.scannedChunks.sort((a, b) => a.index - b.index);
-        const fullSdp = atob(appState.scannedChunks.map(chunk => chunk.data).join(''));
-        const sdp = JSON.parse(fullSdp);
+        appState.scannedChunks.sort((a, b) => a.index - b.index);
+        const fullSdp = atob(appState.scannedChunks.map(chunk => chunk.data).join(''));
+        const sdp = JSON.parse(fullSdp);
 
-        if (sdp.type === 'offer') {
-            initializeWebRTC();
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-            await createAnswerQr();
-            dom.p2QrStatus.textContent = 'Status: All chunks scanned. Answer created.';
-        }
-    }
+        if (sdp.type === 'offer') {
+            initializeWebRTC();
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+            await createAnswerQr();
+            dom.p2QrStatus.textContent = 'Status: All chunks scanned. Answer created.';
+        }
+    }
 }
 
 //Handles QR code scan failures for the Joiner
 function onScanFailure(error) {
-    console.warn(`QR code scan error: ${error}`);
+    console.warn(`QR code scan error: ${error}`);
 }
 
 //Handles successful QR code scan for the Host
 async function onHostScanSuccess(decodedText) {
-    const regex = /^\[(\d+)\/(\d+)\]:(.*)$/;
-    const match = decodedText.match(regex);
+    const regex = /^\[(\d+)\/(\d+)\]:(.*)$/;
+    const match = decodedText.match(regex);
 
-    if (!match) {
-        return; // Ignore invalid QR codes
-    }
-    
-    const chunkIndex = parseInt(match[1], 10);
-    const totalChunks = parseInt(match[2], 10);
-    const chunkData = match[3];
+    if (!match) {
+        return; // Ignore invalid QR codes
+    }
+    
+    const chunkIndex = parseInt(match[1], 10);
+    const totalChunks = parseInt(match[2], 10);
+    const chunkData = match[3];
 
-    if (appState.scannedChunks.some(chunk => chunk.index === chunkIndex)) {
-        return; // Ignore duplicate scans
-    }
+    if (appState.scannedChunks.some(chunk => chunk.index === chunkIndex)) {
+        return; // Ignore duplicate scans
+    }
 
-    appState.scannedChunks.push({ index: chunkIndex, data: chunkData });
-    dom.scannerStatusHost.textContent = `Status: Scanned chunk ${appState.scannedChunks.length} of ${totalChunks}.`;
+    appState.scannedChunks.push({ index: chunkIndex, data: chunkData });
+    dom.scannerStatusHost.textContent = `Status: Scanned chunk ${appState.scannedChunks.length} of ${totalChunks}.`;
 
-    // Play a beep and display the status for 2 seconds
-    playBeepSound();
+    // Play a beep and display the status for 2 seconds
+    playBeepSound();
 
-    // Display the new overlay message
-    dom.scanOverlayMessage.textContent = `${appState.scannedChunks.length} of ${totalChunks}`;
-    dom.scanOverlayMessage.classList.remove('hidden');
+    // Display the new overlay message
+    dom.scanOverlayMessage.textContent = `${appState.scannedChunks.length} of ${totalChunks}`;
+    dom.scanOverlayMessage.classList.remove('hidden');
 
-    // Hide the overlay message after 2 seconds
-    setTimeout(() => {
-        dom.scanOverlayMessage.classList.add('hidden');
-    }, 2000);
+    // Hide the overlay message after 2 seconds
+    setTimeout(() => {
+        dom.scanOverlayMessage.classList.add('hidden');
+    }, 2000);
 
-    if (appState.scannedChunks.length === totalChunks) {
-        if (qrScannerHost) {
-            qrScannerHost.clear();
-        }
+    if (appState.scannedChunks.length === totalChunks) {
+        if (qrScannerHost) {
+            qrScannerHost.clear();
+        }
 
-        appState.scannedChunks.sort((a, b) => a.index - b.index);
-        const fullSdp = atob(appState.scannedChunks.map(chunk => chunk.data).join(''));
-        const sdp = JSON.parse(fullSdp);
+        appState.scannedChunks.sort((a, b) => a.index - b.index);
+        const fullSdp = atob(appState.scannedChunks.map(chunk => chunk.data).join(''));
+        const sdp = JSON.parse(fullSdp);
 
-        if (sdp.type === 'answer' && appState.isInitiator) {
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-            dom.p1QrStatus.textContent = 'Status: Answer received. Connecting...';
-        }
-    }
+        if (sdp.type === 'answer' && appState.isInitiator) {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+            dom.p1QrStatus.textContent = 'Status: Answer received. Connecting...';
+        }
+    }
 }
 
 //Handles QR code scan failures for the Host
 function onHostScanFailure(error) {
-    console.warn(`QR code scan error: ${error}`);
+    console.warn(`QR code scan error: ${error}`);
 }
 
 //Creates QR code chunks with embedded index and total count.
 function createQrCodeChunks(data) {
-    const MAX_CHUNK_SIZE = 128; 
-    const chunks = [];
-    const totalChunks = Math.ceil(data.length / MAX_CHUNK_SIZE);
-    
-    for (let i = 0; i < totalChunks; i++) {
-        const chunkData = data.substring(i * MAX_CHUNK_SIZE, (i + 1) * MAX_CHUNK_SIZE);
-        chunks.push(`[${i + 1}/${totalChunks}]:${chunkData}`);
-    }
-    return chunks;
+    const MAX_CHUNK_SIZE = 128; 
+    const chunks = [];
+    const totalChunks = Math.ceil(data.length / MAX_CHUNK_SIZE);
+    
+    for (let i = 0; i < totalChunks; i++) {
+        const chunkData = data.substring(i * MAX_CHUNK_SIZE, (i + 1) * MAX_CHUNK_SIZE);
+        chunks.push(`[${i + 1}/${totalChunks}]:${chunkData}`);
+    }
+    return chunks;
 }
 
 //Displays a single QR code chunk and updates navigation button states.
 function displayQrChunk(chunks, index) {
-    dom.qrCodeDisplay.innerHTML = '';
-    dom.qrCodeAnswerDisplay.innerHTML = '';
-    
-    const displayTarget = appState.isAnswer ? dom.qrCodeAnswerDisplay : dom.qrCodeDisplay;
-    const textToEncode = chunks[index];
-    
-    try {
-        new QRCode(displayTarget, {
-            text: textToEncode,
-            width: 256,
-            height: 256
-        });
-    } catch (error) {
-        alert("An error occurred:" + error.message);
-    }
-    
-    if (appState.isAnswer) {
-        dom.chunkStatus.textContent = ''; // Clear Host's status text
-        dom.prevQrAnswerBtn.disabled = (index === 0);
-        dom.nextQrAnswerBtn.disabled = (index === chunks.length - 1);
-    } else {
-        dom.chunkStatus.textContent = `Chunk ${index + 1} of ${chunks.length}`;
-        dom.prevQrBtn.disabled = (index === 0);
-        dom.nextQrBtn.disabled = (index === chunks.length - 1);
-    }
+    dom.qrCodeDisplay.innerHTML = '';
+    dom.qrCodeAnswerDisplay.innerHTML = '';
+    
+    const displayTarget = appState.isAnswer ? dom.qrCodeAnswerDisplay : dom.qrCodeDisplay;
+    const textToEncode = chunks[index];
+    
+    try {
+        new QRCode(displayTarget, {
+            text: textToEncode,
+            width: 256,
+            height: 256
+        });
+    } catch (error) {
+        alert("An error occurred:" + error.message);
+    }
+    
+    if (appState.isAnswer) {
+        dom.chunkStatus.textContent = ''; // Clear Host's status text
+        dom.prevQrAnswerBtn.disabled = (index === 0);
+        dom.nextQrAnswerBtn.disabled = (index === chunks.length - 1);
+    } else {
+        dom.chunkStatus.textContent = `Chunk ${index + 1} of ${chunks.length}`;
+        dom.prevQrBtn.disabled = (index === 0);
+        dom.nextQrBtn.disabled = (index === chunks.length - 1);
+    }
 }
 
 //Shows the next QR code chunk for the Host or Joiner
 function showNextChunk() {
-    const chunks = appState.offerChunks;
-    let currentIndex = appState.currentOfferChunkIndex;
+    const chunks = appState.offerChunks;
+    let currentIndex = appState.currentOfferChunkIndex;
 
-    if (currentIndex < chunks.length - 1) {
-        currentIndex++;
-        appState.currentOfferChunkIndex = currentIndex;
-        displayQrChunk(chunks, currentIndex);
-    }
+    if (currentIndex < chunks.length - 1) {
+        currentIndex++;
+        appState.currentOfferChunkIndex = currentIndex;
+        displayQrChunk(chunks, currentIndex);
+    }
 }
 
 //Shows the previous QR code chunk for the Host or Joiner
 function showPrevChunk() {
-    const chunks = appState.offerChunks;
-    let currentIndex = appState.currentOfferChunkIndex;
+    const chunks = appState.offerChunks;
+    let currentIndex = appState.currentOfferChunkIndex;
 
-    if (currentIndex > 0) {
-        currentIndex--;
-        appState.currentOfferChunkIndex = currentIndex;
-        displayQrChunk(chunks, currentIndex);
-    }
+    if (currentIndex > 0) {
+        currentIndex--;
+        appState.currentOfferChunkIndex = currentIndex;
+        displayQrChunk(chunks, currentIndex);
+    }
 }
 
 //Shows the next Answer QR code chunk for the Joiner
 function showNextAnswerChunk() {
-    const chunks = appState.answerChunks;
-    let currentIndex = appState.currentAnswerChunkIndex;
+    const chunks = appState.answerChunks;
+    let currentIndex = appState.currentAnswerChunkIndex;
 
-    if (currentIndex < chunks.length - 1) {
-        currentIndex++;
-        appState.currentAnswerChunkIndex = currentIndex;
-        displayQrChunk(chunks, currentIndex);
-    }
+    if (currentIndex < chunks.length - 1) {
+        currentIndex++;
+        appState.currentAnswerChunkIndex = currentIndex;
+        displayQrChunk(chunks, currentIndex);
+    }
 }
 
 //Shows the previous Answer QR code chunk for the Joiner
 function showPrevAnswerChunk() {
-    const chunks = appState.answerChunks;
-    let currentIndex = appState.currentAnswerChunkIndex;
+    const chunks = appState.answerChunks;
+    let currentIndex = appState.currentAnswerChunkIndex;
 
-    if (currentIndex > 0) {
-        currentIndex--;
-        appState.currentAnswerChunkIndex = currentIndex;
-        displayQrChunk(chunks, currentIndex);
+    if (currentIndex > 0) {
+        currentIndex--;
+        appState.currentAnswerChunkIndex = currentIndex;
+        displayQrChunk(chunks, currentIndex);
+    }
+}
+
+//==============================
+//NEW: Bluetooth Connection Logic
+//==============================
+
+/**
+ * Creates a Bluetooth GATT server, sets up the Sudoku service, and broadcasts
+ * the WebRTC offer. This is for the Host.
+ */
+async function createOfferBluetooth() {
+    dom.p1BluetoothStatus.textContent = 'Status: Preparing offer...';
+    appState.isInitiator = true;
+    initializeWebRTC();
+    dataChannel = peerConnection.createDataChannel('sudoku-game');
+    setupDataChannel(dataChannel);
+
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    const sdpString = JSON.stringify(offer);
+    const sdpBuffer = new TextEncoder().encode(sdpString);
+
+    // This is a mock implementation as a browser cannot act as a BLE peripheral.
+    // In a real-world scenario, you would use a noble library in Node.js
+    // or a native app to create a GATT server.
+    // The following code is illustrative of the ideal flow.
+    try {
+        // Mock a GATT server creation and writing the offer.
+        // This part would be handled by a native app or a service on a different device.
+        dom.p1BluetoothStatus.textContent = 'Status: Offer created and awaiting a Bluetooth connection...';
+
+        // We'll simulate the "answer received" part with a simple message.
+        // This would be replaced by a listener on the BLE characteristic.
+        peerConnection.onicecandidate = event => {
+            if (event.candidate && peerConnection.iceGatheringState === 'complete') {
+                dom.p1BluetoothStatus.textContent = 'Status: Offer sent. Waiting for answer via Bluetooth.';
+            }
+        };
+
+        // For this example, we'll just log the offer.
+        console.log('Mock Bluetooth Offer:', sdpString);
+
+    } catch (error) {
+        console.error('Bluetooth error:', error);
+        dom.p1BluetoothStatus.textContent = 'Status: Failed to create Bluetooth offer. See console.';
     }
 }
 
+/**
+ * Scans for a Bluetooth device, connects, reads the offer, and sends back
+ * the answer. This is for the Joiner.
+ */
+async function joinOfferBluetooth() {
+    dom.p2BluetoothStatus.textContent = 'Status: Scanning for devices...';
+    try {
+        const device = await navigator.bluetooth.requestDevice({
+            filters: [{ services: [SUDOKU_SERVICE_UUID] }]
+        });
+        
+        dom.p2BluetoothStatus.textContent = `Status: Found "${device.name}". Connecting...`;
+
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(SUDOKU_SERVICE_UUID);
+        const characteristic = await service.getCharacteristic(SUDOKU_OFFER_CHARACTERISTIC_UUID);
+
+        dom.p2BluetoothStatus.textContent = 'Status: Connected. Reading offer...';
+        
+        // Read the offer from the characteristic
+        const value = await characteristic.readValue();
+        const offerString = new TextDecoder().decode(value);
+        const offer = JSON.parse(offerString);
+
+        initializeWebRTC();
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+        dom.p2BluetoothStatus.textContent = 'Status: Offer received. Creating answer...';
+
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+
+        // This is a mock implementation. A real implementation would write
+        // the answer to a different characteristic and the host would read it.
+        const answerString = JSON.stringify(answer);
+        console.log('Mock Bluetooth Answer:', answerString);
+
+        dom.p2BluetoothStatus.textContent = 'Status: Answer created. Connection process complete.';
+
+    } catch (error) {
+        console.error('Bluetooth error:', error);
+        dom.p2BluetoothStatus.textContent = 'Status: Bluetooth connection failed. See console.';
+    }
+}
 
 //==============================
 //Game UI and Logic
@@ -431,271 +538,271 @@ function showPrevAnswerChunk() {
 
 //Creates the Sudoku grid
 function createGrid() {
-    if (dom.sudokuGrid.firstChild) {
-        while (dom.sudokuGrid.firstChild) {
-            dom.sudokuGrid.removeChild(dom.sudokuGrid.firstChild);
-        }
-    }
-    for (let row = 0; row < 9; row++) {
-        for (let col = 0; col < 9; col++) {
-            const cell = document.createElement('div');
-            cell.className = 'grid-cell';
-            cell.id = `cell-${row}-${col}`;
-            cell.textContent = '';
-            
-            if ((col + 1) % 3 === 0 && col < 8) {
-                cell.classList.add('subgrid-border-right');
-            }
-            if ((row + 1) % 3 === 0 && row < 8) {
-                cell.classList.add('subgrid-border-bottom');
-            }
-            
-            cell.addEventListener('mousedown', startPressTimer);
-            cell.addEventListener('touchstart', startPressTimer);
-            cell.addEventListener('mouseup', handleCellClick);
-            cell.addEventListener('touchend', handleCellClick);
-            cell.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+    if (dom.sudokuGrid.firstChild) {
+        while (dom.sudokuGrid.firstChild) {
+            dom.sudokuGrid.removeChild(dom.sudokuGrid.firstChild);
+        }
+    }
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.id = `cell-${row}-${col}`;
+            cell.textContent = '';
+            
+            if ((col + 1) % 3 === 0 && col < 8) {
+                cell.classList.add('subgrid-border-right');
+            }
+            if ((row + 1) % 3 === 0 && row < 8) {
+                cell.classList.add('subgrid-border-bottom');
+            }
+            
+            cell.addEventListener('mousedown', startPressTimer);
+            cell.addEventListener('touchstart', startPressTimer);
+            cell.addEventListener('mouseup', handleCellClick);
+            cell.addEventListener('touchend', handleCellClick);
+            cell.addEventListener('mouseleave', () => clearTimeout(pressTimer));
 
-            dom.sudokuGrid.appendChild(cell);
-        }
-    }
+            dom.sudokuGrid.appendChild(cell);
+        }
+    }
 }
 
 //Starts the timer for a long press
 function startPressTimer(event) {
-    clearTimeout(pressTimer);
-    appState.isLongPressActive = false;
-    const cell = event.currentTarget;
-    pressTimer = setTimeout(() => {
-        handleLongPress(cell);
-    }, 500);
+    clearTimeout(pressTimer);
+    appState.isLongPressActive = false;
+    const cell = event.currentTarget;
+    pressTimer = setTimeout(() => {
+        handleLongPress(cell);
+    }, 500);
 }
 
 //Handles a cell click or tap
 function handleCellClick(event) {
-    clearTimeout(pressTimer);
-    const currentTime = new Date().getTime();
-    if (currentTime - appState.lastEventTimestamp < 100) {
-        appState.lastEventTimestamp = 0;
-        return;
-    }
-    appState.lastEventTimestamp = currentTime;
+    clearTimeout(pressTimer);
+    const currentTime = new Date().getTime();
+    if (currentTime - appState.lastEventTimestamp < 100) {
+        appState.lastEventTimestamp = 0;
+        return;
+    }
+    appState.lastEventTimestamp = currentTime;
 
-    if (appState.isLongPressActive) {
-        appState.isLongPressActive = false;
-        return;
-    }
-    const cell = event.currentTarget;
-    if (cell.classList.contains('preloaded-cell')) {
-        const value = cell.textContent.trim();
-        if (value !== '') {
-            clearAllHighlights();
-            highlightMatchingCells(value);
-        }
-        return;
-    }
-    
-    // Check if there is an existing active cell and remove the class
-    if (appState.activeCell) {
-        appState.activeCell.classList.remove('active-cell');
-        // Clear any previous highlights
-        clearAllHighlights();
-    }
-    // Set the new active cell
-    appState.activeCell = cell;
-    // Add the active-cell class
-    cell.classList.add('active-cell');
-    // Highlight matching cells for the new active cell
-    const value = appState.activeCell.textContent.trim();
-    if (value !== '') {
-        highlightMatchingCells(value);
-    }
+    if (appState.isLongPressActive) {
+        appState.isLongPressActive = false;
+        return;
+    }
+    const cell = event.currentTarget;
+    if (cell.classList.contains('preloaded-cell')) {
+        const value = cell.textContent.trim();
+        if (value !== '') {
+            clearAllHighlights();
+            highlightMatchingCells(value);
+        }
+        return;
+    }
+    
+    // Check if there is an existing active cell and remove the class
+    if (appState.activeCell) {
+        appState.activeCell.classList.remove('active-cell');
+        // Clear any previous highlights
+        clearAllHighlights();
+    }
+    // Set the new active cell
+    appState.activeCell = cell;
+    // Add the active-cell class
+    cell.classList.add('active-cell');
+    // Highlight matching cells for the new active cell
+    const value = appState.activeCell.textContent.trim();
+    if (value !== '') {
+        highlightMatchingCells(value);
+    }
 }
 
 //Handles a cell long-press
 function handleLongPress(cell) {
-    appState.isLongPressActive = true;
-    const value = cell.textContent.trim();
-    if (value !== '') {
-        clearAllHighlights();
-        highlightMatchingCells(value);
-    }
+    appState.isLongPressActive = true;
+    const value = cell.textContent.trim();
+    if (value !== '') {
+        clearAllHighlights();
+        highlightMatchingCells(value);
+    }
 }
 
 //Highlights all cells with a matching value
 function highlightMatchingCells(value) {
-    const allCells = document.querySelectorAll('.grid-cell');
-    allCells.forEach(cell => {
-        if (cell.textContent.trim() === value && !cell.classList.contains('invalid-cell') && !cell.classList.contains('solved-puzzle')) {
-            cell.classList.add('highlight-cell');
-        }
-    });
+    const allCells = document.querySelectorAll('.grid-cell');
+    allCells.forEach(cell => {
+        if (cell.textContent.trim() === value && !cell.classList.contains('invalid-cell') && !cell.classList.contains('solved-puzzle')) {
+            cell.classList.add('highlight-cell');
+        }
+    });
 }
 
 //Removes all highlight classes
 function clearAllHighlights() {
-    const allCells = document.querySelectorAll('.grid-cell');
-    allCells.forEach(cell => {
-        cell.classList.remove('highlight-cell');
-    });
+    const allCells = document.querySelectorAll('.grid-cell');
+    allCells.forEach(cell => {
+        cell.classList.remove('highlight-cell');
+    });
 }
 
 //Fetches and loads a new puzzle
 async function loadPuzzle(puzzleData) {
-    createGrid();
-    let puzzle = puzzleData;
-    let isRemoteLoad = !!puzzleData;
-    
-    if (!isRemoteLoad) {
-        try {
-            const response = await fetch('https://sugoku.onrender.com/board?difficulty=easy');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            puzzle = data.board;
-            appState.initialSudokuState = puzzle;
-        } catch (error) {
-            console.error('Failed to load puzzle:', error);
-            alert('Failed to load puzzle. Please ensure you are running a local web server to avoid CORS issues.');
-            return;
-        }
-    }
-    
-    for (let row = 0; row < 9; row++) {
-        for (let col = 0; col < 9; col++) {
-            const cell = document.getElementById(`cell-${row}-${col}`);
-            const value = puzzle[row][col];
-            cell.textContent = value === 0 ? '' : value;
-            if (value !== 0) {
-                cell.classList.add('preloaded-cell');
-            }
-        }
-    }
-    
-    checkGridState();
-    if (!isRemoteLoad && dataChannel && dataChannel.readyState === 'open') {
-        const puzzleMessage = { type: 'initial-state', state: puzzle };
-        dataChannel.send(JSON.stringify(puzzleMessage));
-    }
+    createGrid();
+    let puzzle = puzzleData;
+    let isRemoteLoad = !!puzzleData;
+    
+    if (!isRemoteLoad) {
+        try {
+            const response = await fetch('https://sugoku.onrender.com/board?difficulty=easy');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            puzzle = data.board;
+            appState.initialSudokuState = puzzle;
+        } catch (error) {
+            console.error('Failed to load puzzle:', error);
+            alert('Failed to load puzzle. Please ensure you are running a local web server to avoid CORS issues.');
+            return;
+        }
+    }
+    
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            const cell = document.getElementById(`cell-${row}-${col}`);
+            const value = puzzle[row][col];
+            cell.textContent = value === 0 ? '' : value;
+            if (value !== 0) {
+                cell.classList.add('preloaded-cell');
+            }
+        }
+    }
+    
+    checkGridState();
+    if (!isRemoteLoad && dataChannel && dataChannel.readyState === 'open') {
+        const puzzleMessage = { type: 'initial-state', state: puzzle };
+        dataChannel.send(JSON.stringify(puzzleMessage));
+    }
 }
 
 //Validates the entire puzzle grid for conflicts and completeness
 function validatePuzzle() {
-    const invalidCells = new Set();
-    let isComplete = true;
-    const gridValues = [];
+    const invalidCells = new Set();
+    let isComplete = true;
+    const gridValues = [];
 
-    for (let row = 0; row < 9; row++) {
-        const rowValues = [];
-        for (let col = 0; col < 9; col++) {
-            const cellValue = document.getElementById(`cell-${row}-${col}`).textContent.trim();
-            rowValues.push(cellValue);
-            if (cellValue === '') {
-                isComplete = false;
-            }
-        }
-        gridValues.push(rowValues);
-    }
-    
-    const checkConflicts = (arr) => {
-        const seen = new Set();
-        for (const num of arr) {
-            if (num !== '' && seen.has(num)) {
-                return true;
-            }
-            if (num !== '') {
-                seen.add(num);
-            }
-        }
-        return false;
-    };
+    for (let row = 0; row < 9; row++) {
+        const rowValues = [];
+        for (let col = 0; col < 9; col++) {
+            const cellValue = document.getElementById(`cell-${row}-${col}`).textContent.trim();
+            rowValues.push(cellValue);
+            if (cellValue === '') {
+                isComplete = false;
+            }
+        }
+        gridValues.push(rowValues);
+    }
+    
+    const checkConflicts = (arr) => {
+        const seen = new Set();
+        for (const num of arr) {
+            if (num !== '' && seen.has(num)) {
+                return true;
+            }
+            if (num !== '') {
+                seen.add(num);
+            }
+        }
+        return false;
+    };
 
-    // Check rows, columns, and subgrids
-    for (let i = 0; i < 9; i++) {
-        const rowValues = gridValues[i];
-        const colValues = [];
-        for (let j = 0; j < 9; j++) {
-            colValues.push(gridValues[j][i]);
-        }
-        
-        if (checkConflicts(rowValues)) {
-            for (let j = 0; j < 9; j++) {
-                if (gridValues[i][j] !== '') invalidCells.add(`cell-${i}-${j}`);
-            }
-        }
-        if (checkConflicts(colValues)) {
-            for (let j = 0; j < 9; j++) {
-                if (gridValues[j][i] !== '') invalidCells.add(`cell-${j}-${i}`);
-            }
-        }
+    // Check rows, columns, and subgrids
+    for (let i = 0; i < 9; i++) {
+        const rowValues = gridValues[i];
+        const colValues = [];
+        for (let j = 0; j < 9; j++) {
+            colValues.push(gridValues[j][i]);
+        }
+        
+        if (checkConflicts(rowValues)) {
+            for (let j = 0; j < 9; j++) {
+                if (gridValues[i][j] !== '') invalidCells.add(`cell-${i}-${j}`);
+            }
+        }
+        if (checkConflicts(colValues)) {
+            for (let j = 0; j < 9; j++) {
+                if (gridValues[j][i] !== '') invalidCells.add(`cell-${j}-${i}`);
+            }
+        }
 
-        const subgridValues = [];
-        const startRow = Math.floor(i / 3) * 3;
-        const startCol = (i % 3) * 3;
-        for (let row = 0; row < 3; row++) {
-            for (let col = 0; col < 3; col++) {
-                subgridValues.push(gridValues[startRow + row][startCol + col]);
-            }
-        }
-        if (checkConflicts(subgridValues)) {
-            for (let row = 0; row < 3; row++) {
-                for (let col = 0; col < 3; col++) {
-                    if (gridValues[startRow + row][startCol + col] !== '') invalidCells.add(`cell-${startRow + row}-${startCol + col}`);
-                }
-            }
-        }
-    }
+        const subgridValues = [];
+        const startRow = Math.floor(i / 3) * 3;
+        const startCol = (i % 3) * 3;
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                subgridValues.push(gridValues[startRow + row][startCol + col]);
+            }
+        }
+        if (checkConflicts(subgridValues)) {
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 3; col++) {
+                    if (gridValues[startRow + row][startCol + col] !== '') invalidCells.add(`cell-${startRow + row}-${startCol + col}`);
+                }
+            }
+        }
+    }
 
-    document.querySelectorAll('.grid-cell').forEach(cell => {
-        const isPreloaded = cell.classList.contains('preloaded-cell');
-        if (!isPreloaded) {
-            cell.classList.remove('invalid-cell', 'solved-puzzle');
-            if (invalidCells.has(cell.id)) {
-                cell.classList.add('invalid-cell');
-            }
-        }
-    });
-    return { isValid: invalidCells.size === 0, isComplete: isComplete };
+    document.querySelectorAll('.grid-cell').forEach(cell => {
+        const isPreloaded = cell.classList.contains('preloaded-cell');
+        if (!isPreloaded) {
+            cell.classList.remove('invalid-cell', 'solved-puzzle');
+            if (invalidCells.has(cell.id)) {
+                cell.classList.add('invalid-cell');
+            }
+        }
+    });
+    return { isValid: invalidCells.size === 0, isComplete: isComplete };
 }
 
 //Checks the current state of the grid for a win condition
 function checkGridState() {
-    // Call the new function to update button states
-    updateNumberPadState();
+    // Call the new function to update button states
+    updateNumberPadState();
 
-    const { isValid, isComplete } = validatePuzzle();
-    if (isComplete && isValid) {
-        document.querySelectorAll('.grid-cell').forEach(cell => {
-            cell.classList.add('solved-puzzle');
-        });
-        alert("Congratulations! The puzzle is solved!");
-    }
+    const { isValid, isComplete } = validatePuzzle();
+    if (isComplete && isValid) {
+        document.querySelectorAll('.grid-cell').forEach(cell => {
+            cell.classList.add('solved-puzzle');
+        });
+        alert("Congratulations! The puzzle is solved!");
+    }
 }
 
 // Function to update the disabled state of the number pad buttons
 function updateNumberPadState() {
-    const counts = {};
-    for (let i = 1; i <= 9; i++) {
-        counts[i] = 0;
-    }
-    
-    // Count all numbers currently on the grid
-    const allCells = document.querySelectorAll('.grid-cell');
-    allCells.forEach(cell => {
-        const value = parseInt(cell.textContent.trim(), 10);
-        if (value >= 1 && value <= 9) {
-            counts[value]++;
-        }
-    });
+    const counts = {};
+    for (let i = 1; i <= 9; i++) {
+        counts[i] = 0;
+    }
+    
+    // Count all numbers currently on the grid
+    const allCells = document.querySelectorAll('.grid-cell');
+    allCells.forEach(cell => {
+        const value = parseInt(cell.textContent.trim(), 10);
+        if (value >= 1 && value <= 9) {
+            counts[value]++;
+        }
+    });
 
-    // Disable the button if a number has been used 9 times
-    for (const number in counts) {
-        const button = document.getElementById(`number-btn-${number}`);
-        if (button) {
-            button.disabled = counts[number] === 9;
-        }
-    }
+    // Disable the button if a number has been used 9 times
+    for (const number in counts) {
+        const button = document.getElementById(`number-btn-${number}`);
+        if (button) {
+            button.disabled = counts[number] === 9;
+        }
+    }
 }
 
 //==============================
@@ -704,48 +811,58 @@ function updateNumberPadState() {
 
 //Toggles visibility of signaling areas
 function toggleSignalingArea() {
-    dom.signalingArea.classList.toggle('hidden');
-    dom.sudokuGridArea.classList.toggle('hidden');
-    if (dom.signalingArea.classList.contains('hidden')) {
-        dom.sudokuGridArea.scrollIntoView({ behavior: 'smooth' });
-    } else {
-        dom.signalingArea.scrollIntoView({ behavior: 'smooth' });
-    }
+    dom.signalingArea.classList.toggle('hidden');
+    dom.sudokuGridArea.classList.toggle('hidden');
+    if (dom.signalingArea.classList.contains('hidden')) {
+        dom.sudokuGridArea.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        dom.signalingArea.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 //Toggles visibility of specific signaling sections
 function toggleSignalingUI() {
-    const signalingMethod = dom.signalingMethodSelect.value;
-    const playerRole = dom.playerRoleSelect.value;
+    const signalingMethod = dom.signalingMethodSelect.value;
+    const playerRole = dom.playerRoleSelect.value;
 
-    dom.manualSignalingArea.classList.add('hidden');
-    dom.qrSignalingArea.classList.add('hidden');
-    dom.p1ManualArea.classList.add('hidden');
-    dom.p2ManualArea.classList.add('hidden');
-    dom.p1QrArea.classList.add('hidden');
-    dom.p2QrArea.classList.add('hidden');
+    dom.manualSignalingArea.classList.add('hidden');
+    dom.qrSignalingArea.classList.add('hidden');
+    dom.bluetoothSignalingArea.classList.add('hidden'); // NEW
+    dom.p1ManualArea.classList.add('hidden');
+    dom.p2ManualArea.classList.add('hidden');
+    dom.p1QrArea.classList.add('hidden');
+    dom.p2QrArea.classList.add('hidden');
+    dom.p1BluetoothArea.classList.add('hidden'); // NEW
+    dom.p2BluetoothArea.classList.add('hidden'); // NEW
 
-    if (signalingMethod === 'manual') {
-        dom.manualSignalingArea.classList.remove('hidden');
-        if (playerRole === 'host') {
-            dom.p1ManualArea.classList.remove('hidden');
-        } else if (playerRole === 'joiner') {
-            dom.p2ManualArea.classList.remove('hidden');
-        }
-    } else if (signalingMethod === 'qr') {
-        dom.qrSignalingArea.classList.remove('hidden');
-        if (playerRole === 'host') {
-            dom.p1QrArea.classList.remove('hidden');
-        } else if (playerRole === 'joiner') {
-            dom.p2QrArea.classList.remove('hidden');
-        }
-    }
+    if (signalingMethod === 'manual') {
+        dom.manualSignalingArea.classList.remove('hidden');
+        if (playerRole === 'host') {
+            dom.p1ManualArea.classList.remove('hidden');
+        } else if (playerRole === 'joiner') {
+            dom.p2ManualArea.classList.remove('hidden');
+        }
+    } else if (signalingMethod === 'qr') {
+        dom.qrSignalingArea.classList.remove('hidden');
+        if (playerRole === 'host') {
+            dom.p1QrArea.classList.remove('hidden');
+        } else if (playerRole === 'joiner') {
+            dom.p2QrArea.classList.remove('hidden');
+        }
+    } else if (signalingMethod === 'bluetooth') { // NEW
+        dom.bluetoothSignalingArea.classList.remove('hidden');
+        if (playerRole === 'host') {
+            dom.p1BluetoothArea.classList.remove('hidden');
+        } else if (playerRole === 'joiner') {
+            dom.p2BluetoothArea.classList.remove('hidden');
+        }
+    }
 }
 
 //Hides the signaling UI completely and shows the game
 function hideSignalingUI() {
-    dom.signalingArea.style.display = 'none';
-    dom.sudokuGridArea.classList.remove('hidden');
+    dom.signalingArea.style.display = 'none';
+    dom.sudokuGridArea.classList.remove('hidden');
 }
 
 //==============================
@@ -753,144 +870,144 @@ function hideSignalingUI() {
 //==============================
 
 document.addEventListener('DOMContentLoaded', () => {
-    dom.prevQrBtn.disabled = true;
-    dom.nextQrBtn.disabled = true;
-    dom.prevQrAnswerBtn.disabled = true;
-    dom.nextQrAnswerBtn.disabled = true;
-    
-    dom.signalingMethodSelect.addEventListener('change', toggleSignalingUI);
-    dom.playerRoleSelect.addEventListener('change', toggleSignalingUI);
-    
-    toggleSignalingUI();
+    dom.prevQrBtn.disabled = true;
+    dom.nextQrBtn.disabled = true;
+    dom.prevQrAnswerBtn.disabled = true;
+    dom.nextQrAnswerBtn.disabled = true;
+    
+    dom.signalingMethodSelect.addEventListener('change', toggleSignalingUI);
+    dom.playerRoleSelect.addEventListener('change', toggleSignalingUI);
+    
+    toggleSignalingUI();
 });
 
 // Add an event listener to the theme selector
 themeSelector.addEventListener('change', (event) => {
-    // Get the selected theme from the dropdown
-    const selectedTheme = event.target.value;
-    
-    // Remove any existing theme classes
-    body.classList.remove('banished', 'unsc', 'forerunner');
-    
-    // Add the new theme class if it's not the default
-    if (selectedTheme !== 'default') {
-        body.classList.add(selectedTheme);
-    }
+    // Get the selected theme from the dropdown
+    const selectedTheme = event.target.value;
+    
+    // Remove any existing theme classes
+    body.classList.remove('banished', 'unsc', 'forerunner');
+    
+    // Add the new theme class if it's not the default
+    if (selectedTheme !== 'default') {
+        body.classList.add(selectedTheme);
+    }
 });
 
 // Add an event listener to the number pad
 const numberPad = document.getElementById('number-pad');
 numberPad.addEventListener('click', (event) => {
-    // Check if a number button or the empty button was clicked and if a cell is active
-    if (event.target.classList.contains('number-btn') && appState.activeCell) {
-        // Check if the cell is a preloaded cell (you should not be able to change it)
-        if (appState.activeCell.classList.contains('preloaded-cell')) {
-            return;
-        }
+    // Check if a number button or the empty button was clicked and if a cell is active
+    if (event.target.classList.contains('number-btn') && appState.activeCell) {
+        // Check if the cell is a preloaded cell (you should not be able to change it)
+        if (appState.activeCell.classList.contains('preloaded-cell')) {
+            return;
+        }
 
-        let value;
-        // Check if the empty button was clicked
-        if (event.target.id === 'empty-btn') {
-            value = '';
-        } else {
-            value = event.target.textContent;
-        }
-        
-        // Set the content of the active cell to the determined value
-        appState.activeCell.textContent = value;
+        let value;
+        // Check if the empty button was clicked
+        if (event.target.id === 'empty-btn') {
+            value = '';
+        } else {
+            value = event.target.textContent;
+        }
+        
+        // Set the content of the active cell to the determined value
+        appState.activeCell.textContent = value;
 
-        // Create the message object to send to the other player
-        const move = {
-            type: 'move',
-            row: appState.activeCell.id.split('-')[1],
-            col: appState.activeCell.id.split('-')[2],
-            value: value
-        };
-        // Check if the data channel is open and send the message
-        if (dataChannel && dataChannel.readyState === 'open') {
-            dataChannel.send(JSON.stringify(move));
-        }
-        
-        // Remove active class from the old cell to avoid confusion
-        appState.activeCell.classList.remove('active-cell');
-        
-        // Clear all highlights and check grid state after a change
-        clearAllHighlights();
-        checkGridState();
-        
-        // Reset the active cell
-        appState.activeCell = null;
-    }
+        // Create the message object to send to the other player
+        const move = {
+            type: 'move',
+            row: appState.activeCell.id.split('-')[1],
+            col: appState.activeCell.id.split('-')[2],
+            value: value
+        };
+        // Check if the data channel is open and send the message
+        if (dataChannel && dataChannel.readyState === 'open') {
+            dataChannel.send(JSON.stringify(move));
+        }
+        
+        // Remove active class from the old cell to avoid confusion
+        appState.activeCell.classList.remove('active-cell');
+        
+        // Clear all highlights and check grid state after a change
+        clearAllHighlights();
+        checkGridState();
+        
+        // Reset the active cell
+        appState.activeCell = null;
+    }
 });
 
 //Toggles visibility of signaling areas
 function toggleSignalingArea() {
-    dom.signalingArea.classList.toggle('hidden');
-    dom.sudokuGridArea.classList.toggle('hidden');
+    dom.signalingArea.classList.toggle('hidden');
+    dom.sudokuGridArea.classList.toggle('hidden');
 
-    // Toggle the 'connection-background' class on the body
-    document.body.classList.toggle('connection-background');
+    // Toggle the 'connection-background' class on the body
+    document.body.classList.toggle('connection-background');
 
-    if (dom.signalingArea.classList.contains('hidden')) {
-        dom.sudokuGridArea.scrollIntoView({ behavior: 'smooth' });
-    } else {
-        dom.signalingArea.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (dom.signalingArea.classList.contains('hidden')) {
+        dom.sudokuGridArea.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        dom.signalingArea.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 // Copies the offer or answer to the clipboard
 async function copyToClipboard(elementId) {
-    const textToCopy = document.getElementById(elementId).value;
-    try {
-        await navigator.clipboard.writeText(textToCopy);
-        console.log('Content copied to clipboard!');
-        alert('Text copied to clipboard!'); // Provide user feedback
-    } catch (err) {
-        console.error('Failed to copy text: ', err);
-        // Fallback for older browsers
-        const textarea = document.createElement('textarea');
-        textarea.value = textToCopy;
-        textarea.style.position = 'fixed'; // Prevents scrolling
-        document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        try {
-            document.execCommand('copy');
-            alert('Text copied to clipboard!');
-        } catch (execErr) {
-            console.error('Fallback copy failed: ', execErr);
-            alert('Failed to copy. Please copy manually.');
-        } finally {
-            document.body.removeChild(textarea);
-        }
-    }
+    const textToCopy = document.getElementById(elementId).value;
+    try {
+        await navigator.clipboard.writeText(textToCopy);
+        console.log('Content copied to clipboard!');
+        alert('Text copied to clipboard!'); // Provide user feedback
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = textToCopy;
+        textarea.style.position = 'fixed'; // Prevents scrolling
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            alert('Text copied to clipboard!');
+        } catch (execErr) {
+            console.error('Fallback copy failed: ', execErr);
+            alert('Failed to copy. Please copy manually.');
+        } finally {
+            document.body.removeChild(textarea);
+        }
+    }
 }
 
 // Function to clear the content of a specific textarea
 function clearTextbox(id) {
-    const textarea = document.getElementById(id);
-    if (textarea) {
-        textarea.value = '';
-    }
+    const textarea = document.getElementById(id);
+    if (textarea) {
+        textarea.value = '';
+    }
 }
 
 // Function to play a simple beep sound
 function playBeepSound() {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
 
-    // Connect the nodes
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    // Connect the nodes
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
 
-    // Set the tone and duration
-    oscillator.type = 'sine'; // A smooth tone
-    oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // 440 Hz is A4
-    gainNode.gain.setValueAtTime(1, audioContext.currentTime); // Start at full volume
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1); // Fade out quickly
+    // Set the tone and duration
+    oscillator.type = 'sine'; // A smooth tone
+    oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // 440 Hz is A4
+    gainNode.gain.setValueAtTime(1, audioContext.currentTime); // Start at full volume
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1); // Fade out quickly
 
-    // Start and stop the oscillator
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.1);
+    // Start and stop the oscillator
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
 }
