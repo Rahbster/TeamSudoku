@@ -1,24 +1,84 @@
 import {
-  createGrid,
-  startPressTimer,
-  handleCellClick,
-  handleLongPress,
-  highlightMatchingCells,
-  clearAllHighlights,
-  loadPuzzle,
-  validatePuzzle,
-  checkGridState,
-  updateNumberPadState
+    createGrid,
+    startPressTimer,
+    handleCellClick,
+    handleLongPress,
+    highlightMatchingCells,
+    clearAllHighlights,
+    loadPuzzle,
+    validatePuzzle,
+    checkGridState,
+    updateNumberPadState
 } from './game.js';
 
 //==============================
 //Global Variables and DOM Elements
 //==============================
+//Cache DOM elements for faster access
+export const dom = {
+    offerTextarea: document.getElementById('offer-text'),
+    receivedOfferTextarea: document.getElementById('received-offer-text'),
+    answerTextarea: document.getElementById('answer-text'),
+    receivedAnswerTextarea: document.getElementById('received-answer-text'),
+    p1Status: document.getElementById('p1-status'),
+    p2Status: document.getElementById('p2-status'),
+    p1QrStatus: document.getElementById('p1-qr-status'),
+    p2QrStatus: document.getElementById('p2-qr-status'),
+    sudokuGrid: document.getElementById('sudoku-grid'),
+    sudokuGridArea: document.getElementById('sudoku-grid-area'),
+    signalingArea: document.getElementById('signaling-area'),
+    manualSignalingArea: document.getElementById('manual-signaling-area'),
+    qrSignalingArea: document.getElementById('qr-signaling-area'),
+    bluetoothSignalingArea: document.getElementById('bluetooth-signaling-area'),
+    p1ManualArea: document.getElementById('p1-manual-area'),
+    p2ManualArea: document.getElementById('p2-manual-area'),
+    p1QrArea: document.getElementById('p1-qr-area'),
+    p2QrArea: document.getElementById('p2-qr-area'),
+    p1BluetoothArea: document.getElementById('p1-bluetooth-area'),
+    p2BluetoothArea: document.getElementById('p2-bluetooth-area'),
+    p1BluetoothStatus: document.getElementById('p1-bluetooth-status'),
+    p2BluetoothStatus: document.getElementById('p2-bluetooth-status'),
+    qrCodeDisplay: document.getElementById('qr-code-display'),
+    qrCodeAnswerDisplay: document.getElementById('qr-code-display-answer'),
+    chunkStatus: document.getElementById('chunk-status'),
+    prevQrBtn: document.getElementById('prev-qr-btn'),
+    nextQrBtn: document.getElementById('next-qr-btn'),
+    prevQrAnswerBtn: document.getElementById('prev-qr-answer-btn'),
+    nextQrAnswerBtn: document.getElementById('next-qr-answer-btn'),
+    scannerStatus: document.getElementById('scanner-status'),
+    scannerStatusHost: document.getElementById('scanner-status-host'),
+    scanOverlayMessage: document.getElementById('scan-overlay-message'),
+    playerRoleSelect: document.getElementById('player-role'),
+    signalingMethodSelect: document.getElementById('signaling-method'),
+    newPuzzleButton: document.getElementById('new-puzzle-btn'),
+    hostButton: document.getElementById('host-btn'),
+    numberPad: document.getElementById('number-pad'),
+    themeSelector: document.getElementById('theme-select'),
+    body: document.body,
+    // NEW: Manual signaling buttons
+    createOfferManualBtn: document.getElementById('create-offer-manual-btn'),
+    copyOfferBtn: document.getElementById('copy-offer-btn'),
+    clearOfferBtn: document.getElementById('clear-offer-btn'),
+    addAnswerManualBtn: document.getElementById('add-answer-manual-btn'),
+    clearReceivedAnswerBtn: document.getElementById('clear-received-answer-btn'),
+    createAnswerManualBtn: document.getElementById('create-answer-manual-btn'),
+    clearReceivedOfferBtn: document.getElementById('clear-received-offer-btn'),
+    copyAnswerBtn: document.getElementById('copy-answer-btn'),
+    clearAnswerBtn: document.getElementById('clear-answer-btn'),
+    // NEW: QR signaling buttons
+    createQrBtn: document.getElementById('create-qr-btn'),
+    startQrHostBtn: document.getElementById('start-qr-host-btn'),
+    startQrBtn: document.getElementById('start-qr-btn'),
+    // NEW: Bluetooth signaling buttons
+    createBluetoothOfferBtn: document.getElementById('create-bluetooth-offer-btn'),
+    joinBluetoothOfferBtn: document.getElementById('join-bluetooth-offer-btn')
+};
+
 export let peerConnection;
 export let dataChannel;
 export let qrScanner = null;
 export let qrScannerHost = null;
-export let pressTimer = null; // Declare pressTimer globally
+export let pressTimer = null;
 
 //State object to manage application state
 export const appState = {
@@ -37,49 +97,6 @@ export const appState = {
     isLongPressActive: false,
     lastEventTimestamp: 0
 };
-
-//Cache DOM elements for faster access
-export const dom = {
-    offerTextarea: document.getElementById('offer-text'),
-    receivedOfferTextarea: document.getElementById('received-offer-text'),
-    answerTextarea: document.getElementById('answer-text'),
-    receivedAnswerTextarea: document.getElementById('received-answer-text'),
-    p1Status: document.getElementById('p1-status'),
-    p2Status: document.getElementById('p2-status'),
-    p1QrStatus: document.getElementById('p1-qr-status'),
-    p2QrStatus: document.getElementById('p2-qr-status'),
-    sudokuGrid: document.getElementById('sudoku-grid'),
-    sudokuGridArea: document.getElementById('sudoku-grid-area'),
-    signalingArea: document.getElementById('signaling-area'),
-    manualSignalingArea: document.getElementById('manual-signaling-area'),
-    qrSignalingArea: document.getElementById('qr-signaling-area'),
-    bluetoothSignalingArea: document.getElementById('bluetooth-signaling-area'), // NEW
-    p1ManualArea: document.getElementById('p1-manual-area'),
-    p2ManualArea: document.getElementById('p2-manual-area'),
-    p1QrArea: document.getElementById('p1-qr-area'),
-    p2QrArea: document.getElementById('p2-qr-area'),
-    p1BluetoothArea: document.getElementById('p1-bluetooth-area'), // NEW
-    p2BluetoothArea: document.getElementById('p2-bluetooth-area'), // NEW
-    p1BluetoothStatus: document.getElementById('p1-bluetooth-status'), // NEW
-    p2BluetoothStatus: document.getElementById('p2-bluetooth-status'), // NEW
-    qrCodeDisplay: document.getElementById('qr-code-display'),
-    qrCodeAnswerDisplay: document.getElementById('qr-code-display-answer'),
-    chunkStatus: document.getElementById('chunk-status'),
-    prevQrBtn: document.getElementById('prev-qr'),
-    nextQrBtn: document.getElementById('next-qr'),
-    prevQrAnswerBtn: document.getElementById('prev-qr-answer'),
-    nextQrAnswerBtn: document.getElementById('next-qr-answer'),
-    scannerStatus: document.getElementById('scanner-status'),
-    scannerStatusHost: document.getElementById('scanner-status-host'),
-    scanOverlayMessage: document.getElementById('scan-overlay-message'),
-    playerRoleSelect: document.getElementById('player-role'),
-    signalingMethodSelect: document.getElementById('signaling-method'),
-    newPuzzleButton: document.getElementById('new-puzzle-btn'),
-    hostButton: document.getElementById('host-btn')
-};
-
-const themeSelector = document.getElementById('theme-select');
-const body = document.body;
 
 //==============================
 //Bluetooth Constants
@@ -112,7 +129,7 @@ function initializeWebRTC() {
             hideSignalingUI(); //Hide all signaling UI when connected
         }
     };
-    
+
     peerConnection.ondatachannel = event => {
         dataChannel = event.channel;
         setupDataChannel(dataChannel);
@@ -127,8 +144,8 @@ function setupDataChannel(channel) {
         dom.p2Status.textContent = 'Status: Connected!';
         dom.p1QrStatus.textContent = 'Status: Connected!';
         dom.p2QrStatus.textContent = 'Status: Connected!';
-        dom.p1BluetoothStatus.textContent = 'Status: Connected!'; // NEW
-        dom.p2BluetoothStatus.textContent = 'Status: Connected!'; // NEW
+        dom.p1BluetoothStatus.textContent = 'Status: Connected!';
+        dom.p2BluetoothStatus.textContent = 'Status: Connected!';
         toggleSignalingArea();
     };
 
@@ -154,7 +171,7 @@ async function createOfferManual() {
     setupDataChannel(dataChannel);
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
-    
+
     peerConnection.onicegatheringstatechange = () => {
         if (peerConnection.iceGatheringState === 'complete') {
             dom.offerTextarea.value = JSON.stringify(peerConnection.localDescription);
@@ -169,7 +186,7 @@ async function createAnswerManual() {
     await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
-    
+
     peerConnection.onicegatheringstatechange = () => {
         if (peerConnection.iceGatheringState === 'complete') {
             dom.answerTextarea.value = JSON.stringify(peerConnection.localDescription);
@@ -194,7 +211,7 @@ async function createOfferQr() {
     setupDataChannel(dataChannel);
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
-    
+
     peerConnection.onicegatheringstatechange = () => {
         if (peerConnection.iceGatheringState === 'complete') {
             const sdpString = JSON.stringify(peerConnection.localDescription);
@@ -232,12 +249,12 @@ function startQrScanner() {
             qrScanner = null;
         });
     }
-    
+
     appState.scannedChunks = [];
     appState.totalChunksToScan = 0;
     dom.scannerStatus.textContent = 'Status: Scanning first QR code...';
-    
-    qrScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} });
+
+    qrScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: { width: 250, height: 250 } });
     qrScanner.render(onScanSuccess, onScanFailure);
 }
 
@@ -248,12 +265,12 @@ function startQrScannerHost() {
             qrScannerHost = null;
         });
     }
-    
+
     appState.scannedChunks = [];
     appState.totalChunksToScan = 0;
     dom.scannerStatusHost.textContent = 'Status: Scanning first QR code...';
-    
-    qrScannerHost = new Html5QrcodeScanner("qr-reader-host", { fps: 10, qrbox: {width: 250, height: 250} });
+
+    qrScannerHost = new Html5QrcodeScanner("qr-reader-host", { fps: 10, qrbox: { width: 250, height: 250 } });
     qrScannerHost.render(onHostScanSuccess, onHostScanFailure);
 }
 
@@ -265,7 +282,7 @@ async function onScanSuccess(decodedText) {
     if (!match) {
         return; // Ignore invalid QR codes
     }
-    
+
     const chunkIndex = parseInt(match[1], 10);
     const totalChunks = parseInt(match[2], 10);
     const chunkData = match[3];
@@ -288,7 +305,7 @@ async function onScanSuccess(decodedText) {
     setTimeout(() => {
         dom.scanOverlayMessage.classList.add('hidden');
     }, 2000);
-    
+
     if (appState.scannedChunks.length === totalChunks) {
         if (qrScanner) {
             qrScanner.clear();
@@ -320,7 +337,7 @@ async function onHostScanSuccess(decodedText) {
     if (!match) {
         return; // Ignore invalid QR codes
     }
-    
+
     const chunkIndex = parseInt(match[1], 10);
     const totalChunks = parseInt(match[2], 10);
     const chunkData = match[3];
@@ -367,10 +384,10 @@ function onHostScanFailure(error) {
 
 //Creates QR code chunks with embedded index and total count.
 function createQrCodeChunks(data) {
-    const MAX_CHUNK_SIZE = 128; 
+    const MAX_CHUNK_SIZE = 128;
     const chunks = [];
     const totalChunks = Math.ceil(data.length / MAX_CHUNK_SIZE);
-    
+
     for (let i = 0; i < totalChunks; i++) {
         const chunkData = data.substring(i * MAX_CHUNK_SIZE, (i + 1) * MAX_CHUNK_SIZE);
         chunks.push(`[${i + 1}/${totalChunks}]:${chunkData}`);
@@ -382,10 +399,10 @@ function createQrCodeChunks(data) {
 function displayQrChunk(chunks, index) {
     dom.qrCodeDisplay.innerHTML = '';
     dom.qrCodeAnswerDisplay.innerHTML = '';
-    
+
     const displayTarget = appState.isAnswer ? dom.qrCodeAnswerDisplay : dom.qrCodeDisplay;
     const textToEncode = chunks[index];
-    
+
     try {
         new QRCode(displayTarget, {
             text: textToEncode,
@@ -395,7 +412,7 @@ function displayQrChunk(chunks, index) {
     } catch (error) {
         alert("An error occurred:" + error.message);
     }
-    
+
     if (appState.isAnswer) {
         dom.chunkStatus.textContent = ''; // Clear Host's status text
         dom.prevQrAnswerBtn.disabled = (index === 0);
@@ -512,7 +529,7 @@ async function joinOfferBluetooth() {
         const device = await navigator.bluetooth.requestDevice({
             filters: [{ services: [SUDOKU_SERVICE_UUID] }]
         });
-        
+
         dom.p2BluetoothStatus.textContent = `Status: Found "${device.name}". Connecting...`;
 
         const server = await device.gatt.connect();
@@ -520,7 +537,7 @@ async function joinOfferBluetooth() {
         const characteristic = await service.getCharacteristic(SUDOKU_OFFER_CHARACTERISTIC_UUID);
 
         dom.p2BluetoothStatus.textContent = 'Status: Connected. Reading offer...';
-        
+
         // Read the offer from the characteristic
         const value = await characteristic.readValue();
         const offerString = new TextDecoder().decode(value);
@@ -573,13 +590,13 @@ function toggleSignalingUI() {
 
     dom.manualSignalingArea.classList.add('hidden');
     dom.qrSignalingArea.classList.add('hidden');
-    dom.bluetoothSignalingArea.classList.add('hidden'); // NEW
+    dom.bluetoothSignalingArea.classList.add('hidden');
     dom.p1ManualArea.classList.add('hidden');
     dom.p2ManualArea.classList.add('hidden');
     dom.p1QrArea.classList.add('hidden');
     dom.p2QrArea.classList.add('hidden');
-    dom.p1BluetoothArea.classList.add('hidden'); // NEW
-    dom.p2BluetoothArea.classList.add('hidden'); // NEW
+    dom.p1BluetoothArea.classList.add('hidden');
+    dom.p2BluetoothArea.classList.add('hidden');
 
     if (signalingMethod === 'manual') {
         dom.manualSignalingArea.classList.remove('hidden');
@@ -595,7 +612,7 @@ function toggleSignalingUI() {
         } else if (playerRole === 'joiner') {
             dom.p2QrArea.classList.remove('hidden');
         }
-    } else if (signalingMethod === 'bluetooth') { // NEW
+    } else if (signalingMethod === 'bluetooth') {
         dom.bluetoothSignalingArea.classList.remove('hidden');
         if (playerRole === 'host') {
             dom.p1BluetoothArea.classList.remove('hidden');
@@ -610,88 +627,6 @@ function hideSignalingUI() {
     dom.signalingArea.style.display = 'none';
     dom.sudokuGridArea.classList.remove('hidden');
 }
-
-//==============================
-//Initial Setup
-//==============================
-newPuzzleButton.addEventListener('click', () => {
-  loadPuzzle();
-});
-
-hostButton.addEventListener('click', () => {
-  toggleSignalingArea();
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    dom.prevQrBtn.disabled = true;
-    dom.nextQrBtn.disabled = true;
-    dom.prevQrAnswerBtn.disabled = true;
-    dom.nextQrAnswerBtn.disabled = true;
-    
-    dom.signalingMethodSelect.addEventListener('change', toggleSignalingUI);
-    dom.playerRoleSelect.addEventListener('change', toggleSignalingUI);
-    
-    toggleSignalingUI();
-});
-
-// Add an event listener to the theme selector
-themeSelector.addEventListener('change', (event) => {
-    // Get the selected theme from the dropdown
-    const selectedTheme = event.target.value;
-    
-    // Remove any existing theme classes
-    body.classList.remove('banished', 'unsc', 'forerunner');
-    
-    // Add the new theme class if it's not the default
-    if (selectedTheme !== 'default') {
-        body.classList.add(selectedTheme);
-    }
-});
-
-// Add an event listener to the number pad
-const numberPad = document.getElementById('number-pad');
-numberPad.addEventListener('click', (event) => {
-    // Check if a number button or the empty button was clicked and if a cell is active
-    if (event.target.classList.contains('number-btn') && appState.activeCell) {
-        // Check if the cell is a preloaded cell (you should not be able to change it)
-        if (appState.activeCell.classList.contains('preloaded-cell')) {
-            return;
-        }
-
-        let value;
-        // Check if the empty button was clicked
-        if (event.target.id === 'empty-btn') {
-            value = '';
-        } else {
-            value = event.target.textContent;
-        }
-        
-        // Set the content of the active cell to the determined value
-        appState.activeCell.textContent = value;
-
-        // Create the message object to send to the other player
-        const move = {
-            type: 'move',
-            row: appState.activeCell.id.split('-')[1],
-            col: appState.activeCell.id.split('-')[2],
-            value: value
-        };
-        // Check if the data channel is open and send the message
-        if (dataChannel && dataChannel.readyState === 'open') {
-            dataChannel.send(JSON.stringify(move));
-        }
-        
-        // Remove active class from the old cell to avoid confusion
-        appState.activeCell.classList.remove('active-cell');
-        
-        // Clear all highlights and check grid state after a change
-        clearAllHighlights();
-        checkGridState();
-        
-        // Reset the active cell
-        appState.activeCell = null;
-    }
-});
 
 // Copies the offer or answer to the clipboard
 async function copyToClipboard(elementId) {
@@ -731,7 +666,7 @@ function clearTextbox(id) {
 
 // Function to play a simple beep sound
 function playBeepSound() {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const audioContext = new(window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
@@ -749,3 +684,128 @@ function playBeepSound() {
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.1);
 }
+
+//==============================
+//Initial Setup
+//==============================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Initial UI setup
+    dom.prevQrBtn.disabled = true;
+    dom.nextQrBtn.disabled = true;
+    dom.prevQrAnswerBtn.disabled = true;
+    dom.nextQrAnswerBtn.disabled = true;
+
+    toggleSignalingUI();
+    createGrid();
+    loadPuzzle();
+
+    // Event listeners for drop-downs
+    dom.signalingMethodSelect.addEventListener('change', toggleSignalingUI);
+    dom.playerRoleSelect.addEventListener('change', toggleSignalingUI);
+
+    // Event listeners for game-related buttons
+    dom.newPuzzleButton.addEventListener('click', () => {
+        loadPuzzle();
+    });
+
+    // Event listeners for the "Toggle P2P Configuration" button
+    dom.hostButton.addEventListener('click', () => {
+        toggleSignalingArea();
+    });
+
+    // Event listeners for the manual signaling buttons
+    dom.createOfferManualBtn.addEventListener('click', createOfferManual);
+    dom.copyOfferBtn.addEventListener('click', () => copyToClipboard('offer-text'));
+    dom.clearOfferBtn.addEventListener('click', () => clearTextbox('offer-text'));
+    dom.addAnswerManualBtn.addEventListener('click', addAnswerManual);
+    dom.clearReceivedAnswerBtn.addEventListener('click', () => clearTextbox('received-answer-text'));
+    dom.createAnswerManualBtn.addEventListener('click', createAnswerManual);
+    dom.clearReceivedOfferBtn.addEventListener('click', () => clearTextbox('received-offer-text'));
+    dom.copyAnswerBtn.addEventListener('click', () => copyToClipboard('answer-text'));
+    dom.clearAnswerBtn.addEventListener('click', () => clearTextbox('answer-text'));
+
+    // Event listeners for the QR signaling buttons
+    dom.createQrBtn.addEventListener('click', createOfferQr);
+    dom.startQrHostBtn.addEventListener('click', startQrScannerHost);
+    dom.startQrBtn.addEventListener('click', startQrScanner);
+    dom.prevQrBtn.addEventListener('click', showPrevChunk);
+    dom.nextQrBtn.addEventListener('click', showNextChunk);
+    dom.prevQrAnswerBtn.addEventListener('click', showPrevAnswerChunk);
+    dom.nextQrAnswerBtn.addEventListener('click', showNextAnswerChunk);
+
+    // Event listeners for the Bluetooth signaling buttons
+    dom.createBluetoothOfferBtn.addEventListener('click', createOfferBluetooth);
+    dom.joinBluetoothOfferBtn.addEventListener('click', joinOfferBluetooth);
+
+    // Event listener for the theme selector
+    dom.themeSelector.addEventListener('change', (event) => {
+        const selectedTheme = event.target.value;
+        dom.body.classList.remove('banished', 'unsc', 'forerunner');
+        if (selectedTheme !== 'default') {
+            dom.body.classList.add(selectedTheme);
+        }
+    });
+
+    // Event listeners for cell interactions (click and long-press)
+    dom.sudokuGrid.addEventListener('mousedown', (e) => startPressTimer(e));
+    dom.sudokuGrid.addEventListener('mouseup', () => {
+        clearTimeout(pressTimer);
+        appState.isLongPressActive = false; // Reset the state
+    });
+    dom.sudokuGrid.addEventListener('mouseleave', () => {
+        clearTimeout(pressTimer);
+        appState.isLongPressActive = false; // Reset the state
+    });
+
+    // For mobile devices
+    dom.sudokuGrid.addEventListener('touchstart', (e) => startPressTimer(e));
+    dom.sudokuGrid.addEventListener('touchend', () => {
+        clearTimeout(pressTimer);
+        appState.isLongPressActive = false; // Reset the state
+    });
+
+    // Event listener to the number pad
+    dom.numberPad.addEventListener('click', (event) => {
+        // Check if a number button or the empty button was clicked and if a cell is active
+        if (event.target.classList.contains('number-btn') && appState.activeCell) {
+            // Check if the cell is a preloaded cell (you should not be able to change it)
+            if (appState.activeCell.classList.contains('preloaded-cell')) {
+                return;
+            }
+
+            let value;
+            // Check if the empty button was clicked
+            if (event.target.id === 'empty-btn') {
+                value = '';
+            } else {
+                value = event.target.textContent;
+            }
+
+            // Set the content of the active cell to the determined value
+            appState.activeCell.textContent = value;
+
+            // Create the message object to send to the other player
+            const move = {
+                type: 'move',
+                row: appState.activeCell.id.split('-')[1],
+                col: appState.activeCell.id.split('-')[2],
+                value: value
+            };
+            // Check if the data channel is open and send the message
+            if (dataChannel && dataChannel.readyState === 'open') {
+                dataChannel.send(JSON.stringify(move));
+            }
+
+            // Remove active class from the old cell to avoid confusion
+            appState.activeCell.classList.remove('active-cell');
+
+            // Clear all highlights and check grid state after a change
+            clearAllHighlights();
+            checkGridState();
+
+            // Reset the active cell
+            appState.activeCell = null;
+        }
+    });
+});
