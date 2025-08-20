@@ -53,6 +53,7 @@ const dom = {
     nextQrAnswerBtn: document.getElementById('next-qr-answer'),
     scannerStatus: document.getElementById('scanner-status'),
     scannerStatusHost: document.getElementById('scanner-status-host'),
+    scanOverlayMessage: document.getElementById('scan-overlay-message'),
     playerRoleSelect: document.getElementById('player-role'),
     signalingMethodSelect: document.getElementById('signaling-method')
 };
@@ -247,6 +248,15 @@ async function onScanSuccess(decodedText) {
 
     // Play a beep and display the status for 2 seconds
     playBeepSound();
+
+    // Display the new overlay message
+    dom.scanOverlayMessage.textContent = `${appState.scannedChunks.length} of ${totalChunks}`;
+    dom.scanOverlayMessage.classList.remove('hidden');
+
+    // Hide the overlay message after 2 seconds
+    setTimeout(() => {
+        dom.scanOverlayMessage.classList.add('hidden');
+    }, 2000);
     
     if (appState.scannedChunks.length === totalChunks) {
         if (qrScanner) {
@@ -293,6 +303,15 @@ async function onHostScanSuccess(decodedText) {
 
     // Play a beep and display the status for 2 seconds
     playBeepSound();
+
+    // Display the new overlay message
+    dom.scanOverlayMessage.textContent = `${appState.scannedChunks.length} of ${totalChunks}`;
+    dom.scanOverlayMessage.classList.remove('hidden');
+
+    // Hide the overlay message after 2 seconds
+    setTimeout(() => {
+        dom.scanOverlayMessage.classList.add('hidden');
+    }, 2000);
 
     if (appState.scannedChunks.length === totalChunks) {
         if (qrScannerHost) {
