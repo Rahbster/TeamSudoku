@@ -245,6 +245,9 @@ async function onScanSuccess(decodedText) {
     appState.scannedChunks.push({ index: chunkIndex, data: chunkData });
     dom.scannerStatus.textContent = `Status: Scanned chunk ${appState.scannedChunks.length} of ${totalChunks}.`;
 
+    // Play a beep and display the status for 2 seconds
+    playBeepSound();
+    
     if (appState.scannedChunks.length === totalChunks) {
         if (qrScanner) {
             qrScanner.clear();
@@ -287,6 +290,9 @@ async function onHostScanSuccess(decodedText) {
 
     appState.scannedChunks.push({ index: chunkIndex, data: chunkData });
     dom.scannerStatusHost.textContent = `Status: Scanned chunk ${appState.scannedChunks.length} of ${totalChunks}.`;
+
+    // Play a beep and display the status for 2 seconds
+    playBeepSound();
 
     if (appState.scannedChunks.length === totalChunks) {
         if (qrScannerHost) {
@@ -845,4 +851,25 @@ function clearTextbox(id) {
     if (textarea) {
         textarea.value = '';
     }
+}
+
+// Function to play a simple beep sound
+function playBeepSound() {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    // Connect the nodes
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    // Set the tone and duration
+    oscillator.type = 'sine'; // A smooth tone
+    oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // 440 Hz is A4
+    gainNode.gain.setValueAtTime(1, audioContext.currentTime); // Start at full volume
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1); // Fade out quickly
+
+    // Start and stop the oscillator
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
 }
