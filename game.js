@@ -44,7 +44,7 @@ export function createGrid() {
 export function startPressTimer(event) {
     clearTimeout(pressTimer);
     appState.isLongPressActive = false;
-    const cell = event.currentTarget;
+    const cell = event.target;
     pressTimer = setTimeout(() => {
         handleLongPress(cell);
     }, 500);
@@ -64,11 +64,10 @@ export function handleCellClick(event) {
         appState.isLongPressActive = false;
         return;
     }
-    const cell = event.currentTarget;
+    const cell = event.target;
     if (cell.classList.contains('preloaded-cell')) {
         const value = cell.textContent.trim();
         if (value !== '') {
-            clearAllHighlights();
             highlightMatchingCells(value);
         }
         return;
@@ -96,7 +95,6 @@ export function handleLongPress(cell) {
     appState.isLongPressActive = true;
     const value = cell.textContent.trim();
     if (value !== '') {
-        clearAllHighlights();
         highlightMatchingCells(value);
     }
 }
@@ -107,6 +105,9 @@ export function highlightMatchingCells(value) {
     allCells.forEach(cell => {
         if (cell.textContent.trim() === value && !cell.classList.contains('invalid-cell') && !cell.classList.contains('solved-puzzle')) {
             cell.classList.add('highlight-cell');
+        }
+        else {
+            cell.classList.remove('highlight-cell');
         }
     });
 }

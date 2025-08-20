@@ -406,8 +406,8 @@ function displayQrChunk(chunks, index) {
     try {
         new QRCode(displayTarget, {
             text: textToEncode,
-            width: 256,
-            height: 256
+            width: 320,
+            height: 320
         });
     } catch (error) {
         alert("An error occurred:" + error.message);
