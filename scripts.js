@@ -74,8 +74,8 @@ export const dom = {
     scanOverlayMessage: document.getElementById('scan-overlay-message'),
     playerRoleSelect: document.getElementById('player-role'),
     signalingMethodSelect: document.getElementById('signaling-method'),
-    newPuzzleButton = document.getElementById('new-puzzle-btn'),
-    hostButton = document.getElementById('host-btn')
+    newPuzzleButton: document.getElementById('new-puzzle-btn'),
+    hostButton: document.getElementById('host-btn')
 };
 
 const themeSelector = document.getElementById('theme-select');
