@@ -277,3 +277,147 @@ export function updateNumberPadState() {
         }
     }
 }
+
+// Initializes the PeerJS connection
+export async function initializePeerJs(playerRole) {
+    // Return a new Promise
+    return new Promise((resolve, reject) => {
+        dom.p1PeerStatus.textContent = 'Status: Initializing...';
+        dom.p2PeerStatus.textContent = 'Status: Waiting for Host...';
+
+        const peerId = playerRole === 'host' ? generateRandomId() : undefined;
+        const peer = new Peer(peerId, {
+            host: 'peerjs.com/peerserver',
+            secure: true,
+            port: 443
+        });
+
+        // Error handling for PeerJS
+        peer.on('error', (err) => {
+            console.error('PeerJS error:', err);
+            reject(err); // Reject the Promise on error
+        });
+
+        peer.on('open', async (id) => {
+            appState.isInitiator = playerRole === 'host';
+            updatePeerIdDisplay(playerRole, id);
+
+            if (playerRole === 'host') {
+                dom.p1PeerStatus.textContent = `Status: Share this ID with Player 2 to connect.`;
+
+                // The peerConnection and dataChannel variables are declared here to ensure they are local to the function's scope
+                const peerConnection = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+                const dataChannel = peerConnection.createDataChannel('sudoku-game');
+                setupDataChannel(dataChannel);
+
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+
+                peer.on('connection', (conn) => {
+                    conn.on('open', () => {
+                        sendOffer(conn, JSON.stringify(peerConnection.localDescription));
+                    });
+
+                    conn.on('data', async (data) => {
+                        const message = JSON.parse(data);
+                        if (message.type === 'answer') {
+                            await peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer));
+                            dom.p1PeerStatus.textContent = 'Status: Answer received. Connection established.';
+                            hideSignalingUI();
+                            // Resolve the Promise with the peerConnection object
+                            resolve(peerConnection);
+                        }
+                    });
+                });
+            } else { // 'joiner'
+                dom.p2PeerStatus.textContent = 'Status: Waiting for a Host to connect...';
+                
+                peer.on('connection', (conn) => {
+                    // For the joiner, the incoming connection *is* the peerConnection
+                    const peerConnection = conn;
+                    
+                    conn.on('data', async (data) => {
+                        const message = JSON.parse(data);
+                        if (message.type === 'offer') {
+                            dom.p2PeerStatus.textContent = 'Status: Offer received. Creating answer...';
+                            await peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer));
+                            const answer = await peerConnection.createAnswer();
+                            await peerConnection.setLocalDescription(answer);
+
+                            sendAnswer(conn, JSON.stringify(peerConnection.localDescription));
+                            // Resolve the Promise once the connection is fully established
+                            resolve(peerConnection);
+                        }
+                    });
+                });
+            }
+        });
+    });
+}
+
+// Function to send the WebRTC offer over the PeerJS connection
+export function sendOffer(conn, offer) {
+    if (conn && conn.open) {
+        const message = {
+            type: 'offer',
+            offer: offer
+        };
+        conn.send(JSON.stringify(message));
+    }
+}
+
+// Function to send the WebRTC answer over the PeerJS connection
+export function sendAnswer(conn, answer) {
+    if (conn && conn.open) {
+        const message = {
+            type: 'answer',
+            answer: answer
+        };
+        conn.send(JSON.stringify(message));
+    }
+}
+
+// Connects to a specific peer using their ID
+export function connectToPeer(joinId) {
+    if (!peer) {
+        console.error('PeerJS not initialized.');
+        return;
+    }
+    dom.p2PeerStatus.textContent = `Status: Attempting to connect to Host...`;
+    
+    // Connect to the host's PeerJS ID.
+    // The rest of the logic is handled by the `peer.on('connection')`
+    // event listener in `initializePeerJs`.
+    peer.connect(joinId);
+}
+
+// Function to handle the received data from the data channel
+function setupDataChannel(conn) {
+    conn.on('data', (data) => {
+        const message = JSON.parse(data);
+        if (message.type === 'move') {
+            // Logic to update the game board
+        } else if (message.type === 'initial-state') {
+            loadPuzzle(message.state);
+        }
+    });
+
+    conn.on('close', () => {
+        console.log('Peer connection closed.');
+    });
+}
+
+// Helper function to update the Peer ID in the UI
+function updatePeerIdDisplay(playerRole, id) {
+    if (playerRole === 'host') {
+        dom.p1PeerId.textContent = id;
+    } else {
+        dom.p2PeerId.textContent = id;
+    }
+}
+
+// Simple function to generate a random ID for the Host
+function generateRandomId() {
+    return 'teamsudoku-' + Math.random().toString(36).substring(2, 9);
+}
+

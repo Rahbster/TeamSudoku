@@ -8,7 +8,8 @@ import {
     loadPuzzle,
     validatePuzzle,
     checkGridState,
-    updateNumberPadState
+    updateNumberPadState,
+    initializePeerJs
 } from './game.js';
 
 //==============================
@@ -71,7 +72,16 @@ export const dom = {
     startQrBtn: document.getElementById('start-qr-btn'),
     // NEW: Bluetooth signaling buttons
     createBluetoothOfferBtn: document.getElementById('create-bluetooth-offer-btn'),
-    joinBluetoothOfferBtn: document.getElementById('join-bluetooth-offer-btn')
+    joinBluetoothOfferBtn: document.getElementById('join-bluetooth-offer-btn'),
+    peerSignalingArea: document.getElementById('peer-signaling-area'),
+    p1PeerArea: document.getElementById('p1-peer-area'),
+    p2PeerArea: document.getElementById('p2-peer-area'),
+    p1PeerId: document.getElementById('p1-peer-id'),
+    p2PeerId: document.getElementById('p2-peer-id'),
+    p1JoinId: document.getElementById('p1-join-id'),
+    connectToPeerBtn: document.getElementById('connect-to-peer-btn'),
+    p1PeerStatus: document.getElementById('p1-peer-status'),
+    p2PeerStatus: document.getElementById('p2-peer-status')
 };
 
 export let peerConnection;
@@ -597,6 +607,9 @@ function toggleSignalingUI() {
     dom.p2QrArea.classList.add('hidden');
     dom.p1BluetoothArea.classList.add('hidden');
     dom.p2BluetoothArea.classList.add('hidden');
+    dom.peerSignalingArea.classList.add('hidden');
+    dom.p1PeerArea.classList.add('hidden');
+    dom.p2PeerArea.classList.add('hidden');
 
     if (signalingMethod === 'manual') {
         dom.manualSignalingArea.classList.remove('hidden');
@@ -618,6 +631,13 @@ function toggleSignalingUI() {
             dom.p1BluetoothArea.classList.remove('hidden');
         } else if (playerRole === 'joiner') {
             dom.p2BluetoothArea.classList.remove('hidden');
+        }
+    } else if (signalingMethod === 'peer') {
+        dom.peerSignalingArea.classList.remove('hidden');
+        if (playerRole === 'host') {
+            dom.p1PeerArea.classList.remove('hidden');
+        } else if (playerRole === 'joiner') {
+            dom.p2PeerArea.classList.remove('hidden');
         }
     }
 }
@@ -737,6 +757,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event listeners for the Bluetooth signaling buttons
     dom.createBluetoothOfferBtn.addEventListener('click', createOfferBluetooth);
     dom.joinBluetoothOfferBtn.addEventListener('click', joinOfferBluetooth);
+
+    dom.connectToPeerBtn.addEventListener('click', () => {
+        const joinId = dom.p1JoinId.value;
+        if (joinId) {
+            connectToPeer(joinId);
+        }
+    });
+
+    // Event listener for the role select, to initialize PeerJS
+    dom.playerRoleSelect.addEventListener('change', async (event) => {
+        // Only initialize if the PeerJS signaling method is selected
+        if (dom.signalingMethodSelect.value === 'peer') {
+            try {
+                // Wait for the promise to resolve and get the peerConnection
+                peerConnection = await initializePeerJs(event.target.value);
+                console.log('PeerConnection is ready!', peerConnection);
+                // You can now use peerConnection in other functions
+            } catch (error) {
+                console.error('Failed to initialize PeerJS:', error);
+            }
+        }
+    });
 
     // Event listener for the theme selector
     dom.themeSelector.addEventListener('change', (event) => {
