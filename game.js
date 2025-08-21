@@ -287,7 +287,7 @@ export async function initializePeerJs(playerRole) {
 
         const peerId = playerRole === 'host' ? generateRandomId() : undefined;
         const peer = new Peer(peerId, {
-            host: 'peerjs.com/peerserver',
+            host: 'peerjs.com',
             secure: true,
             port: 443
         });
