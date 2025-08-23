@@ -80,7 +80,6 @@ export const dom = {
     p1PeerArea: document.getElementById('p1-peer-area'),
     p2PeerArea: document.getElementById('p2-peer-area'),
     p1PeerId: document.getElementById('p1-peer-id'),
-    p2PeerId: document.getElementById('p2-peer-id'),
     p2JoinId: document.getElementById('p2-join-id'),
     connectToPeerBtn: document.getElementById('connect-to-peer-btn'),
     p1PeerStatus: document.getElementById('p1-peer-status'),
