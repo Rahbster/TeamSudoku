@@ -1,0 +1,397 @@
+/*==============================General & Layout==============================*/
+body {
+    font-family: sans-serif;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    background-color: white; /* Set a default color that is visible in the background */
+
+}
+
+#background-image-container {
+    position: fixed;
+    opacity: .25;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* This places the div behind all other content */
+    transition: opacity 0.5s ease-in-out; /* Add a smooth transition */
+    background-image: url('../assets/ActiveSudoku.png');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover; /* This makes the image cover the entire container */
+}
+
+/* This rule applies when the connection UI is visible */
+body.connection-background #background-image-container {
+    background-image: url('../assets/StageConnection.png');
+    opacity: 0.25;
+}
+
+.container {
+    display: flex;
+    gap: 20px;
+}
+
+.column {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hidden {
+    display: none;
+}
+
+#scan-overlay-message.hidden {
+    opacity: 0;
+    pointer-events: none; /* Prevents clicks on the hidden element */
+}
+
+/*==============================Sudoku Grid==============================*/
+#sudoku-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 36px);
+    width: 324px;
+    border: 3px solid black;
+    margin: 0 auto;
+}
+
+.grid-cell {
+    width: 36px;
+    height: 36px;
+    border: 1px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: background-color 0.3s;
+}
+
+.subgrid-border-right {
+    border-right: 3px solid black;
+}
+
+.subgrid-border-bottom {
+    border-bottom: 3px solid black;
+}
+
+.preloaded-cell {
+    background-color: #f0f0f0;
+    cursor: default;
+}
+
+/*==============================Cell Coloring & States==============================*/
+.highlight-cell {
+    background-color: black;
+    color: #f0f0f0;
+}
+
+.active-cell {
+    background-color: gold;
+}
+
+.invalid-cell {
+    background-color: lightcoral;
+}
+
+.solved-puzzle {
+    background-color: lightgreen;
+}
+
+/*==============================Buttons and Form Elements==============================*/
+button, select {
+    background-color: #007bff;
+    color: #fff;
+    border: 2px solid #0056b3;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+button:hover, select:hover {
+    background-color: #0056b3;
+    border-color: #004494;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+}
+
+button:active, select:active {
+    transform: translateY(0);
+    box-shadow: 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+button:disabled, select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    min-width: 200px;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+}
+
+textarea {
+    width: 100%;
+    height: 100px;
+}
+
+#scan-overlay-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-size: 2em;
+    font-weight: bold;
+    padding: 20px 40px;
+    border-radius: 10px;
+    z-index: 1000;
+    transition: opacity 0.3s ease-in-out;
+    opacity: 1; /* Initially visible */
+}
+
+/*==============================QR Code==============================*/
+#qr-signaling-area {
+    text-align: center;
+}
+
+#qr-code-display, #qr-code-display-answer {
+    padding: 10px;
+    border: 1px solid #ccc;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+/*==============================Banished Theme==============================*/
+body.banished {
+    background-color: #2C2E2A; /* Dark metallic gray */
+    color: #F0F0F0;
+}
+
+body.banished #sudoku-grid {
+    border-color: #BC3908; /* Crimson red */
+}
+
+body.banished .grid-cell {
+    border-color: #7A7F85;
+}
+
+body.banished .preloaded-cell {
+    background-color: #4C4A45;
+    color: #F0F0F0; /* Light gray for contrast */
+}
+
+body.banished .highlight-cell {
+    background-color: #A0A0A0; /* Light gray for contrast */
+    color: #4C4A45;
+}
+
+body.banished .active-cell {
+    background-color: #BC3908; /* Crimson red */
+    color: #fff;
+}
+
+body.banished .invalid-cell {
+    background-color: #FF0000; /* Bright red for error */
+}
+
+body.banished .solved-puzzle {
+    background-color: #2D6A4F; /* Darker green for a subtle "solved" look */
+}
+
+/*==============================UNSC Theme==============================*/
+body.unsc {
+    background-color: #1A1A1A; /* Dark military gray */
+    color: #CDCFCC;
+}
+
+body.unsc #sudoku-grid {
+    border-color: #CDCFCC; /* Light gray */
+}
+
+body.unsc .grid-cell {
+    border-color: #CDCFCC;
+}
+
+body.unsc .preloaded-cell {
+    background-color: #4C4A45;
+    color: #EFB82A; /* Gold/yellow for preloaded numbers */
+}
+
+body.unsc .highlight-cell {
+    background-color: #EFB82A;
+    color: #4C4A45;
+}
+
+body.unsc .active-cell {
+    background-color: #2D6A4F; /* Military green */
+}
+
+body.unsc .invalid-cell {
+    background-color: #B53835; /* Muted red */
+}
+
+body.unsc .solved-puzzle {
+    background-color: #CDCFCC; /* A bright, clean look */
+}
+
+/*==============================Forerunner Theme - Revised==============================*/
+body.forerunner {
+    background-color: #0E0E1A; /* Very dark blue/purple */
+    color: #E6E6FA; /* Light purple/white for input numbers */
+}
+
+body.forerunner #sudoku-grid {
+    border-color: #4D4D99;
+}
+
+body.forerunner .grid-cell {
+    border-color: #4D4D99;
+}
+
+/* Updated Preloaded Cell */
+body.forerunner .preloaded-cell {
+    background-color: #B2B2FF; /* A light, icy blue/purple */
+    color: #2D0063; /* A dark purple for high contrast */
+}
+
+body.forerunner .highlight-cell {
+    background-color: #2D0063; /* A dark purple for high contrast */
+    color: #B2B2FF; /* A light, icy blue/purple */
+}
+
+body.forerunner .active-cell {
+    background-color: #4D4D99;
+}
+
+body.forerunner .invalid-cell {
+    background-color: #E60073;
+}
+
+body.forerunner .solved-puzzle {
+    background-color: #33CCFF;
+}
+
+/*==============================Number Pad==============================*/
+#number-pad {
+    display: flex;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.number-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 5px;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s;
+    background-color: #007bff;
+    color: #fff;
+    /* Properties to center the text */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ------------------------------------------ */
+/* Media Query                                */
+/* ------------------------------------------ */
+
+/* This rule will only apply to screens with a min-max width of 0px - 390px. */
+@media (max-width: 390px) {
+    #number-pad {
+        flex-wrap: wrap; /* Allows buttons to wrap to a new line on smaller screens */
+        gap: 5px; /* Adjust the gap for a tighter fit */
+        margin-top: 10px;
+    }
+
+    .number-btn {
+        width: 19%; /* Use a percentage to make the buttons responsive */
+        max-width: 60px; /* Limits the size of the button */
+    }
+}
+
+.number-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Optional: Add theme-specific styles for the number pad */
+body.banished .number-btn {
+    background-color: #BC3908;
+    color: #F0F0F0;
+    border: 2px solid #BC3908;
+}
+
+body.unsc .number-btn {
+    background-color: #4C4A45;
+    color: #CDCFCC;
+    border: 2px solid #2D6A4F;
+}
+
+body.forerunner .number-btn {
+    background-color: #4D4D99;
+    color: #E6E6FA;
+    border: 2px solid #33CCFF;
+}
+
+#empty-btn {
+    background-color: #dc3545; /* A red color to signify "clear" or "delete" */
+}
+
+#empty-btn:hover {
+    background-color: #c82333;
+}
+
+body.banished .theme-button,
+body.banished #signaling-method,
+body.banished #player-role,
+body.banished #theme-select {
+    background-color: #BC3908;
+    color: #F0F0F0;
+    border-color: #BC3908;
+}
+
+body.unsc .theme-button,
+body.unsc #signaling-method,
+body.unsc #player-role,
+body.unsc #theme-select {
+    background-color: #4C4A45;
+    color: #CDCFCC;
+    border-color: #2D6A4F;
+}
+
+body.forerunner .theme-button,
+body.forerunner #signaling-method,
+body.forerunner #player-role,
+body.forerunner #theme-select {
+    background-color: #4D4D99;
+    color: #E6E6FA;
+    border-color: #33CCFF;
+}
