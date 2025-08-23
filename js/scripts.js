@@ -623,7 +623,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Step 2: Listen for the 'connection' event to get the actual data connection.
                     peerJSObject.on('connection', async (peerJSConnection) => {
-                        console.log('PeerJS connection received from:', conn.peer);
                         dom.p1PeerStatus.textContent = 'Status: PeerJS connection received. Starting WebRTC signaling...';
 
                         dom.p1PeerStatus.textContent = 'Status: PeerJS connection received. Creating offer...';
