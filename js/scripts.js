@@ -638,21 +638,21 @@ document.addEventListener('DOMContentLoaded', () => {
                                     // Step 4: Send the offer over the PeerJS connection.
                                     sendOffer(peerJSConnection, offerData);
                                     dom.p1PeerStatus.textContent = 'Status: Offer sent to joiner. Waiting for answer...';
+
+                                    // Step 5: Listen for the answer from the joiner.
+                                    peerJSConnection.on('data', async (data) => {
+                                        const message = JSON.parse(data);
+                                        if (message.type === 'answer') {
+                                            dom.p1PeerStatus.textContent = 'Status: Answer received. WebRTC connection established.';
+                                            await rtcConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(message.answer)));
+
+                                            // Close the PeerJS connection and object as they are no longer needed.
+                                            peerJSConnection.close();
+                                            peerJSObject.destroy();
+                                        }
+                                    });
                                 }
                             };
-
-                            // Step 5: Listen for the answer from the joiner.
-                            peerJSConnection.on('data', async (data) => {
-                                const message = JSON.parse(data);
-                                if (message.type === 'answer') {
-                                    dom.p1PeerStatus.textContent = 'Status: Answer received. WebRTC connection established.';
-                                    await rtcConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(message.answer)));
-
-                                   // Close the PeerJS connection and object as they are no longer needed.
-                                    peerJSConnection.close();
-                                    peerJSObject.destroy();
-                                }
-                            });
                         });
                     });
                 } catch (error) {
