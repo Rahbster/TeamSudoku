@@ -384,7 +384,8 @@ body.forerunner .number-btn {
 body.banished .theme-button,
 body.banished #signaling-method,
 body.banished #player-role,
-body.banished #theme-select {
+body.banished #theme-select,
+body.banished #difficulty-select {
     background-color: #BC3908;
     color: #F0F0F0;
     border-color: #BC3908;
@@ -393,7 +394,8 @@ body.banished #theme-select {
 body.unsc .theme-button,
 body.unsc #signaling-method,
 body.unsc #player-role,
-body.unsc #theme-select {
+body.unsc #theme-select,
+body.unsc #difficulty-select {
     background-color: #4C4A45;
     color: #CDCFCC;
     border-color: #2D6A4F;
@@ -402,7 +404,8 @@ body.unsc #theme-select {
 body.forerunner .theme-button,
 body.forerunner #signaling-method,
 body.forerunner #player-role,
-body.forerunner #theme-select {
+body.forerunner #theme-select,
+body.forerunner #difficulty-select {
     background-color: #4D4D99;
     color: #E6E6FA;
     border-color: #33CCFF;
