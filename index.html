@@ -26,8 +26,8 @@
                 <button class="number-btn">9</button>
                 <button class="number-btn" id="empty-btn">X</button>
             </div>
-            
-            <div id="sudoku-grid"></div>
+
+            <div class="puzzle-area" id="sudoku-grid"></div>
 
             <label for="theme-select">Choose a Theme</label>
             <div class="theme-selector">
@@ -39,7 +39,13 @@
                 </select>
             </div>
             
-            <div class="header-container">
+            <label for="difficulty-select">Choose a Difficulty</label>
+            <div class="difficulty-selector">
+                <select id="difficulty-select">
+                    <option value="esay">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
                 <button class="theme-button" id="new-puzzle-btn">Load New Puzzle</button>
             </div>
         </section>

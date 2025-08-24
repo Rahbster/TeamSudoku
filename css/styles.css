@@ -75,6 +75,7 @@ body.connection-background #background-image-container {
     cursor: pointer;
     box-sizing: border-box;
     transition: background-color 0.3s;
+    background-color: rgba(255, 255, 255, .75);
 }
 
 .subgrid-border-right {

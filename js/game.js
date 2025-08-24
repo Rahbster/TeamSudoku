@@ -3,7 +3,8 @@
 import { dom,
          appState,
          pressTimer,
-         dataChannels
+         dataChannels,
+         startPressTimer
 } from './scripts.js';
 
 //==============================
@@ -40,16 +41,6 @@ export function createGrid() {
             dom.sudokuGrid.appendChild(cell);
         }
     }
-}
-
-//Starts the timer for a long press
-export function startPressTimer(event) {
-    clearTimeout(pressTimer);
-    appState.isLongPressActive = false;
-    const cell = event.target;
-    pressTimer = setTimeout(() => {
-        handleLongPress(cell);
-    }, 500);
 }
 
 //Handles a cell click or tap
@@ -123,14 +114,14 @@ export function clearAllHighlights() {
 }
 
 //Fetches and loads a new puzzle
-export async function loadPuzzle(puzzleData) {
+export async function loadPuzzle(difficulty, puzzleData) {
     createGrid();
     let puzzle = puzzleData;
     let isRemoteLoad = !!puzzleData;
     
     if (!isRemoteLoad) {
         try {
-            const response = await fetch('https://sugoku.onrender.com/board?difficulty=easy');
+            const response = await fetch('https://sugoku.onrender.com/board?difficulty=' + difficulty);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }

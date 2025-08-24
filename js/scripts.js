@@ -1,9 +1,9 @@
 import {
     createGrid,
-    startPressTimer,
     clearAllHighlights,
     loadPuzzle,
-    checkGridState
+    checkGridState,
+    highlightMatchingCells
 } from './game.js';
 
 import {
@@ -113,7 +113,7 @@ function setupDataChannel(channel) {
                 }
             });
         } else if (data.type === 'initial-state') {
-            loadPuzzle(data.state);
+            loadPuzzle(appState.selectedDifficulty, data.state);
         }
     };
 }
@@ -571,11 +571,24 @@ async function PeerJSInitiate() {
     }
 }
 
+//Starts the timer for a long press
+export function startPressTimer(event) {
+    clearTimeout(pressTimer);
+    appState.isLongPressActive = false;
+    const cell = event.target;
+
+    pressTimer = setTimeout(() => {
+        handleLongPress(cell);
+    }, 500);
+}
+
 //==============================
 //Initial Setup
 //==============================
 
 document.addEventListener('DOMContentLoaded', () => {
+    // APP State
+    appState.selectedDifficulty = 'easy';
     // DOM setup
     dom.offerTextarea = document.getElementById('offer-text');
     dom.receivedOfferTextarea = document.getElementById('received-offer-text');
@@ -610,6 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.hostButton = document.getElementById('host-btn');
     dom.numberPad = document.getElementById('number-pad');
     dom.themeSelector = document.getElementById('theme-select');
+    dom.difficultySelector = document.getElementById('difficulty-select');
     dom.body = document.body;
     //Manual signaling buttons
     dom.createOfferManualBtn = document.getElementById('create-offer-manual-btn');
@@ -651,7 +665,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event listeners for game-related buttons
     dom.newPuzzleButton.addEventListener('click', () => {
-        loadPuzzle();
+        loadPuzzle(appState.selectedDifficulty);
     });
 
     // Event listeners for the "Toggle P2P Configuration" button
@@ -742,6 +756,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Event listener for the theme selector
+    dom.difficultySelector.addEventListener('change', (event) => {
+        appState.selectedDifficulty = event.target.value;
+    });
+
     // Event listeners for cell interactions (click and long-press)
     dom.sudokuGrid.addEventListener('mousedown', (e) => startPressTimer(e));
     dom.sudokuGrid.addEventListener('mouseup', () => {
@@ -804,6 +823,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Reset the active cell
             appState.activeCell = null;
+
+            if (value != '') {
+                highlightMatchingCells(value);
+            }
         }
     });
 });
