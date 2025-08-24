@@ -43,6 +43,8 @@ export function createGrid() {
     }
 }
 
+let activeCellSelectCount = 0;
+
 //Handles a cell click or tap
 export function handleCellClick(event) {
     clearTimeout(pressTimer);
@@ -71,6 +73,29 @@ export function handleCellClick(event) {
         appState.activeCell.classList.remove('active-cell');
         // Clear any previous highlights
         clearAllHighlights();
+    }
+    if (appState.activeCell == cell) {
+        activeCellSelectCount++;
+        if (activeCellSelectCount > 3) {
+            let board = [];
+            for (let row = 0; row < 9; row++) {
+                board[row] = [];
+                for (let col = 0; col < 9; col++) {
+                    const cellValue = document.getElementById(`cell-${row}-${col}`).textContent.trim();
+                    const value = cellValue === '' ? 0 : parseInt(cellValue, 10);
+                    board[row][col] = value;
+                }
+            }
+            let hintValue = getHint(board);
+            if (hintValue != null) {
+                appState.activeCell.textContent = hintValue.value;
+                highlightMatchingCells(appState.activeCell.textContent);
+                checkGridState();
+            }
+        }
+    }
+    else {
+        activeCellSelectCount = 0;
     }
     // Set the new active cell
     appState.activeCell = cell;
@@ -253,6 +278,107 @@ export function checkGridState() {
         });
         alert("Congratulations! The puzzle is solved!");
     }
+}
+
+/**
+ * Solves a Sudoku puzzle using a backtracking algorithm.
+ * @param {number[][]} board - The 9x9 Sudoku grid.
+ * @returns {boolean} - True if the puzzle is solved, false otherwise.
+ */
+function solveSudoku(board) {
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            // Find an empty cell
+            if (board[row][col] === 0) {
+                // Try numbers 1-9
+                for (let num = 1; num <= 9; num++) {
+                    if (isValidMove(board, row, col, num)) {
+                        board[row][col] = num; // Make a temporary assignment
+
+                        // Recursively try to solve the rest of the puzzle
+                        if (solveSudoku(board)) {
+                            return true; // Puzzle is solved
+                        }
+
+                        // If it fails, backtrack
+                        board[row][col] = 0;
+                    }
+                }
+                return false; // No number worked, so backtrack
+            }
+        }
+    }
+    return true; // All cells are filled, puzzle is solved
+}
+
+/**
+ * Checks if a number can be placed in a specific cell without conflicts.
+ * @param {number[][]} board - The Sudoku grid.
+ * @param {number} row - The row index.
+ * @param {number} col - The column index.
+ * @param {number} num - The number to check.
+ * @returns {boolean} - True if the move is valid, false otherwise.
+ */
+function isValidMove(board, row, col, num) {
+    // Check row and column
+    for (let i = 0; i < 9; i++) {
+        if (board[row][i] === num || board[i][col] === num) {
+            return false;
+        }
+    }
+
+    // Check 3x3 subgrid
+    const startRow = Math.floor(row / 3) * 3;
+    const startCol = Math.floor(col / 3) * 3;
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            if (board[startRow + i][startCol + j] === num) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * Finds the correct value for the appState.activeCell to provide a hint.
+ * @param {number[][]} board - The current state of the Sudoku grid.
+ * @returns {{row: number, col: number, value: number} | null} - The hint object or null if the active cell is not empty.
+ */
+function getHint(board) {
+    const activeCell = appState.activeCell;
+
+    // First, check if there is an active cell and if it's empty
+    if (!activeCell || activeCell.textContent.trim() !== '') {
+        console.log("No empty active cell selected to provide a hint.");
+        return null;
+    }
+
+    // Get the row and column from the active cell's ID
+    const [_, row, col] = activeCell.id.split('-');
+    const hintRow = parseInt(row, 10);
+    const hintCol = parseInt(col, 10);
+
+    // Create a copy of the board to find the solution without altering the current game state
+    const boardCopy = board.map(arr => [...arr]);
+
+    // Iterate through numbers 1-9 to find the correct value for the active cell
+    for (let num = 1; num <= 9; num++) {
+        if (isValidMove(boardCopy, hintRow, hintCol, num)) {
+            boardCopy[hintRow][hintCol] = num;
+
+            // Check if this number leads to a solvable puzzle
+            if (solveSudoku(boardCopy)) {
+                return { row: hintRow, col: hintCol, value: num };
+            }
+
+            // Backtrack if the number doesn't work
+            boardCopy[hintRow][hintCol] = 0;
+        }
+    }
+
+    // If no number works (the puzzle is unsolvable), return null
+    return null;
 }
 
 // Function to update the disabled state of the number pad buttons
