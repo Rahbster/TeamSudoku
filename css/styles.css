@@ -157,6 +157,24 @@ textarea {
     height: 100px;
 }
 
+@keyframes blink-animation {
+    0% {
+        background-color: transparent;
+    }
+
+    50% {
+        background-color: #add8e6;
+    }
+    /* A light blue, for example */
+    100% {
+        background-color: transparent;
+    }
+}
+
+.blink {
+    animation: blink-animation 1s steps(1) infinite;
+}
+
 #scan-overlay-message {
     position: fixed;
     top: 50%;
@@ -171,6 +189,19 @@ textarea {
     z-index: 1000;
     transition: opacity 0.3s ease-in-out;
     opacity: 1; /* Initially visible */
+}
+
+#p1-peer-id {
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-size: 2em;
+    font-weight: bold;
+    padding: 20px 40px;
+    border-radius: 10px;
+    z-index: 1000;
+    transition: opacity 0.3s ease-in-out;
+    opacity: 1; /* Initially visible */
+    display: inline-block;
 }
 
 /*==============================QR Code==============================*/

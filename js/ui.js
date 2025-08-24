@@ -2,7 +2,7 @@
 //UI Logic
 //==============================
 
-import { appState, dom, pressTimer, dataChannels } from './scripts.js';
+import { appState, dom, pressTimer, dataChannels, startPressTimer } from './scripts.js';
 import { loadPuzzle, checkGridState, highlightMatchingCells } from './game.js';
 import { clearTextbox, createQrCodeChunks, playBeepSound } from './misc.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
@@ -245,6 +245,9 @@ async function PeerJSInitiate() {
 //...PeerJS functions=====
 
 //=====QR functions...
+let qrScanner = null;
+let qrScannerHost = null;
+
 //Starts the Joiner's QR code scanner
 function startQrScanner() {
     if (qrScanner) {

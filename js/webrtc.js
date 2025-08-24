@@ -52,6 +52,14 @@ function setupDataChannel(channel) {
             const cell = document.getElementById(`cell-${data.row}-${data.col}`);
             if (cell) {
                 cell.textContent = data.value;
+
+                // Add the blink class to the cell
+                cell.classList.add('blink');
+
+                // Set a timer to remove the blink class after 3 seconds
+                setTimeout(() => {
+                    cell.classList.remove('blink');
+                }, 3000);
             }
             checkGridState();
 
