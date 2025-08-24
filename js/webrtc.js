@@ -85,5 +85,24 @@ export async function createAnswer(offerText) {
     await connection.setRemoteDescription(new RTCSessionDescription(offerText));
     const answer = await connection.createAnswer();
     await connection.setLocalDescription(answer);
+    // Wait until ICE gathering is complete before returning the connection
+    await waitForIceGathering(connection);
     return connection;
+}
+
+// A helper function to ensure ICE gathering is complete
+async function waitForIceGathering(connection) {
+    return new Promise(resolve => {
+        if (connection.iceGatheringState === 'complete') {
+            resolve();
+        } else {
+            const checkState = () => {
+                if (connection.iceGatheringState === 'complete') {
+                    connection.removeEventListener('icegatheringstatechange', checkState);
+                    resolve();
+                }
+            };
+            connection.addEventListener('icegatheringstatechange', checkState);
+        }
+    });
 }
