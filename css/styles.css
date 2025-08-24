@@ -229,11 +229,11 @@ body.unsc {
 }
 
 body.unsc #sudoku-grid {
-    border-color: #CDCFCC; /* Light gray */
+    border-color: #2D6A4F; /* Military green */
 }
 
 body.unsc .grid-cell {
-    border-color: #CDCFCC;
+    border-color: #1D3A2F;
 }
 
 body.unsc .preloaded-cell {
