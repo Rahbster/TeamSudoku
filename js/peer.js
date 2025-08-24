@@ -6,13 +6,15 @@ import { removePrefix } from './misc.js';
 export const SUDOKU_SERVICE_PEER_PREFIX = 'teamsudoku-';
 
 // Initializes the PeerJS object
-export async function initializePeerJs(playerRole) {
+export async function initializePeerJs(isHost) {
+    appState.isInitiator = isHost;
+
     // Return a new Promise that will resolve with the PeerJS object
     return new Promise((resolve, reject) => {
         dom.p1PeerStatus.textContent = 'Status: Initializing...';
         dom.p2PeerStatus.textContent = 'Status: Waiting for Host...';
 
-        const peerId = playerRole === 'host' ? generateRandomId() : undefined;
+        const peerId = appState.isInitiator ? generateRandomId() : undefined;
         const peerJSObject = new Peer(peerId, {
             host: '0.peerjs.com',
             secure: true,
@@ -26,12 +28,11 @@ export async function initializePeerJs(playerRole) {
         });
 
         peerJSObject.on('open', (id) => {
-            appState.isInitiator = playerRole === 'host';
             console.log('PeerJS ID:', id);
 
             if (appState.isInitiator) {
                 const publishChallenge = removePrefix(peerId, SUDOKU_SERVICE_PEER_PREFIX);
-                updatePeerIdDisplay(playerRole, publishChallenge);
+                updatePeerIdDisplay(isHost, publishChallenge);
                 dom.p1PeerStatus.textContent = `Status: Share this ID with Player 2 to connect.`;
                 resolve(peerJSObject);
             } else { // 'joiner'
@@ -97,8 +98,8 @@ export function connectToPeerJS(peerJSObject, joinId) {
 }
 
 // Helper function to update the Peer ID in the UI
-function updatePeerIdDisplay(playerRole, id) {
-    if (playerRole === 'host') {
+function updatePeerIdDisplay(isHost, id) {
+    if (isHost) {
         dom.p1PeerId.textContent = id;
     } else {
         dom.p2PeerId.textContent = id;

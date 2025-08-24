@@ -24,69 +24,9 @@ import {
 //Global Variables and DOM Elements
 //==============================
 //Cache DOM elements for faster access
-export const dom = {
-    offerTextarea: document.getElementById('offer-text'),
-    receivedOfferTextarea: document.getElementById('received-offer-text'),
-    answerTextarea: document.getElementById('answer-text'),
-    receivedAnswerTextarea: document.getElementById('received-answer-text'),
-    p1Status: document.getElementById('p1-status'),
-    p2Status: document.getElementById('p2-status'),
-    p1QrStatus: document.getElementById('p1-qr-status'),
-    p2QrStatus: document.getElementById('p2-qr-status'),
-    sudokuGrid: document.getElementById('sudoku-grid'),
-    sudokuGridArea: document.getElementById('sudoku-grid-area'),
-    signalingArea: document.getElementById('signaling-area'),
-    manualSignalingArea: document.getElementById('manual-signaling-area'),
-    qrSignalingArea: document.getElementById('qr-signaling-area'),
-    p1ManualArea: document.getElementById('p1-manual-area'),
-    p2ManualArea: document.getElementById('p2-manual-area'),
-    p1QrArea: document.getElementById('p1-qr-area'),
-    p2QrArea: document.getElementById('p2-qr-area'),
-    qrCodeDisplay: document.getElementById('qr-code-display'),
-    qrCodeAnswerDisplay: document.getElementById('qr-code-display-answer'),
-    chunkStatus: document.getElementById('chunk-status'),
-    prevQrBtn: document.getElementById('prev-qr-btn'),
-    nextQrBtn: document.getElementById('next-qr-btn'),
-    prevQrAnswerBtn: document.getElementById('prev-qr-answer-btn'),
-    nextQrAnswerBtn: document.getElementById('next-qr-answer-btn'),
-    scannerStatus: document.getElementById('scanner-status'),
-    scannerStatusHost: document.getElementById('scanner-status-host'),
-    scanOverlayMessage: document.getElementById('scan-overlay-message'),
-    playerRoleSelect: document.getElementById('player-role'),
-    signalingMethodSelect: document.getElementById('signaling-method'),
-    newPuzzleButton: document.getElementById('new-puzzle-btn'),
-    hostButton: document.getElementById('host-btn'),
-    numberPad: document.getElementById('number-pad'),
-    themeSelector: document.getElementById('theme-select'),
-    body: document.body,
-    //Manual signaling buttons
-    createOfferManualBtn: document.getElementById('create-offer-manual-btn'),
-    copyOfferBtn: document.getElementById('copy-offer-btn'),
-    clearOfferBtn: document.getElementById('clear-offer-btn'),
-    addAnswerManualBtn: document.getElementById('add-answer-manual-btn'),
-    clearReceivedAnswerBtn: document.getElementById('clear-received-answer-btn'),
-    createAnswerManualBtn: document.getElementById('create-answer-manual-btn'),
-    clearReceivedOfferBtn: document.getElementById('clear-received-offer-btn'),
-    copyAnswerBtn: document.getElementById('copy-answer-btn'),
-    clearAnswerBtn: document.getElementById('clear-answer-btn'),
+export const dom = {};
 
-    //QR signaling buttons
-    createQrBtn: document.getElementById('create-qr-btn'),
-    startQrHostBtn: document.getElementById('start-qr-host-btn'),
-    startQrBtn: document.getElementById('start-qr-btn'),
-
-    //PeerJS signaling buttons
-    peerSignalingArea: document.getElementById('peer-signaling-area'),
-    p1PeerArea: document.getElementById('p1-peer-area'),
-    p2PeerArea: document.getElementById('p2-peer-area'),
-    p1PeerId: document.getElementById('p1-peer-id'),
-    p2JoinId: document.getElementById('p2-join-id'),
-    connectToPeerBtn: document.getElementById('connect-to-peer-btn'),
-    p1PeerStatus: document.getElementById('p1-peer-status'),
-    p2PeerStatus: document.getElementById('p2-peer-status')
-};
-
-export let dataChannel; // This will hold the WebRTC data channel
+export let dataChannels = []; // This will hold the WebRTC data channels
 export let qrScanner = null;
 export let qrScannerHost = null;
 export let pressTimer = null;
@@ -132,13 +72,15 @@ export function initializeWebRTC() {
     connection.onconnectionstatechange = () => {
         if (connection.connectionState === 'connected') {
             console.log('WebRTC connection established!');
-            hideSignalingUI(); //Hide all signaling UI when connected
+            if (!appState.isInitiator) {
+                hideSignalingUI(); //Hide all signaling UI when connected
+            }
         }
     };
 
     connection.ondatachannel = event => {
-        dataChannel = event.channel;
-        setupDataChannel(dataChannel);
+        const channel = event.channel;
+        setupDataChannel(channel);
     };
 
     return connection;
@@ -152,7 +94,7 @@ function setupDataChannel(channel) {
         dom.p2Status.textContent = 'Status: Connected!';
         dom.p1QrStatus.textContent = 'Status: Connected!';
         dom.p2QrStatus.textContent = 'Status: Connected!';
-        toggleSignalingArea();
+        dataChannels.push(channel); // Store the new channel
     };
 
     channel.onmessage = event => {
@@ -163,6 +105,13 @@ function setupDataChannel(channel) {
                 cell.textContent = data.value;
             }
             checkGridState();
+
+            // Broadcast the move to all other players
+            dataChannels.forEach(otherChannel => {
+                if (otherChannel.readyState === 'open' && otherChannel !== channel) {
+                    otherChannel.send(event.data);
+                }
+            });
         } else if (data.type === 'initial-state') {
             loadPuzzle(data.state);
         }
@@ -185,8 +134,8 @@ async function createOffer() {
     appState.isInitiator = true;
     appState.isAnswer = false;
     const connection = initializeWebRTC();
-    dataChannel = connection.createDataChannel('sudoku-game');
-    setupDataChannel(dataChannel);
+    const channel = connection.createDataChannel('sudoku-game');
+    setupDataChannel(channel);
     const offer = await connection.createOffer();
     await connection.setLocalDescription(offer);
     return connection;
@@ -480,6 +429,13 @@ function toggleSignalingArea() {
     dom.signalingArea.classList.toggle('hidden');
     dom.sudokuGridArea.classList.toggle('hidden');
 
+    // Show or hide the 'Load New Puzzle' button based on the player role
+    if (appState.isInitiator) {
+        dom.newPuzzleButton.classList.remove('hidden');
+    } else {
+        dom.newPuzzleButton.classList.add('hidden');
+    }
+
     // Toggle the 'connection-background' class on the body
     document.body.classList.toggle('connection-background');
 
@@ -494,6 +450,13 @@ function toggleSignalingArea() {
 function toggleSignalingUI() {
     const signalingMethod = dom.signalingMethodSelect.value;
     const playerRole = dom.playerRoleSelect.value;
+    if (signalingMethod === 'none' ||
+        playerRole === 'none')
+    {
+        return;
+    }
+
+    appState.isInitiator = playerRole === 'host';
 
     dom.manualSignalingArea.classList.add('hidden');
     dom.qrSignalingArea.classList.add('hidden');
@@ -507,23 +470,23 @@ function toggleSignalingUI() {
 
     if (signalingMethod === 'manual') {
         dom.manualSignalingArea.classList.remove('hidden');
-        if (playerRole === 'host') {
+        if (appState.isInitiator) {
             dom.p1ManualArea.classList.remove('hidden');
-        } else if (playerRole === 'joiner') {
+        } else {
             dom.p2ManualArea.classList.remove('hidden');
         }
     } else if (signalingMethod === 'qr') {
         dom.qrSignalingArea.classList.remove('hidden');
-        if (playerRole === 'host') {
+        if (appState.isInitiator) {
             dom.p1QrArea.classList.remove('hidden');
-        } else if (playerRole === 'joiner') {
+        } else {
             dom.p2QrArea.classList.remove('hidden');
         }
-    } else if (signalingMethod === 'peer') {
+    } else if (signalingMethod === 'peerJS') {
         dom.peerSignalingArea.classList.remove('hidden');
-        if (playerRole === 'host') {
+        if (appState.isInitiator) {
             dom.p1PeerArea.classList.remove('hidden');
-        } else if (playerRole === 'joiner') {
+        } else {
             dom.p2PeerArea.classList.remove('hidden');
         }
     }
@@ -563,11 +526,116 @@ async function copyToClipboard(elementId) {
     }
 }
 
+async function PeerJSInitiate() {
+    try {
+        // Step 1: Initialize PeerJS. The returned value is the PeerJS 'Peer' object.
+        const peerJSObject = await initializePeerJs(true);
+
+        // Step 2: Listen for the 'connection' event to get the actual data connection.
+        peerJSObject.on('connection', async (peerJSConnection) => {
+            dom.p1PeerStatus.textContent = 'Status: PeerJS connection received. Starting WebRTC signaling...';
+
+            dom.p1PeerStatus.textContent = 'Status: PeerJS connection received. Creating offer...';
+
+            // Step 3: Create the WebRTC offer once the PeerJS connection is open.
+            // You must wait for the 'open' event before sending data.
+            peerJSConnection.on('open', async () => {
+
+                rtcConnection = await createOffer();
+
+                rtcConnection.onicegatheringstatechange = () => {
+                    if (rtcConnection.iceGatheringState === 'complete') {
+                        const offerData = JSON.stringify(rtcConnection.localDescription);
+                        // Step 4: Send the offer over the PeerJS connection.
+                        sendOffer(peerJSConnection, offerData);
+                        dom.p1PeerStatus.textContent = 'Status: Offer sent to joiner. Waiting for answer...';
+
+                        // Step 5: Listen for the answer from the joiner.
+                        peerJSConnection.on('data', async (data) => {
+                            const message = JSON.parse(data);
+                            if (message.type === 'answer') {
+                                dom.p1PeerStatus.textContent = 'Status: Answer received. WebRTC connection established.';
+                                await rtcConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(message.answer)));
+
+                                // Close the PeerJS connection and object as they are no longer needed.
+                                peerJSConnection.close();
+                                peerJSObject.destroy();
+                                PeerJSInitiate();
+                            }
+                        });
+                    }
+                };
+            });
+        });
+    } catch (error) {
+        console.error('Failed to initialize PeerJS:', error);
+    }
+}
+
 //==============================
 //Initial Setup
 //==============================
 
 document.addEventListener('DOMContentLoaded', () => {
+    // DOM setup
+    dom.offerTextarea = document.getElementById('offer-text');
+    dom.receivedOfferTextarea = document.getElementById('received-offer-text');
+    dom.answerTextarea = document.getElementById('answer-text');
+    dom.receivedAnswerTextarea = document.getElementById('received-answer-text');
+    dom.p1Status = document.getElementById('p1-status');
+    dom.p2Status = document.getElementById('p2-status');
+    dom.p1QrStatus = document.getElementById('p1-qr-status');
+    dom.p2QrStatus = document.getElementById('p2-qr-status');
+    dom.sudokuGrid = document.getElementById('sudoku-grid');
+    dom.sudokuGridArea = document.getElementById('sudoku-grid-area');
+    dom.signalingArea = document.getElementById('signaling-area');
+    dom.manualSignalingArea = document.getElementById('manual-signaling-area');
+    dom.qrSignalingArea = document.getElementById('qr-signaling-area');
+    dom.p1ManualArea = document.getElementById('p1-manual-area');
+    dom.p2ManualArea = document.getElementById('p2-manual-area');
+    dom.p1QrArea = document.getElementById('p1-qr-area');
+    dom.p2QrArea = document.getElementById('p2-qr-area');
+    dom.qrCodeDisplay = document.getElementById('qr-code-display');
+    dom.qrCodeAnswerDisplay = document.getElementById('qr-code-display-answer');
+    dom.chunkStatus = document.getElementById('chunk-status');
+    dom.prevQrBtn = document.getElementById('prev-qr-btn');
+    dom.nextQrBtn = document.getElementById('next-qr-btn');
+    dom.prevQrAnswerBtn = document.getElementById('prev-qr-answer-btn');
+    dom.nextQrAnswerBtn = document.getElementById('next-qr-answer-btn');
+    dom.scannerStatus = document.getElementById('scanner-status');
+    dom.scannerStatusHost = document.getElementById('scanner-status-host');
+    dom.scanOverlayMessage = document.getElementById('scan-overlay-message');
+    dom.playerRoleSelect = document.getElementById('player-role');
+    dom.signalingMethodSelect = document.getElementById('signaling-method');
+    dom.newPuzzleButton = document.getElementById('new-puzzle-btn');
+    dom.hostButton = document.getElementById('host-btn');
+    dom.numberPad = document.getElementById('number-pad');
+    dom.themeSelector = document.getElementById('theme-select');
+    dom.body = document.body;
+    //Manual signaling buttons
+    dom.createOfferManualBtn = document.getElementById('create-offer-manual-btn');
+    dom.copyOfferBtn = document.getElementById('copy-offer-btn');
+    dom.clearOfferBtn = document.getElementById('clear-offer-btn');
+    dom.addAnswerManualBtn = document.getElementById('add-answer-manual-btn');
+    dom.clearReceivedAnswerBtn = document.getElementById('clear-received-answer-btn');
+    dom.createAnswerManualBtn = document.getElementById('create-answer-manual-btn');
+    dom.clearReceivedOfferBtn = document.getElementById('clear-received-offer-btn');
+    dom.copyAnswerBtn = document.getElementById('copy-answer-btn');
+    dom.clearAnswerBtn = document.getElementById('clear-answer-btn');
+    //QR signaling buttons
+    dom.createQrBtn = document.getElementById('create-qr-btn');
+    dom.startQrHostBtn = document.getElementById('start-qr-host-btn');
+    dom.startQrBtn = document.getElementById('start-qr-btn');
+    //PeerJS signaling buttons
+    dom.peerSignalingArea = document.getElementById('peer-signaling-area');
+    dom.p1PeerArea = document.getElementById('p1-peer-area');
+    dom.p2PeerArea = document.getElementById('p2-peer-area');
+    dom.p1PeerId = document.getElementById('p1-peer-id');
+    dom.p2JoinId = document.getElementById('p2-join-id');
+    dom.connectToPeerBtn = document.getElementById('connect-to-peer-btn');
+    dom.p1PeerStatus = document.getElementById('p1-peer-status');
+    dom.p2PeerStatus = document.getElementById('p2-peer-status');
+
     // Initial UI setup
     dom.prevQrBtn.disabled = true;
     dom.nextQrBtn.disabled = true;
@@ -576,7 +644,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     toggleSignalingUI();
     createGrid();
-    loadPuzzle();
 
     // Event listeners for drop-downs
     dom.signalingMethodSelect.addEventListener('change', toggleSignalingUI);
@@ -613,51 +680,10 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.nextQrAnswerBtn.addEventListener('click', showNextAnswerChunk);
 
     dom.playerRoleSelect.addEventListener('change', async (event) => {
-        if (dom.signalingMethodSelect.value === 'peer') {
-            const playerRole = event.target.value;
-            if (playerRole === 'host') {
-                try {
-                    // Step 1: Initialize PeerJS. The returned value is the PeerJS 'Peer' object.
-                    const peerJSObject = await initializePeerJs('host');
-
-                    // Step 2: Listen for the 'connection' event to get the actual data connection.
-                    peerJSObject.on('connection', async (peerJSConnection) => {
-                        dom.p1PeerStatus.textContent = 'Status: PeerJS connection received. Starting WebRTC signaling...';
-
-                        dom.p1PeerStatus.textContent = 'Status: PeerJS connection received. Creating offer...';
-
-                        // Step 3: Create the WebRTC offer once the PeerJS connection is open.
-                        // You must wait for the 'open' event before sending data.
-                        peerJSConnection.on('open', async () => {
-
-                            rtcConnection = await createOffer();
-
-                            rtcConnection.onicegatheringstatechange = () => {
-                                if (rtcConnection.iceGatheringState === 'complete') {
-                                    const offerData = JSON.stringify(rtcConnection.localDescription);
-                                    // Step 4: Send the offer over the PeerJS connection.
-                                    sendOffer(peerJSConnection, offerData);
-                                    dom.p1PeerStatus.textContent = 'Status: Offer sent to joiner. Waiting for answer...';
-
-                                    // Step 5: Listen for the answer from the joiner.
-                                    peerJSConnection.on('data', async (data) => {
-                                        const message = JSON.parse(data);
-                                        if (message.type === 'answer') {
-                                            dom.p1PeerStatus.textContent = 'Status: Answer received. WebRTC connection established.';
-                                            await rtcConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(message.answer)));
-
-                                            // Close the PeerJS connection and object as they are no longer needed.
-                                            peerJSConnection.close();
-                                            peerJSObject.destroy();
-                                        }
-                                    });
-                                }
-                            };
-                        });
-                    });
-                } catch (error) {
-                    console.error('Failed to initialize PeerJS:', error);
-                }
+        if (dom.signalingMethodSelect.value === 'peerJS') {
+            
+            if (appState.isInitiator) {
+                await PeerJSInitiate();
             }
         }
     });
@@ -667,9 +693,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (peerId) {
             try {
                 // Step 1: Initialize PeerJS. The returned value is the PeerJS object.
-                const peerJSObject = await initializePeerJs('joiner');
+                const peerJSObject = await initializePeerJs(false);
 
-                // Step 2: Use the PeerJS 'peer' object to establish the data connection.
+                // Step 2: Use the PeerJS 'peerJR' object to establish the data connection.
                 // This function now returns a Promise that resolves with PeerJS connection.
                 const peerJSConnection = await connectToPeerJS(peerJSObject, peerId);
 
@@ -752,10 +778,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 col: appState.activeCell.id.split('-')[2],
                 value: value
             };
-            // Check if the data channel is open and send the message
-            if (dataChannel && dataChannel.readyState === 'open') {
-                dataChannel.send(JSON.stringify(move));
-            }
+
+            // Broadcast the move to all other players
+            dataChannels.forEach(otherChannel => {
+                if (otherChannel.readyState === 'open') {
+                    otherChannel.send(JSON.stringify(move));
+                }
+            });
 
             // Remove active class from the old cell to avoid confusion
             appState.activeCell.classList.remove('active-cell');

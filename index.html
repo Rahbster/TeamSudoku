@@ -1,33 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Sudoku P2P Proof-of-Concept (Pure HTML/JS)</title>
+    <title>Sudoku P2P Proof-of-Concept</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="icon" href="assets/SudokuIcon.png" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
 </head>
 
 <body>
     <div id="background-image-container"></div>
     <div id="scan-overlay-message" class="hidden"></div>
+
     <main>
         <section id="sudoku-grid-area">
-            <div id="number-pad">
-                <button class="number-btn" id="number-btn-1">1</button>
-                <button class="number-btn" id="number-btn-2">2</button>
-                <button class="number-btn" id="number-btn-3">3</button>
-                <button class="number-btn" id="number-btn-4">4</button>
-                <button class="number-btn" id="number-btn-5">5</button>
-                <button class="number-btn" id="number-btn-6">6</button>
-                <button class="number-btn" id="number-btn-7">7</button>
-                <button class="number-btn" id="number-btn-8">8</button>
-                <button class="number-btn" id="number-btn-9">9</button>
+            <div id="number-pad" class="flex-container">
+                <button class="number-btn">1</button>
+                <button class="number-btn">2</button>
+                <button class="number-btn">3</button>
+                <button class="number-btn">4</button>
+                <button class="number-btn">5</button>
+                <button class="number-btn">6</button>
+                <button class="number-btn">7</button>
+                <button class="number-btn">8</button>
+                <button class="number-btn">9</button>
                 <button class="number-btn" id="empty-btn">X</button>
             </div>
-            <br/>
+            
             <div id="sudoku-grid"></div>
-            <br/>
-            <label for="theme-select">Choose a Theme.</label>
+
+            <label for="theme-select">Choose a Theme</label>
             <div class="theme-selector">
                 <select id="theme-select">
                     <option value="default">Default</option>
@@ -36,15 +38,15 @@
                     <option value="unsc">UNSC</option>
                 </select>
             </div>
-            <br/>
+            
             <div class="header-container">
                 <button class="theme-button" id="new-puzzle-btn">Load New Puzzle</button>
             </div>
-            <br/>
         </section>
 
         <button class="theme-button" id="host-btn">Toggle P2P Configuration</button>
         <p>Once connected, click on a grid cell to change its value. The change will appear on the other player's screen.</p>
+        
         <section id="signaling-area" class="hidden">
             <h1>P2P Sudoku PoC</h1>
             <p>Open this file in two separate browser tabs to simulate two players. Follow the steps below to connect them.</p>
@@ -54,9 +56,9 @@
                 <option value="none">-- Select a method --</option>
                 <option value="manual">Manual Copy/Paste</option>
                 <option value="qr">QR Code Scan</option>
-                <option value="peer">PeerJS</option>
+                <option value="peerJS">PeerJS</option>
             </select>
-            <br><br>
+            <br/>
             <label for="player-role">Choose Player Role:</label>
             <select id="player-role">
                 <option value="none">-- Select a role --</option>
@@ -72,8 +74,10 @@
                             <button class="theme-button" id="create-offer-manual-btn">1. Create Offer</button>
                             <p>Copy the text below and paste it into the "Received Offer" box for Player 2.</p>
                             <textarea id="offer-text" readonly></textarea>
-                            <button class="theme-button" id="copy-offer-btn">Copy Offer</button>
-                            <button class="theme-button" id="clear-offer-btn">Clear</button>
+                            <div class="button-group">
+                                <button class="theme-button" id="copy-offer-btn">Copy Offer</button>
+                                <button class="theme-button" id="clear-offer-btn">Clear</button>
+                            </div>
                         </div>
                     </div>
                     <div class="container">
@@ -81,8 +85,10 @@
                             <h2>Player 1 (Final Step)</h2>
                             <p>Paste Answer from Player 2 into the box below:</p>
                             <textarea id="received-answer-text"></textarea>
-                            <button class="theme-button" id="add-answer-manual-btn">Add Answer & Connect</button>
-                            <button class="theme-button" id="clear-received-answer-btn">Clear</button>
+                            <div class="button-group">
+                                <button class="theme-button" id="add-answer-manual-btn">Add Answer & Connect</button>
+                                <button class="theme-button" id="clear-received-answer-btn">Clear</button>
+                            </div>
                             <p id="p1-status">Status: Disconnected</p>
                         </div>
                     </div>
@@ -97,8 +103,10 @@
                             <button class="theme-button" id="clear-received-offer-btn">Clear</button>
                             <p>Copy the text below and paste it into the "Received Answer" box for Player 1.</p>
                             <textarea id="answer-text" readonly></textarea>
-                            <button class="theme-button" id="copy-answer-btn">Copy Answer</button>
-                            <button class="theme-button" id="clear-answer-btn">Clear</button>
+                            <div class="button-group">
+                                <button class="theme-button" id="copy-answer-btn">Copy Answer</button>
+                                <button class="theme-button" id="clear-answer-btn">Clear</button>
+                            </div>
                         </div>
                     </div>
                     <div class="container">
@@ -116,13 +124,12 @@
                             <h2>Player 1 (Host)</h2>
                             <p>1. Create Offer and show the QR codes to Player 2.</p>
                             <button class="theme-button" id="create-qr-btn">Create QR Codes</button>
-
                             <p id="chunk-status">Generate chunks to begin.</p>
                             <div id="qr-code-display" class="qr-display-area"></div>
-                            <br>
-                            <button class="theme-button" id="prev-qr-btn">Previous</button>
-                            <button class="theme-button" id="next-qr-btn">Next</button>
-
+                            <div class="button-group">
+                                <button class="theme-button" id="prev-qr-btn">Previous</button>
+                                <button class="theme-button" id="next-qr-btn">Next</button>
+                            </div>
                         </div>
                     </div>
                     <div class="container">
@@ -149,9 +156,10 @@
                             <div id="qr-reader" style="width: 300px; margin: 0 auto;"></div>
                             <p>Or, if Player 1 has scanned your answer, show this code:</p>
                             <div id="qr-code-display-answer" class="qr-display-area"></div>
-                            <br>
-                            <button class="theme-button" id="prev-qr-answer-btn">Previous</button>
-                            <button class="theme-button" id="next-qr-answer-btn">Next</button>
+                            <div class="button-group">
+                                <button class="theme-button" id="prev-qr-answer-btn">Previous</button>
+                                <button class="theme-button" id="next-qr-answer-btn">Next</button>
+                            </div>
                         </div>
                     </div>
                     <div class="container">
@@ -164,19 +172,18 @@
 
             <div id="peer-signaling-area" class="container mt-4 hidden">
                 <div id="p1-peer-area" class="hidden">
-                    <h3 class="mt-3">Host ID: <span id="p1-peer-id" class="fw-bold">...</span></h3>
-                    <p id="p1-peer-status" class="status-message mt-2">Status: Share this ID with Player 2 to connect.</p>
+                    <h3 class="mt-3">Host ID: <span id="p1-peer-id">...</span></h3>
+                    <p id="p1-peer-status">Status: Share this ID with Player 2 to connect.</p>
                 </div>
 
                 <div id="p2-peer-area" class="hidden">
-                    <p id="p2-peer-status" class="status-message mt-2">Status: Waiting for a Host to connect...</p>
-                    <div class="input-group mb-3">
-                        <input type="text" id="p2-join-id" class="form-control" style="font-size: 1.2em;" inputmode="numeric" pattern="[0-9]*"  placeholder="Enter Host ID">
-                        <button class="btn btn-primary" type="button" id="connect-to-peer-btn">Connect</button>
+                    <p id="p2-peer-status">Status: Waiting for a Host to connect...</p>
+                    <div class="input-group">
+                        <input type="text" id="p2-join-id" style="font-size: 1.2em;" inputmode="numeric" pattern="[0-9]*" placeholder="Enter Host ID">
+                        <button type="button" id="connect-to-peer-btn">Connect</button>
                     </div>
                 </div>
             </div>
-
         </section>
     </main>
 
@@ -185,5 +192,4 @@
     <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
     <script src="js/scripts.js" type="module"></script>
 </body>
-
 </html>

@@ -3,7 +3,7 @@
 import { dom,
          appState,
          pressTimer,
-         dataChannel
+         dataChannels
 } from './scripts.js';
 
 //==============================
@@ -156,9 +156,18 @@ export async function loadPuzzle(puzzleData) {
     }
     
     checkGridState();
-    if (!isRemoteLoad && dataChannel && dataChannel.readyState === 'open') {
+
+    // Check if the puzzle was loaded locally and there are active data channels.
+    if (!isRemoteLoad && dataChannels && dataChannels.length > 0) {
         const puzzleMessage = { type: 'initial-state', state: puzzle };
-        dataChannel.send(JSON.stringify(puzzleMessage));
+        const messageString = JSON.stringify(puzzleMessage);
+
+        // Broadcast the puzzle to all connected data channels.
+        dataChannels.forEach(channel => {
+            if (channel.readyState === 'open') {
+                channel.send(messageString);
+            }
+        });
     }
 }
 
