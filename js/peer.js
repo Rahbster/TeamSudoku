@@ -1,4 +1,6 @@
-// peer.js
+//==============================
+//Peer Logic
+//==============================
 
 import { dom, appState } from './scripts.js';
 import { removePrefix } from './misc.js';
@@ -72,28 +74,28 @@ export function sendAnswer(peerJSConnection, answer) {
 export function connectToPeerJS(peerJSObject, joinId) {
     // This is the key change: wrap the function in a Promise
     return new Promise((resolve, reject) => {
-    if (!peerJSObject) {
-        const err = new Error('PeerJS not initialized.');
-        console.error(err);
-        reject(err);
-        return;
-    }
+        if (!peerJSObject) {
+            const err = new Error('PeerJS not initialized.');
+            console.error(err);
+            reject(err);
+            return;
+        }
 
-    dom.p2PeerStatus.textContent = `Status: Attempting to connect to Host via PeerJS...`;
+        dom.p2PeerStatus.textContent = `Status: Attempting to connect to Host via PeerJS...`;
 
-    const peerJSConnection = peerJSObject.connect(joinId);
+        const peerJSConnection = peerJSObject.connect(joinId);
 
-    peerJSConnection.on('open', () => {
-        dom.p2PeerStatus.textContent = 'Status: PeerJS signaling channel open. Waiting for offer...';
+        peerJSConnection.on('open', () => {
+            dom.p2PeerStatus.textContent = 'Status: PeerJS signaling channel open. Waiting for offer...';
             // Resolve the promise once the connection is open
             resolve(peerJSConnection);
-    });
+        });
 
-    peerJSConnection.on('error', (err) => {
-        console.error('Joiner: PeerJS connection error:', err);
-        dom.p2PeerStatus.textContent = 'Status: Connection failed.';
-        reject(err); // Reject the promise on error
-    });
+        peerJSConnection.on('error', (err) => {
+            console.error('Joiner: PeerJS connection error:', err);
+            dom.p2PeerStatus.textContent = 'Status: Connection failed.';
+            reject(err); // Reject the promise on error
+        });
     });
 }
 
