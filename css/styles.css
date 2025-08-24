@@ -294,6 +294,17 @@ body.forerunner .solved-puzzle {
     background-color: #33CCFF;
 }
 
+/*==============================Host ID Area============================*/
+.host-id-container {
+    display: flex;
+    align-items: center; /* This aligns items vertically */
+    gap: 10px; /* This adds space between the ID and the button */
+}
+
+#generate-new-id-btn {
+    margin-top: 5px;
+}
+
 /*==============================Number Pad==============================*/
 #number-pad {
     display: flex;

@@ -560,7 +560,6 @@ async function PeerJSInitiate() {
                                 // Close the PeerJS connection and object as they are no longer needed.
                                 peerJSConnection.close();
                                 peerJSObject.destroy();
-                                PeerJSInitiate();
                             }
                         });
                     }
@@ -635,6 +634,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.connectToPeerBtn = document.getElementById('connect-to-peer-btn');
     dom.p1PeerStatus = document.getElementById('p1-peer-status');
     dom.p2PeerStatus = document.getElementById('p2-peer-status');
+    dom.generateNewIDButton = document.getElementById('generate-new-id-btn');
 
     // Initial UI setup
     dom.prevQrBtn.disabled = true;
@@ -682,6 +682,15 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.playerRoleSelect.addEventListener('change', async (event) => {
         if (dom.signalingMethodSelect.value === 'peerJS') {
             
+            if (appState.isInitiator) {
+                await PeerJSInitiate();
+            }
+        }
+    });
+
+    dom.generateNewIDButton.addEventListener('click', async () => {
+        if (dom.signalingMethodSelect.value === 'peerJS') {
+
             if (appState.isInitiator) {
                 await PeerJSInitiate();
             }
