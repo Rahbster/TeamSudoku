@@ -9,6 +9,10 @@ import { dom,
          startPressTimer
 } from './scripts.js';
 
+import {
+    startTimer
+} from './timer.js';
+
 //==============================
 //Game UI and Logic
 //==============================
@@ -92,9 +96,9 @@ export function handleCellClick(event) {
             if (hintValue != null) {
                 appState.activeCell.textContent = hintValue.value;
                 highlightMatchingCells(appState.activeCell.textContent);
-                checkGridState();
             }
         }
+        checkGridState();
     }
     else {
         activeCellSelectCount = 0;
@@ -187,6 +191,7 @@ export async function loadPuzzle(difficulty, puzzleData) {
             }
         });
     }
+    startTimer();
 }
 
 //Validates the entire puzzle grid for conflicts and completeness
@@ -278,6 +283,7 @@ export function checkGridState() {
         document.querySelectorAll('.grid-cell').forEach(cell => {
             cell.classList.add('solved-puzzle');
         });
+        stopTimer();
         alert("Congratulations! The puzzle is solved!");
     }
 }
@@ -403,7 +409,7 @@ export function updateNumberPadState() {
     for (const number in counts) {
         const button = document.getElementById(`number-btn-${number}`);
         if (button) {
-            button.disabled = counts[number] === 9;
+            button.disabled = counts[number] >= 9;
         }
     }
 }

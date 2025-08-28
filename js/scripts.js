@@ -14,8 +14,6 @@ import {
 export const dom = {};
 
 export let dataChannels = []; // This will hold the WebRTC data channels
-export let qrScanner = null;
-export let qrScannerHost = null;
 export let pressTimer = null;
 
 

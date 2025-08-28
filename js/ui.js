@@ -3,7 +3,7 @@
 //==============================
 
 import { appState, dom, pressTimer, dataChannels, startPressTimer } from './scripts.js';
-import { loadPuzzle, checkGridState, highlightMatchingCells } from './game.js';
+import { clearAllHighlights, loadPuzzle, checkGridState, highlightMatchingCells } from './game.js';
 import { clearTextbox, createQrCodeChunks, playBeepSound } from './misc.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
 import { createOffer, createAnswer } from './webrtc.js';

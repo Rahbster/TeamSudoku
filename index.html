@@ -15,28 +15,32 @@
     <main>
         <section id="sudoku-grid-area">
             <div id="number-pad" class="flex-container">
-                <button class="number-btn">1</button>
-                <button class="number-btn">2</button>
-                <button class="number-btn">3</button>
-                <button class="number-btn">4</button>
-                <button class="number-btn">5</button>
-                <button class="number-btn">6</button>
-                <button class="number-btn">7</button>
-                <button class="number-btn">8</button>
-                <button class="number-btn">9</button>
+                <button class="number-btn" id="number-btn-1">1</button>
+                <button class="number-btn" id="number-btn-2">2</button>
+                <button class="number-btn" id="number-btn-3">3</button>
+                <button class="number-btn" id="number-btn-4">4</button>
+                <button class="number-btn" id="number-btn-5">5</button>
+                <button class="number-btn" id="number-btn-6">6</button>
+                <button class="number-btn" id="number-btn-7">7</button>
+                <button class="number-btn" id="number-btn-8">8</button>
+                <button class="number-btn" id="number-btn-9">9</button>
                 <button class="number-btn" id="empty-btn">X</button>
             </div>
 
             <div id="sudoku-grid"></div>
-
-            <label for="theme-select">Choose a Theme</label>
-            <div class="theme-selector">
-                <select id="theme-select">
-                    <option value="default">Default</option>
-                    <option value="banished">Banished</option>
-                    <option value="forerunner">Forerunner</option>
-                    <option value="unsc">UNSC</option>
-                </select>
+            <div id="timer-area">
+                <p>Time: <span id="timer-display">00:00</span></p>
+            </div>
+            <div>
+                <label for="theme-select">Choose a Theme</label>
+                <div class="theme-selector">
+                    <select id="theme-select">
+                        <option value="default">Default</option>
+                        <option value="banished">Banished</option>
+                        <option value="forerunner">Forerunner</option>
+                        <option value="unsc">UNSC</option>
+                    </select>
+                </div>
             </div>
         </section>
         <section id="sudoku-loadpuzzle-area">

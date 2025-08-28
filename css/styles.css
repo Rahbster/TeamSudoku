@@ -191,6 +191,17 @@ textarea {
     opacity: 1; /* Initially visible */
 }
 
+#timer-area {
+    /* Adds padding and a background for readability */
+    padding: 0px 50px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-size: 1.2em;
+    border-radius: 5px;
+    z-index: 1000; /* Ensures it appears on top of other content */
+    display: inline-block;
+}
+
 #p1-peer-id {
     background-color: rgba(0, 0, 0, 0.7);
     color: white;
