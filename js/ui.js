@@ -12,6 +12,7 @@ import { createOffer, createAnswer } from './webrtc.js';
 function toggleSignalingArea() {
     dom.signalingArea.classList.toggle('hidden');
     dom.sudokuGridArea.classList.toggle('hidden');
+    dom.instructions.classList.toggle('hidden');
 
     // Show or hide the 'Load New Puzzle' area based on the player role
     if (appState.isInitiator) {
@@ -79,6 +80,7 @@ export function toggleSignalingUI() {
 export function hideSignalingUI() {
     dom.signalingArea.style.display = 'none';
     dom.sudokuGridArea.classList.remove('hidden');
+    dom.instructions.classList.remove('hidden');
 }
 
 // All of your QR-related functions go here...
@@ -595,4 +597,44 @@ export function initializeEventListeners() {
             }
         }
     });
+
+    dom.showChannelsBtn.addEventListener('click', renderChannelList);
+    dom.channelList.addEventListener('click', disconnectChannel);
+}
+
+// Function to render the list of channels
+function renderChannelList() {
+    const channelList = document.getElementById('channel-list');
+    channelList.innerHTML = ''; // Clear the existing list
+
+    if (dataChannels.length === 0) {
+        channelList.innerHTML = '<li>No active channels.</li>';
+        return;
+    }
+
+    dataChannels.forEach((channel, index) => {
+        // Create a list item for each channel
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `
+            <span>Channel ${index + 1}: ${channel.label}</span>
+            <button class="disconnect-btn" data-channel-index="${index}">Disconnect</button>
+        `;
+        channelList.appendChild(listItem);
+    });
+}
+
+// Function to handle the disconnect action
+function disconnectChannel(event) {
+    if (event.target.classList.contains('disconnect-btn')) {
+        const index = event.target.getAttribute('data-channel-index');
+        const channelToDisconnect = dataChannels[index];
+
+        if (channelToDisconnect && channelToDisconnect.readyState === 'open') {
+            channelToDisconnect.close();
+            // Remove the channel from the array
+            dataChannels.splice(index, 1);
+            console.log(`Channel ${channelToDisconnect.label} disconnected.`);
+            renderChannelList(); // Re-render the list
+        }
+    }
 }

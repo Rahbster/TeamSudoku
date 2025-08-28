@@ -56,11 +56,11 @@
         </section>
 
         <button class="theme-button" id="host-btn">Toggle P2P Configuration</button>
-        <p>Once connected, click on a grid cell to change its value. The change will appear on the other player's screen.</p>
+        <p id="instructions">Once connected, click on a grid cell to change its value. The change will appear on the other player's screen.</p>
         
         <section id="signaling-area" class="hidden">
             <h1>P2P Sudoku PoC</h1>
-            <p>Open this file in two separate browser tabs to simulate two players. Follow the steps below to connect them.</p>
+            <p>Open the URL in separate browsers or tabs to connect players. Follow the steps below to connect them.</p>
 
             <label for="signaling-method">Choose Connection Method:</label>
             <br />
@@ -187,7 +187,7 @@
                 <div id="p1-peer-area" class="hidden">
                     <div class="host-id-container">
                         <h3 class="mt-3">
-                            Host ID: <br/><span id="p1-peer-id">...</span><br />
+                            Host ID: <br /><span id="p1-peer-id">...</span><br />
                             <button class="theme-button" id="generate-new-id-btn">New ID</button>
                         </h3>
                     </div>
@@ -201,6 +201,12 @@
                         <button type="button" id="connect-to-peer-btn">Connect</button>
                     </div>
                 </div>
+            </div>
+
+            <div id="data-channels-display">
+                <h3>Connected Channels:</h3>
+                <ul id="channel-list"></ul>
+                <button id="show-channels-btn">Show Channels</button>
             </div>
         </section>
     </main>

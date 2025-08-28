@@ -113,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.newPuzzleButton = document.getElementById('new-puzzle-btn');
     dom.sudokuLoadPuzzleArea = document.getElementById('sudoku-loadpuzzle-area');
     dom.hostButton = document.getElementById('host-btn');
+    dom.instructions = document.getElementById('instructions');
     dom.numberPad = document.getElementById('number-pad');
     dom.themeSelector = document.getElementById('theme-select');
     dom.difficultySelector = document.getElementById('difficulty-select');
@@ -141,6 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.p1PeerStatus = document.getElementById('p1-peer-status');
     dom.p2PeerStatus = document.getElementById('p2-peer-status');
     dom.generateNewIDButton = document.getElementById('generate-new-id-btn');
+    dom.channelList = document.getElementById('channel-list');
+    dom.showChannelsBtn = document.getElementById('show-channels-btn');
 
     // Initial UI setup
     dom.prevQrBtn.disabled = true;
