@@ -10,7 +10,8 @@ import { dom,
 } from './scripts.js';
 
 import {
-    startTimer
+    startTimer,
+    stopTimer
 } from './timer.js';
 
 //==============================
