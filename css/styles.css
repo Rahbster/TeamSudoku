@@ -5,7 +5,6 @@ body {
     margin: 0;
     padding: 20px;
     background-color: white; /* Set a default color that is visible in the background */
-
 }
 
 #background-image-container {
@@ -87,7 +86,7 @@ body.connection-background #background-image-container {
 }
 
 .preloaded-cell {
-    background-color: #f0f0f0;
+    background-color: #d0d0d0;
     cursor: default;
 }
 
@@ -98,7 +97,7 @@ body.connection-background #background-image-container {
 }
 
 .active-cell {
-    background-color: gold;
+    background-color: #007bff;
 }
 
 .invalid-cell {
@@ -227,115 +226,148 @@ textarea {
     margin-top: 10px;
 }
 
-/*==============================Banished Theme==============================*/
+/*==============================Banished Theme - Dominant Colors Revised (Image 2)==============================*/
+
+/* Main body background, taking cues from the darker armor and shadows */
 body.banished {
-    background-color: #2C2E2A; /* Dark metallic gray */
-    color: #F0F0F0;
+    background-color: #262125; /* Very dark desaturated plum/grey */
+    color: #E0DEDF; /* Light, slightly warm grey for general text */
 }
 
-body.banished #sudoku-grid {
-    border-color: #BC3908; /* Crimson red */
-}
+    /* Sudoku grid borders, using a rich, slightly muted red from the armor */
+    body.banished #sudoku-grid {
+        border-color: #8C2F2F; /* Deep, strong red */
+    }
 
-body.banished .grid-cell {
-    border-color: #7A7F85;
-}
+    /* Individual cell borders, a subtle dark grey for definition */
+    body.banished .grid-cell {
+        border-color: #4A4549;
+    }
 
-body.banished .preloaded-cell {
-    background-color: #4C4A45;
-    color: #F0F0F0; /* Light gray for contrast */
-}
+    /* Preloaded cells (initial puzzle numbers) - using a lighter, more weathered grey from the Brute's skin */
+    body.banished .preloaded-cell {
+        background-color: #6B686A; /* Mid-tone weathered grey */
+        color: #262125; /* Dark text for excellent contrast */
+    }
 
-body.banished .highlight-cell {
-    background-color: #A0A0A0; /* Light gray for contrast */
-    color: #4C4A45;
-}
+    /* Highlighted cells (e.g., when a number is selected) - a lighter, almost bone-like grey for distinction */
+    body.banished .highlight-cell {
+        background-color: #A3A0A2; /* Light, neutral grey */
+        color: #262125; /* Dark text for high contrast */
+    }
 
-body.banished .active-cell {
-    background-color: #BC3908; /* Crimson red */
-    color: #fff;
-}
+    /* Active cell (the one currently selected) - distinct and bold with the prominent red */
+    body.banished .active-cell {
+        background-color: #C22D2D; /* A brighter, more intense red, similar to the eyes */
+        color: #FFFFFF; /* White text for maximum visibility */
+    }
 
-body.banished .invalid-cell {
-    background-color: #FF0000; /* Bright red for error */
-}
+    /* Invalid cell (error indication) - needs to be clearly noticeable */
+    body.banished .invalid-cell {
+        background-color: #FF0000; /* Standard bright red for errors */
+        color: #FFFFFF;
+    }
 
-body.banished .solved-puzzle {
-    background-color: #2D6A4F; /* Darker green for a subtle "solved" look */
-}
+    /* Solved puzzle - a final, satisfying state, perhaps a dark, tarnished bronze/gold */
+    body.banished .solved-puzzle {
+        background-color: #5C4B2E; /* Dark, tarnished bronze */
+        color: #E0DEDF; /* Light text for clarity */
+    }
 
-/*==============================UNSC Theme==============================*/
+/*==============================UNSC Theme - Dominant Colors Revised==============================*/
+
+/* Main body background, reflecting the dark, somber tone of a UNSC ship or environment */
 body.unsc {
     background-color: #1A1A1A; /* Dark military gray */
-    color: #CDCFCC;
+    color: #CDCFCC; /* A cool, off-white for text */
 }
 
-body.unsc #sudoku-grid {
-    border-color: #2D6A4F; /* Military green */
-}
+    /* Sudoku grid borders, using Master Chief's primary armor color */
+    body.unsc #sudoku-grid {
+        border-color: #2D6A4F; /* Military olive green */
+    }
 
-body.unsc .grid-cell {
-    border-color: #1D3A2F;
-}
+    /* Individual cell borders, a darker shade for subtle definition */
+    body.unsc .grid-cell {
+        border-color: #1D3A2F;
+    }
 
-body.unsc .preloaded-cell {
-    background-color: #4C4A45;
-    color: #EFB82A; /* Gold/yellow for preloaded numbers */
-}
+    /* Preloaded cells (initial puzzle numbers) - a worn, metallic color from the armor */
+    body.unsc .preloaded-cell {
+        background-color: #4C4A45; /* A dark, worn metallic gray */
+        color: #CDCFCC; /* Light text for good contrast */
+    }
 
-body.unsc .highlight-cell {
-    background-color: #EFB82A;
-    color: #4C4A45;
-}
+    /* Highlighted cells - using the bright, high-tech orange from the visor */
+    body.unsc .highlight-cell {
+        background-color: #EFB82A; /* Visor gold/yellow */
+        color: #1D3A2F; /* Dark text for high contrast */
+    }
 
-body.unsc .active-cell {
-    background-color: #2D6A4F; /* Military green */
-}
+    /* Active cell - a brighter version of the armor's green */
+    body.unsc .active-cell {
+        background-color: #3D6B51; /* A more vibrant military green */
+        color: #CDCFCC;
+    }
 
-body.unsc .invalid-cell {
-    background-color: #B53835; /* Muted red */
-}
+    /* Invalid cell (error) - a muted red, fitting the military aesthetic */
+    body.unsc .invalid-cell {
+        background-color: #B53835;
+    }
 
-body.unsc .solved-puzzle {
-    background-color: #CDCFCC; /* A bright, clean look */
-}
+    /* Solved puzzle - the ethereal, calming blue of the AI hologram */
+    body.unsc .solved-puzzle {
+        background-color: #00A0C0; /* The cyan glow of the AI */
+        color: #1A1A1A; /* Dark text for clarity */
+    }
 
-/*==============================Forerunner Theme - Revised==============================*/
+/*==============================Forerunner Theme - Dominant Colors Revised==============================*/
+
+/* Dominate dark background, similar to the image's background */
 body.forerunner {
-    background-color: #0E0E1A; /* Very dark blue/purple */
-    color: #E6E6FA; /* Light purple/white for input numbers */
+    background-color: #1A2A3A; /* Deep dark blue-grey */
+    color: #C0D0E0; /* Light desaturated blue for general text */
 }
 
-body.forerunner #sudoku-grid {
-    border-color: #4D4D99;
-}
+    /* Sudoku grid borders, using a prominent metallic blue-grey from the structures */
+    body.forerunner #sudoku-grid {
+        border-color: #4A6A8A; /* Medium metallic blue-grey */
+    }
 
-body.forerunner .grid-cell {
-    border-color: #4D4D99;
-}
+    /* Individual cell borders, a slightly darker shade for definition */
+    body.forerunner .grid-cell {
+        border-color: #3A5A7A; /* Darker metallic blue-grey */
+    }
 
-/* Updated Preloaded Cell */
-body.forerunner .preloaded-cell {
-    background-color: #B2B2FF; /* A light, icy blue/purple */
-    color: #2D0063; /* A dark purple for high contrast */
-}
+    /* Preloaded cells (initial puzzle numbers) - should stand out but blend thematically */
+    body.forerunner .preloaded-cell {
+        background-color: #2A4A6A; /* A darker, rich blue-grey */
+        color: #F0F8FF; /* Near-white or very pale blue for excellent contrast */
+    }
 
-body.forerunner .highlight-cell {
-    background-color: #2D0063; /* A dark purple for high contrast */
-    color: #B2B2FF; /* A light, icy blue/purple */
-}
+    /* Highlighted cells (e.g., when a number is selected) - uses a more vibrant metallic color */
+    body.forerunner .highlight-cell {
+        background-color: #6A8AA0; /* A lighter, more reflective metallic blue-grey */
+        color: #1A2A3A; /* Use the body's dark background for text on highlight */
+    }
 
-body.forerunner .active-cell {
-    background-color: #4D4D99;
-}
+    /* Active cell (the one currently selected by the player) - distinct and functional */
+    body.forerunner .active-cell {
+        background-color: #00A0C0; /* A vibrant teal/cyan, pulling from the subtle accents */
+        color: #1A2A3A; /* Dark text for high contrast on the bright background */
+    }
 
-body.forerunner .invalid-cell {
-    background-color: #E60073;
-}
+    /* Invalid cell (error indication) - needs to be clearly noticeable */
+    body.forerunner .invalid-cell {
+        background-color: #CC3333; /* A strong, clear red for errors */
+        color: #F0F8FF; /* White text on red for high visibility */
+    }
 
-body.forerunner .solved-puzzle {
-    background-color: #33CCFF;
-}
+    /* Solved puzzle - a final, satisfying state */
+    body.forerunner .solved-puzzle {
+        background-color: #208060; /* A deep, sci-fi green for completion */
+        color: #F0F8FF; /* White text for clarity */
+    }
 
 /*==============================Host ID Area============================*/
 .host-id-container {
@@ -398,7 +430,7 @@ body.forerunner .solved-puzzle {
 
 /* Optional: Add theme-specific styles for the number pad */
 body.banished .number-btn {
-    background-color: #BC3908;
+    background-color: #9C3908;
     color: #F0F0F0;
     border: 2px solid #BC3908;
 }
@@ -428,7 +460,7 @@ body.banished #signaling-method,
 body.banished #player-role,
 body.banished #theme-select,
 body.banished #difficulty-select {
-    background-color: #BC3908;
+    background-color: #9C3908;
     color: #F0F0F0;
     border-color: #BC3908;
 }
