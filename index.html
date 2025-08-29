@@ -10,6 +10,18 @@
 
 <body>
     <div id="background-image-container"></div>
+
+    <!--
+    src="https://www.youtube.com/embed/VIDEOID?autoplay=1&mute=1&loop=1&playlist=VIDEOID&controls=0&disablekb=1&modestbranding=1&rel=0"
+    -->
+    <div class="video-background">
+        <div class="video-foreground">
+            <iframe frameborder="0"
+                    allowfullscreen
+                    allow="autoplay; encrypted-media"></iframe>
+        </div>
+    </div>
+
     <div id="scan-overlay-message" class="hidden"></div>
 
     <main>
@@ -57,7 +69,7 @@
 
         <button class="theme-button" id="host-btn">Toggle P2P Configuration</button>
         <p id="instructions">Once connected, click on a grid cell to change its value. The change will appear on the other player's screen.</p>
-        
+
         <section id="signaling-area" class="hidden">
             <h1>P2P Sudoku PoC</h1>
             <p>Open the URL in separate browsers or tabs to connect players. Follow the steps below to connect them.</p>
