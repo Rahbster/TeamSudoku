@@ -1,10 +1,18 @@
-/*==============================General & Layout==============================*/
+/*==============================
+  Core Sudoku Game Styles
+==============================*/
+
 body {
     font-family: sans-serif;
-    color: #333;
     margin: 0;
-    padding: 20px;
-    background-color: white; /* Set a default color that is visible in the background */
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+    transition: background-color 0.5s ease;
 }
 
 #background-image-container {
@@ -14,101 +22,60 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: -1; /* This places the div behind all other content */
-    transition: opacity 0.5s ease-in-out; /* Add a smooth transition */
+    z-index: -1;
+    transition: opacity 0.5s ease-in-out;
     background-image: url('../assets/ActiveSudoku.png');
     background-repeat: no-repeat;
     background-position: center center;
-    background-size: cover; /* This makes the image cover the entire container */
+    background-size: cover;
 }
 
-/* This rule applies when the connection UI is visible */
 body.connection-background #background-image-container {
     background-image: url('../assets/StageConnection.png');
     opacity: 0.25;
 }
 
-.container {
-    display: flex;
-    gap: 20px;
-}
-
-.column {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #ccc;
-}
-
-.header-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
 .hidden {
-    display: none;
+    display: none !important;
 }
 
-#scan-overlay-message.hidden {
-    opacity: 0;
-    pointer-events: none; /* Prevents clicks on the hidden element */
+.number-btn:hover {
+    transform: scale(1.1);
 }
 
-/*==============================Sudoku Grid==============================*/
-#sudoku-grid {
-    display: grid;
-    grid-template-columns: repeat(9, 36px);
-    width: 324px;
-    border: 3px solid black;
-    margin: 0 auto;
-}
-
-.grid-cell {
-    width: 36px;
-    height: 36px;
-    border: 1px solid black;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 20px;
-    cursor: pointer;
-    box-sizing: border-box;
-    transition: background-color 0.3s;
-    background-color: rgba(255, 255, 255, .75);
-}
-
-.subgrid-border-right {
-    border-right: 3px solid black;
-}
-
-.subgrid-border-bottom {
-    border-bottom: 3px solid black;
-}
-
+/* Base Styles for Themed Elements */
 .preloaded-cell {
-    background-color: #d0d0d0;
+    font-weight: bold;
     cursor: default;
 }
 
-/*==============================Cell Coloring & States==============================*/
 .highlight-cell {
-    background-color: black;
-    color: #f0f0f0;
+    background-color: #e0e0e0;
 }
 
 .active-cell {
-    background-color: #007bff;
+    border: 2px solid red;
 }
 
 .invalid-cell {
-    background-color: lightcoral;
+    background-color: #ff0000;
 }
 
 .solved-puzzle {
     background-color: lightgreen;
 }
 
-/*==============================Buttons and Form Elements==============================*/
+.blink {
+    animation: blink-animation 1s steps(1) infinite;
+}
+
+@keyframes blink-animation {
+    0% { background-color: transparent; }
+    50% { background-color: #add8e6; }
+    100% { background-color: transparent; }
+}
+
+/* Global button and select styles. Thematic styles will override these. */
 button, select {
     background-color: #007bff;
     color: #fff;
@@ -141,6 +108,7 @@ button:disabled, select:disabled {
     box-shadow: none;
 }
 
+/* Dropdown styling */
 select {
     appearance: none;
     -webkit-appearance: none;
@@ -151,29 +119,13 @@ select {
     background-position: right 10px center;
 }
 
+/* Text area styling */
 textarea {
     width: 100%;
     height: 100px;
 }
 
-@keyframes blink-animation {
-    0% {
-        background-color: transparent;
-    }
-
-    50% {
-        background-color: #add8e6;
-    }
-    /* A light blue, for example */
-    100% {
-        background-color: transparent;
-    }
-}
-
-.blink {
-    animation: blink-animation 1s steps(1) infinite;
-}
-
+/* Overlays and Information areas */
 #scan-overlay-message {
     position: fixed;
     top: 50%;
@@ -187,17 +139,21 @@ textarea {
     border-radius: 10px;
     z-index: 1000;
     transition: opacity 0.3s ease-in-out;
-    opacity: 1; /* Initially visible */
+    opacity: 1;
+}
+
+#scan-overlay-message.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 #timer-area {
-    /* Adds padding and a background for readability */
     padding: 0px 50px;
     background-color: rgba(0, 0, 0, 0.7);
     color: white;
     font-size: 1.2em;
     border-radius: 5px;
-    z-index: 1000; /* Ensures it appears on top of other content */
+    z-index: 1000;
     display: inline-block;
 }
 
@@ -210,290 +166,38 @@ textarea {
     border-radius: 10px;
     z-index: 1000;
     transition: opacity 0.3s ease-in-out;
-    opacity: 1; /* Initially visible */
+    opacity: 1;
     display: inline-block;
 }
 
-/*==============================QR Code==============================*/
-#qr-signaling-area {
-    text-align: center;
-}
-
-#qr-code-display, #qr-code-display-answer {
-    padding: 10px;
-    border: 1px solid #ccc;
-    display: inline-block;
-    margin-top: 10px;
-}
-
-/*==============================Banished Theme - Dominant Colors Revised (Image 2)==============================*/
-
-/* Main body background, taking cues from the darker armor and shadows */
-body.banished {
-    background-color: #262125; /* Very dark desaturated plum/grey */
-    color: #E0DEDF; /* Light, slightly warm grey for general text */
-}
-
-    /* Sudoku grid borders, using a rich, slightly muted red from the armor */
-    body.banished #sudoku-grid {
-        border-color: #8C2F2F; /* Deep, strong red */
-    }
-
-    /* Individual cell borders, a subtle dark grey for definition */
-    body.banished .grid-cell {
-        border-color: #4A4549;
-    }
-
-    /* Preloaded cells (initial puzzle numbers) - using a lighter, more weathered grey from the Brute's skin */
-    body.banished .preloaded-cell {
-        background-color: #6B686A; /* Mid-tone weathered grey */
-        color: #262125; /* Dark text for excellent contrast */
-    }
-
-    /* Highlighted cells (e.g., when a number is selected) - a lighter, almost bone-like grey for distinction */
-    body.banished .highlight-cell {
-        background-color: #A3A0A2; /* Light, neutral grey */
-        color: #262125; /* Dark text for high contrast */
-    }
-
-    /* Active cell (the one currently selected) - distinct and bold with the prominent red */
-    body.banished .active-cell {
-        background-color: #C22D2D; /* A brighter, more intense red, similar to the eyes */
-        color: #FFFFFF; /* White text for maximum visibility */
-    }
-
-    /* Invalid cell (error indication) - needs to be clearly noticeable */
-    body.banished .invalid-cell {
-        background-color: #FF0000; /* Standard bright red for errors */
-        color: #FFFFFF;
-    }
-
-    /* Solved puzzle - a final, satisfying state, perhaps a dark, tarnished bronze/gold */
-    body.banished .solved-puzzle {
-        background-color: #5C4B2E; /* Dark, tarnished bronze */
-        color: #E0DEDF; /* Light text for clarity */
-    }
-
-/*==============================UNSC Theme - Dominant Colors Revised==============================*/
-
-/* Main body background, reflecting the dark, somber tone of a UNSC ship or environment */
-body.unsc {
-    background-color: #1A1A1A; /* Dark military gray */
-    color: #CDCFCC; /* A cool, off-white for text */
-}
-
-    /* Sudoku grid borders, using Master Chief's primary armor color */
-    body.unsc #sudoku-grid {
-        border-color: #2D6A4F; /* Military olive green */
-    }
-
-    /* Individual cell borders, a darker shade for subtle definition */
-    body.unsc .grid-cell {
-        border-color: #1D3A2F;
-    }
-
-    /* Preloaded cells (initial puzzle numbers) - a worn, metallic color from the armor */
-    body.unsc .preloaded-cell {
-        background-color: #4C4A45; /* A dark, worn metallic gray */
-        color: #CDCFCC; /* Light text for good contrast */
-    }
-
-    /* Highlighted cells - using the bright, high-tech orange from the visor */
-    body.unsc .highlight-cell {
-        background-color: #EFB82A; /* Visor gold/yellow */
-        color: #1D3A2F; /* Dark text for high contrast */
-    }
-
-    /* Active cell - a brighter version of the armor's green */
-    body.unsc .active-cell {
-        background-color: #3D6B51; /* A more vibrant military green */
-        color: #CDCFCC;
-    }
-
-    /* Invalid cell (error) - a muted red, fitting the military aesthetic */
-    body.unsc .invalid-cell {
-        background-color: #B53835;
-    }
-
-    /* Solved puzzle - the ethereal, calming blue of the AI hologram */
-    body.unsc .solved-puzzle {
-        background-color: #00A0C0; /* The cyan glow of the AI */
-        color: #1A1A1A; /* Dark text for clarity */
-    }
-
-/*==============================Forerunner Theme - Dominant Colors Revised==============================*/
-
-/* Dominate dark background, similar to the image's background */
-body.forerunner {
-    background-color: #1A2A3A; /* Deep dark blue-grey */
-    color: #C0D0E0; /* Light desaturated blue for general text */
-}
-
-    /* Sudoku grid borders, using a prominent metallic blue-grey from the structures */
-    body.forerunner #sudoku-grid {
-        border-color: #4A6A8A; /* Medium metallic blue-grey */
-    }
-
-    /* Individual cell borders, a slightly darker shade for definition */
-    body.forerunner .grid-cell {
-        border-color: #3A5A7A; /* Darker metallic blue-grey */
-    }
-
-    /* Preloaded cells (initial puzzle numbers) - should stand out but blend thematically */
-    body.forerunner .preloaded-cell {
-        background-color: #2A4A6A; /* A darker, rich blue-grey */
-        color: #F0F8FF; /* Near-white or very pale blue for excellent contrast */
-    }
-
-    /* Highlighted cells (e.g., when a number is selected) - uses a more vibrant metallic color */
-    body.forerunner .highlight-cell {
-        background-color: #6A8AA0; /* A lighter, more reflective metallic blue-grey */
-        color: #1A2A3A; /* Use the body's dark background for text on highlight */
-    }
-
-    /* Active cell (the one currently selected by the player) - distinct and functional */
-    body.forerunner .active-cell {
-        background-color: #00A0C0; /* A vibrant teal/cyan, pulling from the subtle accents */
-        color: #1A2A3A; /* Dark text for high contrast on the bright background */
-    }
-
-    /* Invalid cell (error indication) - needs to be clearly noticeable */
-    body.forerunner .invalid-cell {
-        background-color: #CC3333; /* A strong, clear red for errors */
-        color: #F0F8FF; /* White text on red for high visibility */
-    }
-
-    /* Solved puzzle - a final, satisfying state */
-    body.forerunner .solved-puzzle {
-        background-color: #208060; /* A deep, sci-fi green for completion */
-        color: #F0F8FF; /* White text for clarity */
-    }
-
-/*==============================Host ID Area============================*/
+/* Other UI elements */
 .host-id-container {
     display: flex;
-    align-items: center; /* This aligns items vertically */
-    gap: 10px; /* This adds space between the ID and the button */
+    align-items: center;
+    gap: 10px;
 }
 
 #generate-new-id-btn {
     margin-top: 5px;
 }
 
-/*==============================Number Pad==============================*/
-#number-pad {
-    display: flex;
-    justify-content: center;
-    flex-wrap: nowrap;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.number-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 5px;
-    font-size: 1.2em;
-    font-weight: bold;
-    cursor: pointer;
-    border: none;
-    transition: transform 0.2s;
-    background-color: #007bff;
-    color: #fff;
-    /* Properties to center the text */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* ------------------------------------------ */
-/* Media Query                                */
-/* ------------------------------------------ */
-
-/* This rule will only apply to screens with a min-max width of 0px - 390px. */
-@media (max-width: 390px) {
-    #number-pad {
-        flex-wrap: wrap; /* Allows buttons to wrap to a new line on smaller screens */
-        gap: 5px; /* Adjust the gap for a tighter fit */
-        margin-top: 10px;
-    }
-
-    .number-btn {
-        width: 19%; /* Use a percentage to make the buttons responsive */
-        max-width: 60px; /* Limits the size of the button */
-    }
-}
-
-.number-btn:hover {
-    transform: scale(1.1);
-}
-
-/* Optional: Add theme-specific styles for the number pad */
-body.banished .number-btn {
-    background-color: #9C3908;
-    color: #F0F0F0;
-    border: 2px solid #BC3908;
-}
-
-body.unsc .number-btn {
-    background-color: #4C4A45;
-    color: #CDCFCC;
-    border: 2px solid #2D6A4F;
-}
-
-body.forerunner .number-btn {
-    background-color: #4D4D99;
-    color: #E6E6FA;
-    border: 2px solid #33CCFF;
-}
-
 #empty-btn {
-    background-color: #dc3545; /* A red color to signify "clear" or "delete" */
+    background-color: #dc3545;
 }
 
 #empty-btn:hover {
     background-color: #c82333;
 }
 
-body.banished .theme-button,
-body.banished #signaling-method,
-body.banished #player-role,
-body.banished #theme-select,
-body.banished #difficulty-select {
-    background-color: #9C3908;
-    color: #F0F0F0;
-    border-color: #BC3908;
-}
-
-body.unsc .theme-button,
-body.unsc #signaling-method,
-body.unsc #player-role,
-body.unsc #theme-select,
-body.unsc #difficulty-select {
-    background-color: #4C4A45;
-    color: #CDCFCC;
-    border-color: #2D6A4F;
-}
-
-body.forerunner .theme-button,
-body.forerunner #signaling-method,
-body.forerunner #player-role,
-body.forerunner #theme-select,
-body.forerunner #difficulty-select {
-    background-color: #4D4D99;
-    color: #E6E6FA;
-    border-color: #33CCFF;
-}
-
-
+/* Video Background */
 .video-background {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    overflow: hidden; /* This hides any scrollbars */
-    z-index: -1; /* This places the video behind all other content */
+    overflow: hidden;
+    z-index: -1;
 }
 
 .video-foreground {
@@ -507,11 +211,412 @@ body.forerunner #difficulty-select {
     height: auto;
 }
 
-    .video-foreground iframe {
-        position: absolute;
-        top: 0;
-        left: 0;
+.video-foreground iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* ------------------------------------------ */
+/* Media Queries for Responsive Design */
+/* ------------------------------------------ */
+
+/* Portrait and narrow screens (width is less than height) */
+@media (orientation: portrait) {
+    main {
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 2vh;
+    }
+
+    #sudoku-grid-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2vh;
+    }
+
+    #game-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1vh;
+    }
+
+    #number-pad {
+        display: flex;
+        justify-content: space-evenly;
+        flex-wrap: wrap;
+        gap: 2vw;
+        margin: 1vh;
+        width: 90vw;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    #sudoku-grid {
+        width: 90vw;
+        height: 90vw;
+        display: grid;
+        grid-template-columns: repeat(9, 1fr);
+        grid-template-rows: repeat(9, 1fr);
+        border: 3px solid black;
+        margin: 0 auto;
+        aspect-ratio: 1 / 1;
+    }
+
+    .number-btn {
+        flex: 1 0 18%;
+        padding: 1vw;
+        font-size: 4vw;
+        height: 6.5vh;
+        width: 6.5vh;
+        aspect-ratio: 1 / 1;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: transform 0.1s ease-in-out;
+    }
+
+    .grid-cell {
         width: 100%;
         height: 100%;
-        pointer-events: none; /* Prevents the user from interacting with the iframe */
+        border: 1px solid black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 5vw;
+        cursor: pointer;
+        box-sizing: border-box;
+        transition: background-color 0.3s;
+        background-color: rgba(255, 255, 255, .75);
     }
+
+    .subgrid-border-right {
+        border-right: 3px solid black;
+    }
+
+    .subgrid-border-bottom {
+        border-bottom: 3px solid black;
+    }
+}
+
+/* Landscape and wider screens (width is more than height) */
+@media (orientation: landscape) {
+    main {
+        flex-direction: row; /* Aligns items side-by-side */
+        align-items: center;
+        justify-content: center;
+        width: 100vw; /* Ensure main takes up full width */
+        height: 100vh; /* Ensure main takes up full viewport height */
+        gap: 4vw;
+    }
+
+    #game-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        overflow: auto;
+        gap: 1vh;
+    }
+
+    #sudoku-grid-area {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 4vw;
+        justify-content: space-evenly;
+    }
+
+    #number-pad {
+        display: flex;
+        justify-content: space-evenly;
+        flex-wrap: wrap;
+        gap: 2vh;
+        margin: 1vw;
+        height: 85vh;
+        flex-direction: column; /* Stacks the buttons vertically */
+        align-items: center;
+        width: 10vw;
+    }
+
+    .number-btn {
+        flex: 1 0 18%;
+        padding: 1vw;
+        font-size: 4vw;
+        height: 6.5vh;
+        width: 11.5vh;
+        aspect-ratio: 1 / 1;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: transform 0.1s ease-in-out;
+    }
+
+    #sudoku-grid {
+        width: 65vw;
+        height: 65vw;
+        display: grid;
+        grid-template-columns: repeat(9, 1fr);
+        grid-template-rows: repeat(9, 1fr);
+        border: 3px solid black;
+        margin: 0 auto;
+        aspect-ratio: 1 / 1;
+    }
+
+    .grid-cell {
+        width: 100%;
+        height: 100%;
+        border: 1px solid black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 5vh;
+        cursor: pointer;
+        box-sizing: border-box;
+        transition: background-color 0.3s;
+        background-color: rgba(255, 255, 255, .75);
+    }
+
+    .subgrid-border-right {
+        border-right: 3px solid black;
+    }
+
+    .subgrid-border-bottom {
+        border-bottom: 3px solid black;
+    }
+}
+
+
+/*==============================
+  Default Theme
+==============================*/
+body.default {
+    background-color: #E0DEDF;
+    color: #2F2F2F;
+}
+
+body.default #sudoku-grid {
+    border-color: #2F2F2F;
+}
+
+body.default .grid-cell {
+    border-color: #4A4549;
+    background-color: rgba(255, 255, 255, .75);
+}
+
+body.default .preloaded-cell {
+    background-color: #AFAFAF;
+    color: black;
+}
+
+body.default .highlight-cell {
+    background-color: #C0C0C0;
+    color: #2F2F2F;
+}
+
+body.default .active-cell {
+    background-color: #8A8A8A;
+    color: #E0DEDF;
+}
+
+body.default .invalid-cell {
+    background-color: #DC143C;
+    color: #FFFFFF;
+}
+
+body.default .solved-puzzle {
+    background-color: #3CB371;
+    color: #E0DEDF;
+}
+
+/*==============================
+  Banished Theme
+==============================*/
+body.banished {
+    background-color: #262125;
+    color: #E0DEDF;
+}
+
+body.banished #sudoku-grid {
+    border-color: #8C2F2F;
+}
+
+body.banished .grid-cell {
+    border-color: #4A4549;
+    background-color: rgba(38, 33, 37, .75);
+}
+
+body.banished .preloaded-cell {
+    background-color: #6B686A;
+    color: #262125;
+}
+
+body.banished .highlight-cell {
+    background-color: #A3A0A2;
+    color: #262125;
+}
+
+body.banished .active-cell {
+    background-color: #C22D2D;
+    color: #FFFFFF;
+}
+
+body.banished .invalid-cell {
+    background-color: #FF0000;
+    color: #FFFFFF;
+}
+
+body.banished .solved-puzzle {
+    background-color: #5C4B2E;
+    color: #E0DEDF;
+}
+
+/* Themed buttons and dropdowns */
+body.banished button,
+body.banished .number-btn,
+body.banished #empty-btn,
+body.banished select {
+    background-color: #8C2F2F;
+    color: #E0DEDF;
+    border-color: #5C4B2E;
+}
+
+body.banished button:hover,
+body.banished .number-btn:hover,
+body.banished #empty-btn:hover,
+body.banished select:hover {
+    background-color: #C22D2D;
+    border-color: #8C2F2F;
+    color: #FFFFFF;
+}
+
+/*==============================
+  UNSC Theme
+==============================*/
+body.unsc {
+    background-color: #1A1A1A;
+    color: #CDCFCC;
+}
+
+body.unsc #sudoku-grid {
+    border-color: #2D6A4F;
+}
+
+body.unsc .grid-cell {
+    border-color: #1D3A2F;
+    background-color: rgba(26, 26, 26, .75);
+}
+
+body.unsc .preloaded-cell {
+    background-color: #4C4A45;
+    color: #CDCFCC;
+}
+
+body.unsc .highlight-cell {
+    background-color: #EFB82A;
+    color: #1D3A2F;
+}
+
+body.unsc .active-cell {
+    background-color: #3D6B51;
+    color: #CDCFCC;
+}
+
+body.unsc .invalid-cell {
+    background-color: #B53835;
+}
+
+body.unsc .solved-puzzle {
+    background-color: #00A0C0;
+    color: #1A1A1A;
+}
+
+/* Themed buttons and dropdowns */
+body.unsc button,
+body.unsc .number-btn,
+body.unsc #empty-btn,
+body.unsc select {
+    background-color: #3D6B51;
+    color: #CDCFCC;
+    border-color: #2D6A4F;
+}
+
+body.unsc button:hover,
+body.unsc .number-btn:hover,
+body.unsc #empty-btn:hover,
+body.unsc select:hover {
+    background-color: #EFB82A;
+    color: #1A1A1A;
+    border-color: #EFB82A;
+}
+
+
+/*==============================
+  Forerunner Theme
+==============================*/
+body.forerunner {
+    background-color: #1A2A3A;
+    color: #C0D0E0;
+}
+
+body.forerunner #sudoku-grid {
+    border-color: #4A6A8A;
+}
+
+body.forerunner .grid-cell {
+    border-color: #3A5A7A;
+    background-color: rgba(26, 42, 58, .75);
+}
+
+body.forerunner .preloaded-cell {
+    background-color: #2A4A6A;
+    color: #F0F8FF;
+}
+
+body.forerunner .highlight-cell {
+    background-color: #6A8AA0;
+    color: #1A2A3A;
+}
+
+body.forerunner .active-cell {
+    background-color: #00A0C0;
+    color: #1A2A3A;
+}
+
+body.forerunner .invalid-cell {
+    background-color: #CC3333;
+    color: #F0F8FF;
+}
+
+body.forerunner .solved-puzzle {
+    background-color: #208060;
+    color: #F0F8FF;
+}
+
+/* Themed buttons and dropdowns */
+body.forerunner button,
+body.forerunner .number-btn,
+body.forerunner #empty-btn,
+body.forerunner select {
+    background-color: #4A6A8A;
+    color: #C0D0E0;
+    border-color: #3A5A7A;
+}
+
+body.forerunner button:hover,
+body.forerunner .number-btn:hover,
+body.forerunner #empty-btn:hover,
+body.forerunner select:hover {
+    background-color: #00A0C0;
+    color: #1A2A3A;
+    border-color: #00A0C0;
+}

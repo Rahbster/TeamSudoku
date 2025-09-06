@@ -156,4 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Call the initialization function from the UI file
     initializeEventListeners();
+
+    dom.body.classList.add('default');
 });

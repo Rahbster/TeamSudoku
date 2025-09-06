@@ -518,10 +518,8 @@ export function initializeEventListeners() {
     // Event listener for the theme selector
     dom.themeSelector.addEventListener('change', (event) => {
         const selectedTheme = event.target.value;
-        dom.body.classList.remove('banished', 'unsc', 'forerunner');
-        if (selectedTheme !== 'default') {
-            dom.body.classList.add(selectedTheme);
-        }
+        dom.body.classList.remove('default', 'banished', 'unsc', 'forerunner');
+        dom.body.classList.add(selectedTheme);
     });
 
     // Event listener for the theme selector
