@@ -2,7 +2,7 @@ const CACHE_NAME = 'sudoku-pwa-cache-v1';
 const localUrlsToCache = [
     '/TeamSudoku/',
     '/TeamSudoku/index.html',
-    '/TeamSudoku/css/style.css',
+    '/TeamSudoku/css/styles.css',
     '/TeamSudoku/js/scripts.js',
     '/TeamSudoku/js/game.js',
     '/TeamSudoku/js/misc.js',
