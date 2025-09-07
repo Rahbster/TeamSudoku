@@ -2,31 +2,23 @@
   Core Sudoku Game Styles
 ==============================*/
 html {
-    font-size: .8dvw;
+    font-size: 3vmin;
 }
 
-p {
-    font-size: 2rem;
+p, ul {
+    font-size: 1rem;
 }
 
 h1 {
-    font-size: 3.441rem;
+    font-size: 2rem;
 }
 
-h2 {
-    font-size: 2.953rem;
+h2, label {
+    font-size: 1.5rem;
 }
 
 h3 {
-    font-size: 2.563rem;
-}
-
-label {
-    font-size: 2rem;
-}
-
-ul {
-    font-size: 2rem;
+    font-size: 1.25rem;
 }
 
 body {
@@ -87,7 +79,7 @@ body.connection-background #background-image-container {
     transform: translate(-50%, -50%);
     background-color: rgba(0, 0, 0, 0.7);
     color: white;
-    font-size: 4rem;
+    font-size: 3rem;
     font-weight: bold;
     padding: 20px 40px;
     border-radius: 10px;
@@ -105,7 +97,7 @@ body.connection-background #background-image-container {
     padding: 0 50px;
     background-color: rgba(0, 0, 0, 0.7);
     color: white;
-    font-size: 4rem;
+    font-size: 3rem;
     border-radius: 5px;
     z-index: 1000;
     display: inline-block;
@@ -114,7 +106,7 @@ body.connection-background #background-image-container {
 #p1-peer-id {
     background-color: rgba(0, 0, 0, 0.7);
     color: white;
-    font-size: 4rem;
+    font-size: 3rem;
     font-weight: bold;
     padding: 20px 40px;
     border-radius: 10px;
@@ -125,12 +117,12 @@ body.connection-background #background-image-container {
 }
 
 /* Global Button and Input Styles */
-button, select {
+button, select, .number-btn {
     background-color: #007bff;
     color: #fff;
     border: 2px solid #0056b3;
     padding: 10px 20px;
-    font-size: 3rem;
+    font-size: 2rem;
     font-weight: bold;
     text-transform: uppercase;
     cursor: pointer;
@@ -139,19 +131,19 @@ button, select {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-button:hover, select:hover {
+button:hover, select:hover, .number-btn:hover {
     background-color: #0056b3;
     border-color: #004494;
     transform: translateY(-2px);
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
 }
 
-button:active, select:active {
+button:active, select:active, .number-btn:active {
     transform: translateY(0);
     box-shadow: 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-button:disabled, select:disabled {
+button:disabled, select:disabled, .number-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     box-shadow: none;
@@ -165,6 +157,10 @@ select {
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>');
     background-repeat: no-repeat;
     background-position: right 10px center;
+}
+
+select option {
+    font-size: 1rem;
 }
 
 textarea {
@@ -225,7 +221,7 @@ textarea {
 .number-btn {
     flex: 1 0 18%;
     padding: 1dvw;
-    font-size: 3rem;
+    font-size: 2rem;
     aspect-ratio: 1 / 1;
     box-sizing: border-box;
     display: flex;
@@ -249,7 +245,7 @@ textarea {
     box-sizing: border-box;
     cursor: pointer;
     transition: background-color 0.3s;
-    font-size: 3rem;
+    font-size: 2rem;
 }
 
 .subgrid-border-right {
@@ -337,8 +333,12 @@ textarea {
         width: 6.5dvw;
     }
 
+    #instructions {
+        font-size: 2rem;
+    }
+
     .grid-cell {
-        font-size: 3rem;
+        font-size: 2rem;
         background-color: rgba(255, 255, 255, .75);
     }
 }
@@ -391,7 +391,7 @@ textarea {
         justify-content: space-evenly;
         gap: 1dvh;
         margin: 1dvw;
-        height: 90dvh;
+        height: 95dvh;
         width: 50dvw;
         flex-direction: column;
         align-items: center;
@@ -399,7 +399,7 @@ textarea {
 
     #sudoku-grid {
         width: 50dvw;
-        height: 85dvh;
+        height: 95dvh;
         display: grid;
         grid-template-columns: repeat(9, 1fr);
         grid-template-rows: repeat(9, 1fr);
@@ -414,7 +414,7 @@ textarea {
     }
 
     .grid-cell {
-        font-size: 3rem;
+        font-size: 2rem;
         background-color: rgba(255, 255, 255, .75);
     }
 }
