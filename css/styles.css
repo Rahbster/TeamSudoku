@@ -305,8 +305,8 @@ textarea {
     }
 
     .number-btn {
-        height: 6.5dvh;
-        width: 6.5dvh;
+        height: 8dvh;
+        width: 6.5dvw;
     }
 
     .grid-cell {
@@ -354,6 +354,7 @@ textarea {
     }
 
     .number-btn {
+        height: 6.5dvh;
         width: 8dvw;
     }
 
