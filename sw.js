@@ -16,6 +16,7 @@ const localUrlsToCache = [
     '/TeamSudoku/icons/icon-192x192.png',
     '/TeamSudoku/icons/icon-512x512.png'
 ];
+
 const externalUrlsToCache = [
     'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
@@ -28,15 +29,19 @@ self.addEventListener('install', (event) => {
             const cache = await caches.open(CACHE_NAME);
             console.log('Opened cache');
 
-            // Cache local files
+            // Cache local files, which should succeed without issue
             await cache.addAll(localUrlsToCache);
 
-            // Fetch and cache external resources one by one
+            // Fetch and cache external resources one by one with a more robust method
             await Promise.all(
-                externalUrlsToCache.map(url => {
-                    return cache.add(url).catch(error => {
-                        console.error(`Failed to cache: ${url}`, error);
-                    });
+                externalUrlsToCache.map(async url => {
+                    try {
+                        const response = await fetch(url, { mode: 'no-cors' });
+                        await cache.put(url, response);
+                        console.log(`Successfully cached opaque response for: ${url}`);
+                    } catch (error) {
+                        console.error(`Failed to cache external resource: ${url}`, error);
+                    }
                 })
             );
         })()
