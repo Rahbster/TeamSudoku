@@ -1,11 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36127.28 d17.14
+VisualStudioVersion = 17.14.36127.28
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{30866438-6081-4A2D-A47C-FCD04FAAAD62}"
 	ProjectSection(SolutionItems) = preProject
 		index.html = index.html
+		manifest.json = manifest.json
 		README.md = README.md
 	EndProjectSection
 EndProject
@@ -20,6 +21,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "js", "js", "{FD47A041-B381-
 		js\misc.js = js\misc.js
 		js\peer.js = js\peer.js
 		js\scripts.js = js\scripts.js
+		sw.js = sw.js
 		js\ui.js = js\ui.js
 		js\webrtc.js = js\webrtc.js
 	EndProjectSection
@@ -27,9 +29,14 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{023245E3-6865-48D0-A5A2-9F5195853350}"
 	ProjectSection(SolutionItems) = preProject
 		assets\ActiveSudoku.png = assets\ActiveSudoku.png
-		assets\Background.png = assets\Background.png
 		assets\StageConnection.png = assets\StageConnection.png
 		assets\SudokuIcon.png = assets\SudokuIcon.png
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "icons", "icons", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		icons\icon-192x192.png = icons\icon-192x192.png
+		icons\icon-512x512.png = icons\icon-512x512.png
 	EndProjectSection
 EndProject
 Global
@@ -40,6 +47,7 @@ Global
 		{630DCF77-46BE-4B61-91D1-90AE9E81BE71} = {30866438-6081-4A2D-A47C-FCD04FAAAD62}
 		{FD47A041-B381-44BF-8DD1-0C5CA9C37FD1} = {30866438-6081-4A2D-A47C-FCD04FAAAD62}
 		{023245E3-6865-48D0-A5A2-9F5195853350} = {30866438-6081-4A2D-A47C-FCD04FAAAD62}
+		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {30866438-6081-4A2D-A47C-FCD04FAAAD62}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {618A1310-2BCA-484E-952D-D360BD87B47E}
