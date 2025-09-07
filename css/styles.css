@@ -2,7 +2,7 @@
   Core Sudoku Game Styles
 ==============================*/
 html {
-    font-size: 3vmin;
+    font-size: min(3dvw, 3dvh);
 }
 
 p, ul {
