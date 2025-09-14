@@ -12,7 +12,6 @@ import { createOffer, createAnswer } from './webrtc.js';
 function toggleSignalingArea() {
     dom.signalingArea.classList.toggle('hidden');
     dom.sudokuGridArea.classList.toggle('hidden');
-    dom.instructions.classList.toggle('hidden');
 
     // Show or hide the 'Load New Puzzle' area based on the player role
     if (appState.isInitiator) {
@@ -80,7 +79,6 @@ export function toggleSignalingUI() {
 export function hideSignalingUI() {
     dom.signalingArea.style.display = 'none';
     dom.sudokuGridArea.classList.remove('hidden');
-    dom.instructions.classList.remove('hidden');
 }
 
 // All of your QR-related functions go here...
@@ -598,6 +596,15 @@ export function initializeEventListeners() {
 
     dom.showChannelsBtn.addEventListener('click', renderChannelList);
     dom.channelList.addEventListener('click', disconnectChannel);
+
+    dom.instructionsModal.style.display = "block";
+
+    // Hide the intructions after 6 seconds
+    setTimeout(() => {
+        if (dom.instructionsModal) {
+            dom.instructionsModal.style.display = 'none';
+        }
+    }, 6000);
 }
 
 // Function to render the list of channels
