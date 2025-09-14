@@ -122,7 +122,7 @@ button, select, .number-btn {
     color: #fff;
     border: 2px solid #0056b3;
     padding: 10px 20px;
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: bold;
     text-transform: uppercase;
     cursor: pointer;
@@ -442,12 +442,12 @@ body.default .preloaded-cell {
 }
 
 body.default .highlight-cell {
-    background-color: #C0C0C0;
+    background-color: #007bff;
     color: #2F2F2F;
 }
 
 body.default .active-cell {
-    background-color: #8A8A8A;
+    background-color: #0056b3;
     color: #E0DEDF;
 }
 
@@ -459,6 +459,25 @@ body.default .invalid-cell {
 body.default .solved-puzzle {
     background-color: #3CB371;
     color: #E0DEDF;
+}
+
+/* Themed buttons and dropdowns */
+body.default button,
+body.default .number-btn,
+body.default #empty-btn,
+body.default select {
+    background-color: #007bff;
+    color: #E0DEDF;
+    border-color: #5C4B2E;
+}
+
+body.default button:hover,
+body.default .number-btn:hover,
+body.default #empty-btn:hover,
+body.default select:hover {
+    background-color: #0056b3;
+    border-color: #004494;
+    color: #FFFFFF;
 }
 
 /*==============================

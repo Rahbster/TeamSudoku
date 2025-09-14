@@ -604,7 +604,7 @@ export function initializeEventListeners() {
         if (dom.instructionsModal) {
             dom.instructionsModal.style.display = 'none';
         }
-    }, 6000);
+    }, 1000);
 }
 
 // Function to render the list of channels
