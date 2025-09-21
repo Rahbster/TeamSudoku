@@ -1,14 +1,17 @@
 //==============================
 //UI Logic
 //==============================
-
-import { appState, dom, pressTimer, dataChannels, startPressTimer } from './scripts.js';
+// This module handles all user interface interactions, from button clicks to dynamic UI updates.
+import { appState, dom, dataChannels, startPressTimer } from './scripts.js';
 import { clearAllHighlights, loadPuzzle, checkGridState, highlightMatchingCells } from './game.js';
 import { clearTextbox, createQrCodeChunks, playBeepSound } from './misc.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
 import { createOffer, createAnswer } from './webrtc.js';
 
-//Toggles visibility of signaling areas
+/**
+ * Toggles the visibility between the main signaling/configuration area and the Sudoku game grid.
+ * Also adjusts the background and scrolls the relevant section into view.
+ */
 function toggleSignalingArea() {
     dom.signalingArea.classList.toggle('hidden');
     dom.sudokuGridArea.classList.toggle('hidden');
@@ -30,7 +33,10 @@ function toggleSignalingArea() {
     }
 }
 
-//Toggles visibility of specific signaling sections
+/**
+ * Toggles the visibility of specific UI sections based on the selected signaling method
+ * (Manual, QR, PeerJS) and player role (Host, Joiner).
+ */
 export function toggleSignalingUI() {
     const signalingMethod = dom.signalingMethodSelect.value;
     const playerRole = dom.playerRoleSelect.value;
@@ -41,15 +47,10 @@ export function toggleSignalingUI() {
 
     appState.isInitiator = playerRole === 'host';
 
-    dom.manualSignalingArea.classList.add('hidden');
-    dom.qrSignalingArea.classList.add('hidden');
-    dom.p1ManualArea.classList.add('hidden');
-    dom.p2ManualArea.classList.add('hidden');
-    dom.p1QrArea.classList.add('hidden');
-    dom.p2QrArea.classList.add('hidden');
-    dom.peerSignalingArea.classList.add('hidden');
-    dom.p1PeerArea.classList.add('hidden');
-    dom.p2PeerArea.classList.add('hidden');
+    // Hide all signaling areas first
+    [dom.manualSignalingArea, dom.qrSignalingArea, dom.peerSignalingArea,
+     dom.p1ManualArea, dom.p2ManualArea, dom.p1QrArea, dom.p2QrArea,
+     dom.p1PeerArea, dom.p2PeerArea].forEach(el => el.classList.add('hidden'));
 
     if (signalingMethod === 'manual') {
         dom.manualSignalingArea.classList.remove('hidden');
@@ -75,15 +76,20 @@ export function toggleSignalingUI() {
     }
 }
 
-//Hides the signaling UI completely and shows the game
+/**
+ * Hides the signaling UI completely, typically called once a P2P connection is established,
+ * to focus the user on the game grid.
+ */
 export function hideSignalingUI() {
     dom.signalingArea.style.display = 'none';
     dom.sudokuGridArea.classList.remove('hidden');
 }
 
-// All of your QR-related functions go here...
-
-//Displays a single QR code chunk and updates navigation button states.
+/**
+ * Displays a single QR code chunk from an array of chunks and updates the navigation button states.
+ * @param {string[]} chunks - The array of QR code data chunks.
+ * @param {number} index - The index of the chunk to display.
+ */
 function displayQrChunk(chunks, index) {
     dom.qrCodeDisplay.innerHTML = '';
     dom.qrCodeAnswerDisplay.innerHTML = '';
@@ -91,6 +97,7 @@ function displayQrChunk(chunks, index) {
     const displayTarget = appState.isAnswer ? dom.qrCodeAnswerDisplay : dom.qrCodeDisplay;
     const textToEncode = chunks[index];
 
+    // Generate the QR code in the appropriate display area.
     try {
         new QRCode(displayTarget, {
             text: textToEncode,
@@ -101,6 +108,7 @@ function displayQrChunk(chunks, index) {
         alert("An error occurred:" + error.message);
     }
 
+    // Update UI elements based on whether it's an offer or an answer QR code.
     if (appState.isAnswer) {
         dom.chunkStatus.textContent = ''; // Clear Host's status text
         dom.prevQrAnswerBtn.disabled = (index === 0);
@@ -112,7 +120,9 @@ function displayQrChunk(chunks, index) {
     }
 }
 
-//Shows the next QR code chunk for the Host or Joiner
+/**
+ * Navigates to and displays the next QR code chunk for the WebRTC offer.
+ */
 function showNextChunk() {
     const chunks = appState.offerChunks;
     let currentIndex = appState.currentOfferChunkIndex;
@@ -124,7 +134,9 @@ function showNextChunk() {
     }
 }
 
-//Shows the previous QR code chunk for the Host or Joiner
+/**
+ * Navigates to and displays the previous QR code chunk for the WebRTC offer.
+ */
 function showPrevChunk() {
     const chunks = appState.offerChunks;
     let currentIndex = appState.currentOfferChunkIndex;
@@ -136,7 +148,9 @@ function showPrevChunk() {
     }
 }
 
-//Shows the next Answer QR code chunk for the Joiner
+/**
+ * Navigates to and displays the next QR code chunk for the WebRTC answer.
+ */
 function showNextAnswerChunk() {
     const chunks = appState.answerChunks;
     let currentIndex = appState.currentAnswerChunkIndex;
@@ -148,7 +162,9 @@ function showNextAnswerChunk() {
     }
 }
 
-//Shows the previous Answer QR code chunk for the Joiner
+/**
+ * Navigates to and displays the previous QR code chunk for the WebRTC answer.
+ */
 function showPrevAnswerChunk() {
     const chunks = appState.answerChunks;
     let currentIndex = appState.currentAnswerChunkIndex;
@@ -160,14 +176,15 @@ function showPrevAnswerChunk() {
     }
 }
 
-// All of your manual signaling functions go here...
-
-// Global variable for the WebRTC connection object
-let rtcConnection = null; // This will hold the native RTCPeerConnection
+// This will hold the native RTCPeerConnection object.
+let rtcConnection = null;
 
 //=====Manual Connection...
-//Handles manual offer creation
+/**
+ * Creates a WebRTC offer and displays it in a textarea for manual copy-pasting.
+ */
 async function createOfferManual() {
+    // createOffer() initializes the connection and returns it.
     rtcConnection = await createOffer();
     rtcConnection.onicegatheringstatechange = () => {
         if (rtcConnection.iceGatheringState === 'complete') {
@@ -176,7 +193,9 @@ async function createOfferManual() {
     };
 }
 
-//Handles adding a manual answer to an offer
+/**
+ * Sets the remote description on the host's connection using the answer received from the joiner.
+ */
 async function addAnswerManual() {
     const answer = JSON.parse(dom.receivedAnswerTextarea.value);
     if (rtcConnection.signalingState !== 'stable') {
@@ -184,11 +203,14 @@ async function addAnswerManual() {
     }
 }
 
-//Handles manual answer creation
+/**
+ * Creates a WebRTC answer based on the offer received from the host via manual copy-paste.
+ */
 async function createAnswerManual() {
     const offerText = JSON.parse(dom.receivedOfferTextarea.value);
     rtcConnection = await createAnswer(offerText);
 
+    // Wait for ICE gathering to complete before displaying the answer.
     rtcConnection.onicegatheringstatechange = () => {
         if (rtcConnection.iceGatheringState === 'complete') {
             dom.answerTextarea.value = JSON.stringify(rtcConnection.localDescription);
@@ -198,6 +220,10 @@ async function createAnswerManual() {
 //...Manual Connection=====
 
 //=====PeerJS functions...
+/**
+ * Initiates the PeerJS connection for the host. It creates a unique peer ID,
+ * waits for a joiner to connect, and then orchestrates the WebRTC offer/answer exchange.
+ */
 async function PeerJSInitiate() {
     try {
         // Step 1: Initialize PeerJS. The returned value is the PeerJS 'Peer' object.
@@ -248,7 +274,9 @@ async function PeerJSInitiate() {
 let qrScanner = null;
 let qrScannerHost = null;
 
-//Starts the Joiner's QR code scanner
+/**
+ * Initializes and starts the QR code scanner for the joiner to scan the host's offer codes.
+ */
 function startQrScanner() {
     if (qrScanner) {
         qrScanner.stop().then(() => {
@@ -264,7 +292,9 @@ function startQrScanner() {
     qrScanner.render(onScanSuccess, onScanFailure);
 }
 
-//Starts the Host QR code scanner
+/**
+ * Initializes and starts the QR code scanner for the host to scan the joiner's answer codes.
+ */
 function startQrScannerHost() {
     if (qrScannerHost) {
         qrScannerHost.stop().then(() => {
@@ -280,7 +310,11 @@ function startQrScannerHost() {
     qrScannerHost.render(onHostScanSuccess, onHostScanFailure);
 }
 
-//Handles successful QR code scan for the Joiner
+/**
+ * Callback function for a successful QR code scan by the joiner (Player 2).
+ * It collects scanned chunks and, once all are received, assembles the offer and creates an answer.
+ * @param {string} decodedText - The text decoded from the QR code.
+ */
 async function onScanSuccess(decodedText) {
     const regex = /^\[(\d+)\/(\d+)\]:(.*)$/;
     const match = decodedText.match(regex);
@@ -293,6 +327,7 @@ async function onScanSuccess(decodedText) {
     const totalChunks = parseInt(match[2], 10);
     const chunkData = match[3];
 
+    // Prevent processing the same chunk multiple times.
     if (appState.scannedChunks.some(chunk => chunk.index === chunkIndex)) {
         return; // Ignore duplicate scans
     }
@@ -312,6 +347,7 @@ async function onScanSuccess(decodedText) {
         dom.scanOverlayMessage.classList.add('hidden');
     }, 2000);
 
+    // If all chunks have been scanned, assemble the SDP and create an answer.
     if (appState.scannedChunks.length === totalChunks) {
         if (qrScanner) {
             qrScanner.clear();
@@ -330,12 +366,19 @@ async function onScanSuccess(decodedText) {
     }
 }
 
-//Handles QR code scan failures for the Joiner
+/**
+ * Callback for a failed QR code scan attempt. Logs a warning to the console.
+ * @param {string} error - The error message from the scanner.
+ */
 function onScanFailure(error) {
     console.warn(`QR code scan error: ${error}`);
 }
 
-//Handles successful QR code scan for the Host
+/**
+ * Callback function for a successful QR code scan by the host (Player 1).
+ * It collects scanned chunks and, once all are received, assembles the answer and completes the connection.
+ * @param {string} decodedText - The text decoded from the QR code.
+ */
 async function onHostScanSuccess(decodedText) {
     const regex = /^\[(\d+)\/(\d+)\]:(.*)$/;
     const match = decodedText.match(regex);
@@ -348,6 +391,7 @@ async function onHostScanSuccess(decodedText) {
     const totalChunks = parseInt(match[2], 10);
     const chunkData = match[3];
 
+    // Prevent processing the same chunk multiple times.
     if (appState.scannedChunks.some(chunk => chunk.index === chunkIndex)) {
         return; // Ignore duplicate scans
     }
@@ -367,6 +411,7 @@ async function onHostScanSuccess(decodedText) {
         dom.scanOverlayMessage.classList.add('hidden');
     }, 2000);
 
+    // If all chunks are scanned, assemble the SDP and set it as the remote description.
     if (appState.scannedChunks.length === totalChunks) {
         if (qrScannerHost) {
             qrScannerHost.clear();
@@ -383,12 +428,18 @@ async function onHostScanSuccess(decodedText) {
     }
 }
 
-//Handles QR code scan failures for the Host
+/**
+ * Callback for a failed QR code scan attempt by the host. Logs a warning to the console.
+ * @param {string} error - The error message from the scanner.
+ */
 function onHostScanFailure(error) {
     console.warn(`QR code scan error: ${error}`);
 }
 
-//Handles QR code offer creation
+/**
+ * Creates a WebRTC offer, waits for ICE gathering to complete, and then splits the
+ * resulting SDP into multiple chunks to be displayed as QR codes.
+ */
 async function createOfferQr() {
     rtcConnection = await createOffer();
 
@@ -404,7 +455,10 @@ async function createOfferQr() {
     };
 }
 
-//Handles QR code answer creation
+/**
+ * Creates a WebRTC answer, waits for ICE gathering, and then splits the resulting
+ * SDP into multiple chunks to be displayed as QR codes for the host to scan.
+ */
 async function createAnswerQr() {
     appState.isAnswer = true;
     const answer = await rtcConnection.createAnswer();
@@ -423,8 +477,10 @@ async function createAnswerQr() {
 }
 //...QR functions=====
 
+/**
+ * Initializes all primary event listeners for the application's UI elements.
+ */
 export function initializeEventListeners() {
-    // This includes all the dom.caching and event listeners
     // Event listeners for drop-downs
     dom.signalingMethodSelect.addEventListener('change', toggleSignalingUI);
     dom.playerRoleSelect.addEventListener('change', toggleSignalingUI);
@@ -459,6 +515,7 @@ export function initializeEventListeners() {
     dom.prevQrAnswerBtn.addEventListener('click', showPrevAnswerChunk);
     dom.nextQrAnswerBtn.addEventListener('click', showNextAnswerChunk);
 
+    // Event listener for PeerJS role selection.
     dom.playerRoleSelect.addEventListener('change', async (event) => {
         if (dom.signalingMethodSelect.value === 'peerJS') {
 
@@ -468,6 +525,7 @@ export function initializeEventListeners() {
         }
     });
 
+    // Event listener for generating a new PeerJS ID for the host.
     dom.generateNewIDButton.addEventListener('click', async () => {
         if (dom.signalingMethodSelect.value === 'peerJS') {
 
@@ -477,6 +535,7 @@ export function initializeEventListeners() {
         }
     });
 
+    // Event listener for the joiner to connect to a host via PeerJS.
     dom.connectToPeerBtn.addEventListener('click', async () => {
         const peerId = SUDOKU_SERVICE_PEER_PREFIX + dom.p2JoinId.value;
         if (peerId) {
@@ -528,18 +587,18 @@ export function initializeEventListeners() {
     // Event listeners for cell interactions (click and long-press)
     dom.sudokuGrid.addEventListener('mousedown', (e) => startPressTimer(e));
     dom.sudokuGrid.addEventListener('mouseup', () => {
-        clearTimeout(pressTimer);
+        clearTimeout(appState.pressTimer);
         appState.isLongPressActive = false; // Reset the state
     });
     dom.sudokuGrid.addEventListener('mouseleave', () => {
-        clearTimeout(pressTimer);
+        clearTimeout(appState.pressTimer);
         appState.isLongPressActive = false; // Reset the state
     });
 
     // For mobile devices
     dom.sudokuGrid.addEventListener('touchstart', (e) => startPressTimer(e));
     dom.sudokuGrid.addEventListener('touchend', () => {
-        clearTimeout(pressTimer);
+        clearTimeout(appState.pressTimer);
         appState.isLongPressActive = false; // Reset the state
     });
 
@@ -607,7 +666,10 @@ export function initializeEventListeners() {
     }, 3000);
 }
 
-// Function to render the list of channels
+/**
+ * Renders the list of currently active WebRTC data channels in the UI,
+ * including a "Disconnect" button for each.
+ */
 function renderChannelList() {
     const channelList = document.getElementById('channel-list');
     channelList.innerHTML = ''; // Clear the existing list
@@ -628,7 +690,10 @@ function renderChannelList() {
     });
 }
 
-// Function to handle the disconnect action
+/**
+ * Handles the click event on a 'disconnect' button to close a specific data channel.
+ * @param {Event} event - The click event from the channel list.
+ */
 function disconnectChannel(event) {
     if (event.target.classList.contains('disconnect-btn')) {
         const index = event.target.getAttribute('data-channel-index');

@@ -1,7 +1,17 @@
-// A state variable to hold the timer ID and the elapsed time
+//==============================
+// Timer Logic
+//==============================
+// This module manages the game timer, including starting, stopping, and formatting the display.
+
+// State variables to hold the timer interval ID and the elapsed time in seconds.
 let timerInterval = null;
 let seconds = 0;
 
+/**
+ * Formats a total number of seconds into a MM:SS string.
+ * @param {number} totalSeconds - The total seconds to format.
+ * @returns {string} The formatted time string (e.g., "01:23").
+ */
 function formatTime(totalSeconds) {
     const minutes = Math.floor(totalSeconds / 60);
     const remainingSeconds = totalSeconds % 60;
@@ -10,8 +20,11 @@ function formatTime(totalSeconds) {
     return `${formattedMinutes}:${formattedSeconds}`;
 }
 
+/**
+ * Starts or restarts the game timer. It resets the elapsed time to zero
+ * and updates the display every second.
+ */
 export function startTimer() {
-    // Clear any existing timer to prevent duplicates
     if (timerInterval) {
         clearInterval(timerInterval);
     }
@@ -23,9 +36,12 @@ export function startTimer() {
     timerInterval = setInterval(() => {
         seconds++;
         timerDisplay.textContent = formatTime(seconds);
-    }, 1000); // 1000 milliseconds = 1 second
+    }, 1000);
 }
 
+/**
+ * Stops the game timer by clearing the interval.
+ */
 export function stopTimer() {
     clearInterval(timerInterval);
     timerInterval = null;

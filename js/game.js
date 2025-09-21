@@ -14,11 +14,18 @@ import {
     stopTimer
 } from './timer.js';
 
+import {
+    generatePuzzle
+} from './generator.js';
+
 //==============================
 //Game UI and Logic
 //==============================
 
-//Creates the Sudoku grid
+/**
+ * Creates and populates the 9x9 Sudoku grid in the DOM.
+ * It clears any existing grid, then generates new cells with appropriate classes and event listeners.
+ */
 export function createGrid() {
     if (dom.sudokuGrid.firstChild) {
         while (dom.sudokuGrid.firstChild) {
@@ -32,6 +39,7 @@ export function createGrid() {
             cell.id = `cell-${row}-${col}`;
             cell.textContent = '';
             
+            // Add thicker borders to delineate the 3x3 subgrids.
             if ((col + 1) % 3 === 0 && col < 8) {
                 cell.classList.add('subgrid-border-right');
             }
@@ -39,6 +47,7 @@ export function createGrid() {
                 cell.classList.add('subgrid-border-bottom');
             }
             
+            // Add event listeners for both mouse and touch to handle clicks and long-presses.
             cell.addEventListener('mousedown', startPressTimer);
             cell.addEventListener('touchstart', startPressTimer);
             cell.addEventListener('mouseup', handleCellClick);
@@ -52,9 +61,14 @@ export function createGrid() {
 
 let activeCellSelectCount = 0;
 
-//Handles a cell click or tap
+/**
+ * Handles a click or tap event on a grid cell.
+ * Manages cell selection, highlighting, and triggers hint generation on multiple taps.
+ * @param {Event} event - The mouse or touch event.
+ */
 export function handleCellClick(event) {
     clearTimeout(pressTimer);
+    // Debounce rapid events to prevent double-firing on some devices.
     const currentTime = new Date().getTime();
     if (currentTime - appState.lastEventTimestamp < 100) {
         appState.lastEventTimestamp = 0;
@@ -62,11 +76,13 @@ export function handleCellClick(event) {
     }
     appState.lastEventTimestamp = currentTime;
 
+    // If a long-press was just completed, do nothing.
     if (appState.isLongPressActive) {
         appState.isLongPressActive = false;
         return;
     }
     const cell = event.target;
+    // If the cell is pre-filled, just highlight matching numbers.
     if (cell.classList.contains('preloaded-cell')) {
         const value = cell.textContent.trim();
         if (value !== '') {
@@ -75,15 +91,17 @@ export function handleCellClick(event) {
         return;
     }
     
-    // Check if there is an existing active cell and remove the class
+    // If there is an existing active cell, remove its 'active' class and clear highlights.
     if (appState.activeCell) {
         appState.activeCell.classList.remove('active-cell');
-        // Clear any previous highlights
         clearAllHighlights();
     }
+
+    // If the same cell is clicked multiple times, offer a hint.
     if (appState.activeCell == cell) {
         activeCellSelectCount++;
         if (activeCellSelectCount > 3) {
+            // Create a 2D array representation of the current board state.
             let board = [];
             for (let row = 0; row < 9; row++) {
                 board[row] = [];
@@ -93,6 +111,7 @@ export function handleCellClick(event) {
                     board[row][col] = value;
                 }
             }
+            // Get a hint for the active cell and display it.
             let hintValue = getHint(board);
             if (hintValue != null) {
                 appState.activeCell.textContent = hintValue.value;
@@ -104,11 +123,10 @@ export function handleCellClick(event) {
     else {
         activeCellSelectCount = 0;
     }
-    // Set the new active cell
+
+    // Set the new active cell and highlight it.
     appState.activeCell = cell;
-    // Add the active-cell class
     cell.classList.add('active-cell');
-    // Highlight matching cells for the new active cell
     const value = appState.activeCell.textContent.trim();
     if (value !== '') {
         highlightMatchingCells(value);
@@ -116,6 +134,10 @@ export function handleCellClick(event) {
 }
 
 //Handles a cell long-press
+/**
+ * Handles a long-press event on a grid cell, highlighting matching numbers.
+ * @param {HTMLElement} cell - The cell that was long-pressed.
+ */
 export function handleLongPress(cell) {
     appState.isLongPressActive = true;
     const value = cell.textContent.trim();
@@ -124,7 +146,10 @@ export function handleLongPress(cell) {
     }
 }
 
-//Highlights all cells with a matching value
+/**
+ * Highlights all cells on the grid that contain the same value as the provided number.
+ * @param {string} value - The number to match and highlight.
+ */
 export function highlightMatchingCells(value) {
     const allCells = document.querySelectorAll('.grid-cell');
     allCells.forEach(cell => {
@@ -137,7 +162,9 @@ export function highlightMatchingCells(value) {
     });
 }
 
-//Removes all highlight classes
+/**
+ * Removes the 'highlight-cell' class from all cells on the grid.
+ */
 export function clearAllHighlights() {
     const allCells = document.querySelectorAll('.grid-cell');
     allCells.forEach(cell => {
@@ -145,28 +172,25 @@ export function clearAllHighlights() {
     });
 }
 
-//Fetches and loads a new puzzle
+/**
+ * Loads a new puzzle onto the grid. Can be generated locally or received from a peer.
+ * @param {string} difficulty - The difficulty level ('easy', 'medium', 'hard') for local generation.
+ * @param {number[][]} [puzzleData] - Optional puzzle data received from a peer.
+ * If provided, this puzzle is loaded instead of generating a new one.
+ */
 export async function loadPuzzle(difficulty, puzzleData) {
     createGrid();
     let puzzle = puzzleData;
     let isRemoteLoad = !!puzzleData;
     
     if (!isRemoteLoad) {
-        try {
-            const response = await fetch('https://sugoku.onrender.com/board?difficulty=' + difficulty);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            puzzle = data.board;
-            appState.initialSudokuState = puzzle;
-        } catch (error) {
-            console.error('Failed to load puzzle:', error);
-            alert('Failed to load puzzle. Please ensure you are running a local web server to avoid CORS issues.');
-            return;
-        }
+        // Generate puzzle locally instead of fetching from an API
+        puzzle = generatePuzzle(difficulty);
+        appState.initialSudokuState = puzzle;
+        console.log('Generated new puzzle locally for difficulty:', difficulty);
     }
     
+    // Populate the grid cells with the puzzle numbers.
     for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
             const cell = document.getElementById(`cell-${row}-${col}`);
@@ -180,7 +204,7 @@ export async function loadPuzzle(difficulty, puzzleData) {
     
     checkGridState();
 
-    // Check if the puzzle was loaded locally and there are active data channels.
+    // If the puzzle was generated locally (by the host), broadcast it to all connected peers.
     if (!isRemoteLoad && dataChannels && dataChannels.length > 0) {
         const puzzleMessage = { type: 'initial-state', state: puzzle };
         const messageString = JSON.stringify(puzzleMessage);
@@ -195,12 +219,17 @@ export async function loadPuzzle(difficulty, puzzleData) {
     startTimer();
 }
 
-//Validates the entire puzzle grid for conflicts and completeness
+/**
+ * Validates the entire Sudoku grid for conflicts (duplicate numbers in rows, columns, or subgrids)
+ * and checks if the puzzle is fully filled.
+ * @returns {{isValid: boolean, isComplete: boolean}} - An object indicating if the grid is valid and complete.
+ */
 export function validatePuzzle() {
     const invalidCells = new Set();
     let isComplete = true;
     const gridValues = [];
 
+    // First, create a 2D array representation of the current grid values.
     for (let row = 0; row < 9; row++) {
         const rowValues = [];
         for (let col = 0; col < 9; col++) {
@@ -213,6 +242,7 @@ export function validatePuzzle() {
         gridValues.push(rowValues);
     }
     
+    // Helper function to check for duplicates in an array (row, column, or subgrid).
     const checkConflicts = (arr) => {
         const seen = new Set();
         for (const num of arr) {
@@ -226,7 +256,7 @@ export function validatePuzzle() {
         return false;
     };
 
-    // Check rows, columns, and subgrids
+    // Check for conflicts in all rows, columns, and 3x3 subgrids.
     for (let i = 0; i < 9; i++) {
         const rowValues = gridValues[i];
         const colValues = [];
@@ -234,17 +264,19 @@ export function validatePuzzle() {
             colValues.push(gridValues[j][i]);
         }
         
+        // If a row has conflicts, mark all its cells as invalid.
         if (checkConflicts(rowValues)) {
             for (let j = 0; j < 9; j++) {
                 if (gridValues[i][j] !== '') invalidCells.add(`cell-${i}-${j}`);
             }
         }
+        // If a column has conflicts, mark all its cells as invalid.
         if (checkConflicts(colValues)) {
             for (let j = 0; j < 9; j++) {
                 if (gridValues[j][i] !== '') invalidCells.add(`cell-${j}-${i}`);
             }
         }
-
+        // If a subgrid has conflicts, mark all its cells as invalid.
         const subgridValues = [];
         const startRow = Math.floor(i / 3) * 3;
         const startCol = (i % 3) * 3;
@@ -262,6 +294,7 @@ export function validatePuzzle() {
         }
     }
 
+    // Apply or remove the 'invalid-cell' class based on the validation results.
     document.querySelectorAll('.grid-cell').forEach(cell => {
         const isPreloaded = cell.classList.contains('preloaded-cell');
         if (!isPreloaded) {
@@ -274,12 +307,15 @@ export function validatePuzzle() {
     return { isValid: invalidCells.size === 0, isComplete: isComplete };
 }
 
-//Checks the current state of the grid for a win condition
+/**
+ * Checks the current state of the grid, validates it, and determines if the puzzle is solved.
+ * If solved, it stops the timer and displays a congratulations message.
+ */
 export function checkGridState() {
-    // Call the new function to update button states
     updateNumberPadState();
 
     const { isValid, isComplete } = validatePuzzle();
+    // The puzzle is solved if it's completely filled and has no conflicts.
     if (isComplete && isValid) {
         document.querySelectorAll('.grid-cell').forEach(cell => {
             cell.classList.add('solved-puzzle');
@@ -390,7 +426,10 @@ function getHint(board) {
     return null;
 }
 
-// Function to update the disabled state of the number pad buttons
+/**
+ * Updates the state of the number pad buttons, disabling any number that has already
+ * been placed 9 times on the grid.
+ */
 export function updateNumberPadState() {
     const counts = {};
     for (let i = 1; i <= 9; i++) {
@@ -414,5 +453,3 @@ export function updateNumberPadState() {
         }
     }
 }
-
-
