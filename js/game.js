@@ -35,7 +35,23 @@ export function createGrid() {
             const cell = document.createElement('div');
             cell.className = 'grid-cell';
             cell.id = `cell-${row}-${col}`;
-            cell.textContent = '';
+
+            // Create the main value display
+            const cellValue = document.createElement('div');
+            cellValue.className = 'cell-value';
+            cell.appendChild(cellValue);
+
+            // Create the scratch pad
+            const scratchPad = document.createElement('div');
+            scratchPad.className = 'scratch-pad';
+            for (let i = 1; i <= 9; i++) {
+                const digit = document.createElement('div');
+                digit.className = 'scratch-pad-digit';
+                digit.textContent = i;
+                digit.dataset.digit = i;
+                scratchPad.appendChild(digit);
+            }
+            cell.appendChild(scratchPad);
             
             // Add thicker borders to delineate the 3x3 subgrids.
             if ((col + 1) % 3 === 0 && col < 8) {
@@ -77,10 +93,10 @@ export function handleCellClick(event) {
         appState.isLongPressActive = false;
         return;
     }
-    const cell = event.target;
+    const cell = event.target.closest('.grid-cell');
     // If the cell is pre-filled, just highlight matching numbers.
     if (cell.classList.contains('preloaded-cell')) {
-        const value = cell.textContent.trim();
+        const value = cell.querySelector('.cell-value').textContent.trim();
         if (value !== '') {
             highlightMatchingCells(value);
         }
@@ -96,7 +112,7 @@ export function handleCellClick(event) {
     // Set the new active cell and highlight it.
     appState.activeCell = cell;
     cell.classList.add('active-cell');
-    const value = appState.activeCell.textContent.trim();
+    const value = appState.activeCell.querySelector('.cell-value').textContent.trim();
     if (value !== '') {
         highlightMatchingCells(value);
     }
@@ -109,7 +125,7 @@ export function handleCellClick(event) {
 export function highlightMatchingCells(value) {
     const allCells = document.querySelectorAll('.grid-cell');
     allCells.forEach(cell => {
-        if (cell.textContent.trim() === value && !cell.classList.contains('invalid-cell') && !cell.classList.contains('solved-puzzle')) {
+        if (cell.querySelector('.cell-value').textContent.trim() === value && !cell.classList.contains('invalid-cell') && !cell.classList.contains('solved-puzzle')) {
             cell.classList.add('highlight-cell');
         }
         else {
@@ -151,7 +167,7 @@ export async function loadPuzzle(difficulty, puzzleData) {
         for (let col = 0; col < 9; col++) {
             const cell = document.getElementById(`cell-${row}-${col}`);
             const value = puzzle[row][col];
-            cell.textContent = value === 0 ? '' : value;
+            cell.querySelector('.cell-value').textContent = value === 0 ? '' : value;
             if (value !== 0) {
                 cell.classList.add('preloaded-cell');
             }
@@ -189,7 +205,7 @@ export function validatePuzzle() {
     for (let row = 0; row < 9; row++) {
         const rowValues = [];
         for (let col = 0; col < 9; col++) {
-            const cellValue = document.getElementById(`cell-${row}-${col}`).textContent.trim();
+            const cellValue = document.getElementById(`cell-${row}-${col}`).querySelector('.cell-value').textContent.trim();
             rowValues.push(cellValue);
             if (cellValue === '') {
                 isComplete = false;
@@ -320,7 +336,7 @@ function solveSudoku(board) {
  * @param {number} num - The number to check.
  * @returns {boolean} - True if the move is valid, false otherwise.
  */
-function isValidMove(board, row, col, num) {
+export function isMoveValid(board, row, col, num) {
     // Check row and column
     for (let i = 0; i < 9; i++) {
         if (board[row][i] === num || board[i][col] === num) {
@@ -365,7 +381,7 @@ function getHint(board) {
 
     // Iterate through numbers 1-9 to find the correct value for the active cell
     for (let num = 1; num <= 9; num++) {
-        if (isValidMove(boardCopy, hintRow, hintCol, num)) {
+        if (isMoveValid(boardCopy, hintRow, hintCol, num)) {
             boardCopy[hintRow][hintCol] = num;
 
             // Check if this number leads to a solvable puzzle
@@ -395,7 +411,7 @@ export function updateNumberPadState() {
     // Count all numbers currently on the grid
     const allCells = document.querySelectorAll('.grid-cell');
     allCells.forEach(cell => {
-        const value = parseInt(cell.textContent.trim(), 10);
+        const value = parseInt(cell.querySelector('.cell-value').textContent.trim(), 10);
         if (value >= 1 && value <= 9) {
             counts[value]++;
         }

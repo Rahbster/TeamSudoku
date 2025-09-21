@@ -3,7 +3,7 @@
 //==============================
 // This module handles all user interface interactions, from button clicks to dynamic UI updates.
 import { appState, dom, dataChannels } from './scripts.js';
-import { clearAllHighlights, loadPuzzle, checkGridState, highlightMatchingCells } from './game.js';
+import { clearAllHighlights, loadPuzzle, checkGridState, highlightMatchingCells, isMoveValid } from './game.js';
 import { clearTextbox, createQrCodeChunks, playBeepSound } from './misc.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
 import { createOffer, createAnswer } from './webrtc.js';
@@ -596,6 +596,13 @@ export function initializeEventListeners() {
         appState.selectedDifficulty = event.target.value;
     });
 
+    // Event listener for the pencil mode button
+    dom.pencilButton.addEventListener('click', () => {
+        appState.isPencilMode = !appState.isPencilMode;
+        document.getElementById('pencil-status').textContent = appState.isPencilMode ? 'ON' : 'OFF';
+        dom.pencilButton.classList.toggle('pencil-active', appState.isPencilMode);
+    });
+
     // Event listener to the number pad
     dom.numberPad.addEventListener('click', (event) => {
         // Check if a number button or the empty button was clicked and if a cell is active
@@ -605,44 +612,72 @@ export function initializeEventListeners() {
                 return;
             }
 
-            let value;
-            // Check if the empty button was clicked
-            if (event.target.id === 'empty-btn') {
-                value = '';
-            } else {
-                value = event.target.textContent;
-            }
+            if (appState.isPencilMode) {
+                // PENCIL MODE LOGIC
+                if (event.target.id !== 'empty-btn') {
+                    const digit = parseInt(event.target.textContent, 10);
+                    const [_, row, col] = appState.activeCell.id.split('-');
 
-            // Set the content of the active cell to the determined value
-            appState.activeCell.textContent = value;
+                    // Create a board representation from the DOM
+                    const board = [];
+                    for (let r = 0; r < 9; r++) {
+                        board[r] = [];
+                        for (let c = 0; c < 9; c++) {
+                            const cell = document.getElementById(`cell-${r}-${c}`);
+                            const value = cell.querySelector('.cell-value').textContent.trim();
+                            board[r][c] = value === '' ? 0 : parseInt(value, 10);
+                        }
+                    }
 
-            // Create the message object to send to the other player
-            const move = {
-                type: 'move',
-                row: appState.activeCell.id.split('-')[1],
-                col: appState.activeCell.id.split('-')[2],
-                value: value
-            };
-
-            // Broadcast the move to all other players
-            dataChannels.forEach(otherChannel => {
-                if (otherChannel.readyState === 'open') {
-                    otherChannel.send(JSON.stringify(move));
+                    // Check if the move is valid before adding the scratch mark
+                    if (isMoveValid(board, parseInt(row, 10), parseInt(col, 10), digit)) {
+                        const scratchDigit = appState.activeCell.querySelector(`.scratch-pad-digit[data-digit="${digit}"]`);
+                        if (scratchDigit) {
+                            scratchDigit.style.visibility = scratchDigit.style.visibility === 'visible' ? 'hidden' : 'visible';
+                        }
+                    } else {
+                        // Optionally, provide feedback that the number is invalid
+                        playBeepSound();
+                        scratchDigit.style.visibility = scratchDigit.style.visibility === 'visible' ? 'hidden' : 'visible';
+                    }
+                } else {
+                    // Clear all scratch marks in the cell
+                    appState.activeCell.querySelectorAll('.scratch-pad-digit').forEach(d => d.style.visibility = 'hidden');
                 }
-            });
+            } else {
+                // NORMAL MODE LOGIC
+                let value;
+                if (event.target.id === 'empty-btn') {
+                    value = '';
+                } else {
+                    value = event.target.textContent;
+                }
 
-            // Remove active class from the old cell to avoid confusion
-            appState.activeCell.classList.remove('active-cell');
+                // Clear scratchpad when a final number is entered
+                appState.activeCell.querySelectorAll('.scratch-pad-digit').forEach(d => d.style.visibility = 'hidden');
+                appState.activeCell.querySelector('.cell-value').textContent = value; // This line was causing the error
 
-            // Clear all highlights and check grid state after a change
-            clearAllHighlights();
-            checkGridState();
+                const move = {
+                    type: 'move',
+                    row: appState.activeCell.id.split('-')[1],
+                    col: appState.activeCell.id.split('-')[2],
+                    value: value
+                };
 
-            // Reset the active cell
-            appState.activeCell = null;
+                dataChannels.forEach(otherChannel => {
+                    if (otherChannel.readyState === 'open') {
+                        otherChannel.send(JSON.stringify(move));
+                    }
+                });
 
-            if (value != '') {
-                highlightMatchingCells(value);
+                appState.activeCell.classList.remove('active-cell');
+                clearAllHighlights();
+                checkGridState();
+                appState.activeCell = null;
+
+                if (value !== '') {
+                    highlightMatchingCells(value);
+                }
             }
         }
     });

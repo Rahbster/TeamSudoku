@@ -38,7 +38,9 @@ export const appState = {
     totalChunksToScan: 0,
     //Input state
     isLongPressActive: false, // Flag to track if a long-press action is active.
-    lastEventTimestamp: 0 // Timestamp to help debounce rapid click/tap events.
+    lastEventTimestamp: 0, // Timestamp to help debounce rapid click/tap events.
+    // Game state
+    isPencilMode: false
 };
 
 // Copies the offer or answer to the clipboard
@@ -126,6 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.numberPad = document.getElementById('number-pad');
     dom.themeSelector = document.getElementById('theme-select');
     dom.difficultySelector = document.getElementById('difficulty-select');
+    dom.pencilButton = document.getElementById('pencil-btn');
     dom.body = document.body;
     //Manual signaling buttons
     dom.createOfferManualBtn = document.getElementById('create-offer-manual-btn');
