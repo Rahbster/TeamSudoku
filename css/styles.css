@@ -226,6 +226,8 @@ button:disabled, select:disabled, .number-btn:disabled {
 .button-content {
     display: flex;
     align-items: center;
+    position: relative; /* Needed for z-index to apply */
+    z-index: 2; /* Ensure this is on top */
     gap: 10px;
 }
 
@@ -246,9 +248,10 @@ button:disabled, select:disabled, .number-btn:disabled {
   top: 50%;
   transform: translateY(-50%) rotate(-45deg); /* Rotate in the opposite direction */
   font-weight: bold;
-  color: black; /* Changed text color to black */
-  background-color: yellow; /* Added yellow background */
+  color: rgba(0, 0, 0, 0.6); /* More transparent black text */
+  background-color: rgba(255, 255, 0, 0.5); /* More transparent yellow background */
   padding: 2px 20px; /* Adjust padding */
+  z-index: 1; /* Ensure this is behind the main content */
 }
 
 /* Toggle Switch Styles */
@@ -325,14 +328,6 @@ textarea {
 
 #generate-new-id-btn {
     margin-top: 5px;
-}
-
-#empty-btn {
-    background-color: #dc3545;
-}
-
-#empty-btn:hover {
-    background-color: #c82333;
 }
 
 /* Video Background */
@@ -713,6 +708,16 @@ body.default select:hover {
     color: #FFFFFF;
 }
 
+/* Red 'X' button for this theme */
+body.default #empty-btn {
+    background-color: #dc3545;
+}
+
+body.default #empty-btn:hover {
+    background-color: #c82333;
+}
+
+
 /*==============================
 � Banished Theme
 ==============================*/
@@ -772,6 +777,15 @@ body.banished select:hover {
     background-color: #C22D2D;
     border-color: #8C2F2F;
     color: #FFFFFF;
+}
+
+/* Transparent red 'X' button for this theme */
+body.banished #empty-btn {
+    background-color: rgba(220, 53, 69, 0.6); /* Transparent red */
+}
+
+body.banished #empty-btn:hover {
+    background-color: rgba(200, 35, 51, 0.8);
 }
 
 /*==============================
@@ -834,6 +848,15 @@ body.unsc select:hover {
     border-color: #EFB82A;
 }
 
+/* Red 'X' button for this theme */
+body.unsc #empty-btn {
+    background-color: #dc3545;
+}
+
+body.unsc #empty-btn:hover {
+    background-color: #c82333;
+}
+
 /*==============================
 � Forerunner Theme
 ==============================*/
@@ -893,6 +916,15 @@ body.forerunner select:hover {
     background-color: #00A0C0;
     color: #1A2A3A;
     border-color: #00A0C0;
+}
+
+/* Red 'X' button for this theme */
+body.forerunner #empty-btn {
+    background-color: #dc3545;
+}
+
+body.forerunner #empty-btn:hover {
+    background-color: #c82333;
 }
 
 /* The Modal (background) */
