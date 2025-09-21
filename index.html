@@ -60,7 +60,7 @@
                 <div id="timer-area">
                     <h2>Time: <span id="timer-display">00:00</span></h2>
                 </div>
-                <div class="theme-selector">
+                <div class="selector-container">
                     <label for="theme-select">Choose a Theme</label>
                     <div>
                         <select id="theme-select">
@@ -71,10 +71,9 @@
                         </select>
                     </div>
                 </div>
-    
-                <div id="sudoku-loadpuzzle-area">
+                <div class="selector-container">
                     <label for="difficulty-select">Choose a Difficulty</label>
-                    <div class="difficulty-selector">
+                    <div>
                         <select id="difficulty-select">
                             <option value="very-easy">Very Easy</option>
                             <option value="easy">Easy</option>
@@ -83,6 +82,7 @@
                         </select>
                     </div>
                 </div>
+    
                 <div class="button-row">
                     <button class="theme-button" id="pencil-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
@@ -95,167 +95,174 @@
                         <span class="rotated-text">New</span>
                     </button>
                 </div>
-                <button class="theme-button" id="host-btn">Toggle Configuration</button>
+
+                <div class="toggle-switch-container">
+                    <label for="host-btn" class="toggle-switch-label">Config</label>
+                    <input type="checkbox" id="host-btn" class="toggle-switch">
+                </div>
+            </section>
+
+            <!-- Main signaling area, hidden by default -->
+            <section id="signaling-area">
+                <h1>P2P Sudoku PoC</h1>
+                <p>Open the URL in separate browsers or tabs to connect players. Follow the steps below to connect them.</p>
+    
+                <!-- Dropdowns for selecting connection method and player role -->
+                <div class="config-selectors">
+                    <div class="selector-container"> <!-- Re-using theme-selector class for consistent styling -->
+                        <label for="signaling-method">Choose Connection Method</label>
+                        <select id="signaling-method">
+                            <option value="none">-- Select a method --</option>
+                            <option value="manual">Manual Copy/Paste</option>
+                            <option value="qr">QR Code Scan</option>
+                            <option value="peerJS">PeerJS</option>
+                        </select>
+                    </div>
+                    <div class="selector-container"> <!-- Re-using theme-selector class for consistent styling -->
+                        <label for="player-role">Choose Player Role</label>
+                        <select id="player-role">
+                            <option value="none">-- Select a role --</option>
+                            <option value="host">Player 1 (Host)</option>
+                            <option value="joiner">Player 2 (Joiner)</option>
+                        </select>
+                    </div>
+                </div>
+    
+                <!-- UI for Manual Copy/Paste Signaling -->
+                <div id="manual-signaling-area" class="hidden">
+                    <div id="p1-manual-area" class="hidden">
+                        <div class="container">
+                            <div class="column">
+                                <h2>Player 1 (Host)</h2>
+                                <button class="theme-button" id="create-offer-manual-btn">1. Create Offer</button>
+                                <p>Copy the text below and paste it into the "Received Offer" box for Player 2.</p>
+                                <textarea id="offer-text" readonly></textarea>
+                                <div class="button-group">
+                                    <button class="theme-button" id="copy-offer-btn">Copy Offer</button>
+                                    <button class="theme-button" id="clear-offer-btn">Clear</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="container">
+                            <div class="column">
+                                <h2>Player 1 (Final Step)</h2>
+                                <p>Paste Answer from Player 2 into the box below:</p>
+                                <textarea id="received-answer-text"></textarea>
+                                <div class="button-group">
+                                    <button class="theme-button" id="add-answer-manual-btn">Add Answer & Connect</button>
+                                    <button class="theme-button" id="clear-received-answer-btn">Clear</button>
+                                </div>
+                                <p id="p1-status">Status: Disconnected</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="p2-manual-area" class="hidden">
+                        <div class="container">
+                            <div class="column">
+                                <h2>Player 2 (Joiner)</h2>
+                                <p>1. Paste Offer from Player 1 into the box below:</p>
+                                <textarea id="received-offer-text"></textarea>
+                                <button class="theme-button" id="create-answer-manual-btn">2. Create Answer</button>
+                                <button class="theme-button" id="clear-received-offer-btn">Clear</button>
+                                <p>Copy the text below and paste it into the "Received Answer" box for Player 1.</p>
+                                <textarea id="answer-text" readonly></textarea>
+                                <div class="button-group">
+                                    <button class="theme-button" id="copy-answer-btn">Copy Answer</button>
+                                    <button class="theme-button" id="clear-answer-btn">Clear</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="container">
+                            <div class="column">
+                                <p id="p2-status">Status: Disconnected</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- UI for QR Code Signaling -->
+                <div id="qr-signaling-area" class="hidden">
+                    <div id="p1-qr-area" class="hidden">
+                        <div class="container">
+                            <div class="column">
+                                <h2>Player 1 (Host)</h2>
+                                <p>1. Create Offer and show the QR codes to Player 2.</p>
+                                <button class="theme-button" id="create-qr-btn">Create QR Codes</button>
+                                <p id="chunk-status">Generate chunks to begin.</p>
+                                <div id="qr-code-display" class="qr-display-area"></div>
+                                <div class="button-group">
+                                    <button class="theme-button" id="prev-qr-btn">Previous</button>
+                                    <button class="theme-button" id="next-qr-btn">Next</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="container">
+                            <div class="column">
+                                <p>2. Scan the Answer QR code from Player 2.</p>
+                                <button class="theme-button" id="start-qr-host-btn">Start QR Scanner</button>
+                                <div id="qr-reader-host" style="width: 300px; margin: 0 auto;"></div>
+                                <p id="scanner-status-host">Status: Ready to scan.</p>
+                            </div>
+                        </div>
+                        <div class="container">
+                            <div class="column">
+                                <p id="p1-qr-status">Status: Disconnected</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="p2-qr-area" class="hidden">
+                        <div class="container">
+                            <div class="column">
+                                <h2>Player 2 (Joiner)</h2>
+                                <p>1. Scan the QR code from Player 1.</p>
+                                <p id="scanner-status">Status: Ready to scan.</p>
+                                <button class="theme-button" id="start-qr-btn">Start QR Scanner</button>
+                                <div id="qr-reader" style="width: 300px; margin: 0 auto;"></div>
+                                <p>Or, if Player 1 has scanned your answer, show this code:</p>
+                                <div id="qr-code-display-answer" class="qr-display-area"></div>
+                                <div class="button-group">
+                                    <button class="theme-button" id="prev-qr-answer-btn">Previous</button>
+                                    <button class="theme-button" id="next-qr-answer-btn">Next</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="container">
+                            <div class="column">
+                                <p id="p2-qr-status">Status: Disconnected</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- UI for PeerJS Signaling -->
+                <div id="peer-signaling-area" class="container mt-4 hidden">
+                    <div id="p1-peer-area" class="hidden">
+                        <div class="host-id-container">
+                            <h3 class="mt-3">
+                                Host ID: <br /><span id="p1-peer-id">...</span><br />
+                                <button class="theme-button" id="generate-new-id-btn">New ID</button>
+                            </h3>
+                        </div>
+                        <p id="p1-peer-status">Status: Share this ID with Player 2 to connect.</p>
+                    </div>
+    
+                    <div id="p2-peer-area" class="hidden">
+                        <p id="p2-peer-status">Status: Waiting for a Host to connect...</p>
+                        <div class="input-group">
+                            <input type="text" id="p2-join-id" style="font-size: 1.2em;" inputmode="numeric" pattern="[0-9]*" placeholder="Enter Host ID">
+                            <button type="button" id="connect-to-peer-btn">Connect</button>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- Display area for currently connected data channels -->
+                <div id="data-channels-display">
+                    <h3>Connected Channels:</h3>
+                    <ul id="channel-list"></ul>
+                    <button class="theme-button" id="show-channels-btn">Show Channels</button>
+                </div>
             </section>
         </div>
-
-        <!-- Main signaling area, hidden by default -->
-        <section id="signaling-area" class="hidden">
-            <h1>P2P Sudoku PoC</h1>
-            <p>Open the URL in separate browsers or tabs to connect players. Follow the steps below to connect them.</p>
-
-            <!-- Dropdowns for selecting connection method and player role -->
-            <label for="signaling-method">Choose Connection Method:</label>
-            <br />
-            <select id="signaling-method">
-                <option value="none">-- Select a method --</option>
-                <option value="manual">Manual Copy/Paste</option>
-                <option value="qr">QR Code Scan</option>
-                <option value="peerJS">PeerJS</option>
-            </select>
-            <br />
-            <label for="player-role">Choose Player Role:</label>
-            <br />
-            <select id="player-role">
-                <option value="none">-- Select a role --</option>
-                <option value="host">Player 1 (Host)</option>
-                <option value="joiner">Player 2 (Joiner)</option>
-            </select>
-
-            <!-- UI for Manual Copy/Paste Signaling -->
-            <div id="manual-signaling-area" class="hidden">
-                <div id="p1-manual-area" class="hidden">
-                    <div class="container">
-                        <div class="column">
-                            <h2>Player 1 (Host)</h2>
-                            <button class="theme-button" id="create-offer-manual-btn">1. Create Offer</button>
-                            <p>Copy the text below and paste it into the "Received Offer" box for Player 2.</p>
-                            <textarea id="offer-text" readonly></textarea>
-                            <div class="button-group">
-                                <button class="theme-button" id="copy-offer-btn">Copy Offer</button>
-                                <button class="theme-button" id="clear-offer-btn">Clear</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="container">
-                        <div class="column">
-                            <h2>Player 1 (Final Step)</h2>
-                            <p>Paste Answer from Player 2 into the box below:</p>
-                            <textarea id="received-answer-text"></textarea>
-                            <div class="button-group">
-                                <button class="theme-button" id="add-answer-manual-btn">Add Answer & Connect</button>
-                                <button class="theme-button" id="clear-received-answer-btn">Clear</button>
-                            </div>
-                            <p id="p1-status">Status: Disconnected</p>
-                        </div>
-                    </div>
-                </div>
-                <div id="p2-manual-area" class="hidden">
-                    <div class="container">
-                        <div class="column">
-                            <h2>Player 2 (Joiner)</h2>
-                            <p>1. Paste Offer from Player 1 into the box below:</p>
-                            <textarea id="received-offer-text"></textarea>
-                            <button class="theme-button" id="create-answer-manual-btn">2. Create Answer</button>
-                            <button class="theme-button" id="clear-received-offer-btn">Clear</button>
-                            <p>Copy the text below and paste it into the "Received Answer" box for Player 1.</p>
-                            <textarea id="answer-text" readonly></textarea>
-                            <div class="button-group">
-                                <button class="theme-button" id="copy-answer-btn">Copy Answer</button>
-                                <button class="theme-button" id="clear-answer-btn">Clear</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="container">
-                        <div class="column">
-                            <p id="p2-status">Status: Disconnected</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- UI for QR Code Signaling -->
-            <div id="qr-signaling-area" class="hidden">
-                <div id="p1-qr-area" class="hidden">
-                    <div class="container">
-                        <div class="column">
-                            <h2>Player 1 (Host)</h2>
-                            <p>1. Create Offer and show the QR codes to Player 2.</p>
-                            <button class="theme-button" id="create-qr-btn">Create QR Codes</button>
-                            <p id="chunk-status">Generate chunks to begin.</p>
-                            <div id="qr-code-display" class="qr-display-area"></div>
-                            <div class="button-group">
-                                <button class="theme-button" id="prev-qr-btn">Previous</button>
-                                <button class="theme-button" id="next-qr-btn">Next</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="container">
-                        <div class="column">
-                            <p>2. Scan the Answer QR code from Player 2.</p>
-                            <button class="theme-button" id="start-qr-host-btn">Start QR Scanner</button>
-                            <div id="qr-reader-host" style="width: 300px; margin: 0 auto;"></div>
-                            <p id="scanner-status-host">Status: Ready to scan.</p>
-                        </div>
-                    </div>
-                    <div class="container">
-                        <div class="column">
-                            <p id="p1-qr-status">Status: Disconnected</p>
-                        </div>
-                    </div>
-                </div>
-                <div id="p2-qr-area" class="hidden">
-                    <div class="container">
-                        <div class="column">
-                            <h2>Player 2 (Joiner)</h2>
-                            <p>1. Scan the QR code from Player 1.</p>
-                            <p id="scanner-status">Status: Ready to scan.</p>
-                            <button class="theme-button" id="start-qr-btn">Start QR Scanner</button>
-                            <div id="qr-reader" style="width: 300px; margin: 0 auto;"></div>
-                            <p>Or, if Player 1 has scanned your answer, show this code:</p>
-                            <div id="qr-code-display-answer" class="qr-display-area"></div>
-                            <div class="button-group">
-                                <button class="theme-button" id="prev-qr-answer-btn">Previous</button>
-                                <button class="theme-button" id="next-qr-answer-btn">Next</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="container">
-                        <div class="column">
-                            <p id="p2-qr-status">Status: Disconnected</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- UI for PeerJS Signaling -->
-            <div id="peer-signaling-area" class="container mt-4 hidden">
-                <div id="p1-peer-area" class="hidden">
-                    <div class="host-id-container">
-                        <h3 class="mt-3">
-                            Host ID: <br /><span id="p1-peer-id">...</span><br />
-                            <button class="theme-button" id="generate-new-id-btn">New ID</button>
-                        </h3>
-                    </div>
-                    <p id="p1-peer-status">Status: Share this ID with Player 2 to connect.</p>
-                </div>
-
-                <div id="p2-peer-area" class="hidden">
-                    <p id="p2-peer-status">Status: Waiting for a Host to connect...</p>
-                    <div class="input-group">
-                        <input type="text" id="p2-join-id" style="font-size: 1.2em;" inputmode="numeric" pattern="[0-9]*" placeholder="Enter Host ID">
-                        <button type="button" id="connect-to-peer-btn">Connect</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Display area for currently connected data channels -->
-            <div id="data-channels-display">
-                <h3>Connected Channels:</h3>
-                <ul id="channel-list"></ul>
-                <button class="theme-button" id="show-channels-btn">Show Channels</button>
-            </div>
-        </section>
     </main>
 
     <!-- External libraries for QR code generation/scanning and PeerJS -->

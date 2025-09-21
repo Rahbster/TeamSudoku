@@ -3,7 +3,7 @@
 //==============================
 // This module handles all user interface interactions, from button clicks to dynamic UI updates.
 import { appState, dom, dataChannels } from './scripts.js';
-import { clearAllHighlights, loadPuzzle, checkGridState, highlightMatchingCells, isMoveValid } from './game.js';
+import { clearAllHighlights, loadPuzzle, checkGridState, highlightMatchingCells, isMoveValid, highlightConflictingCells } from './game.js';
 import { clearTextbox, createQrCodeChunks, playBeepSound } from './misc.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
 import { createOffer, createAnswer } from './webrtc.js';
@@ -13,22 +13,12 @@ import { createOffer, createAnswer } from './webrtc.js';
  * Also adjusts the background and scrolls the relevant section into view.
  */
 function toggleSignalingArea() {
-    dom.signalingArea.classList.toggle('hidden');
-    dom.sudokuGridArea.classList.toggle('hidden');
-
-    // Show or hide the 'Load New Puzzle' area based on the player role
-    if (appState.isInitiator) {
-        dom.sudokuLoadPuzzleArea.classList.remove('hidden');
-    } else {
-        dom.sudokuLoadPuzzleArea.classList.add('hidden');
-    }
+    dom.gameContainer.classList.toggle('config-active');
 
     // Toggle the 'connection-background' class on the body
     document.body.classList.toggle('connection-background');
 
-    if (dom.signalingArea.classList.contains('hidden')) {
-        dom.sudokuGridArea.scrollIntoView({ behavior: 'smooth' });
-    } else {
+    if (dom.gameContainer.classList.contains('config-active')) {
         dom.signalingArea.scrollIntoView({ behavior: 'smooth' });
     }
 }
@@ -503,7 +493,7 @@ export function initializeEventListeners() {
     });
 
     // Event listeners for the "Toggle P2P Configuration" button
-    dom.hostButton.addEventListener('click', () => {
+    dom.hostButton.addEventListener('change', () => {
         toggleSignalingArea();
     });
 
@@ -637,8 +627,13 @@ export function initializeEventListeners() {
                         }
                     } else {
                         // Optionally, provide feedback that the number is invalid
+                        highlightConflictingCells(parseInt(row, 10), parseInt(col, 10), digit.toString());
                         playBeepSound();
-                        scratchDigit.style.visibility = scratchDigit.style.visibility === 'visible' ? 'hidden' : 'visible';
+                        // Clear the highlights after a short delay
+                        setTimeout(() => {
+                            document.querySelectorAll('.invalid-cell').forEach(c => c.classList.remove('invalid-cell'));
+                            validatePuzzle(); // Re-validate to restore any legitimate invalid cells
+                        }, 1000);
                     }
                 } else {
                     // Clear all scratch marks in the cell
@@ -648,35 +643,57 @@ export function initializeEventListeners() {
                 // NORMAL MODE LOGIC
                 let value;
                 if (event.target.id === 'empty-btn') {
-                    value = '';
+                    value = ''; // Allow clearing the cell
                 } else {
-                    value = event.target.textContent;
+                    value = parseInt(event.target.textContent, 10);
                 }
 
-                // Clear scratchpad when a final number is entered
-                appState.activeCell.querySelectorAll('.scratch-pad-digit').forEach(d => d.style.visibility = 'hidden');
-                appState.activeCell.querySelector('.cell-value').textContent = value; // This line was causing the error
-
-                const move = {
-                    type: 'move',
-                    row: appState.activeCell.id.split('-')[1],
-                    col: appState.activeCell.id.split('-')[2],
-                    value: value
-                };
-
-                dataChannels.forEach(otherChannel => {
-                    if (otherChannel.readyState === 'open') {
-                        otherChannel.send(JSON.stringify(move));
+                const [_, row, col] = appState.activeCell.id.split('-');
+                const board = [];
+                for (let r = 0; r < 9; r++) {
+                    board[r] = [];
+                    for (let c = 0; c < 9; c++) {
+                        const cell = document.getElementById(`cell-${r}-${c}`);
+                        const cellVal = cell.querySelector('.cell-value').textContent.trim();
+                        board[r][c] = cellVal === '' ? 0 : parseInt(cellVal, 10);
                     }
-                });
+                }
 
-                appState.activeCell.classList.remove('active-cell');
-                clearAllHighlights();
-                checkGridState();
-                appState.activeCell = null;
+                // Only proceed if the move is valid or if clearing the cell
+                if (value === '' || isMoveValid(board, parseInt(row, 10), parseInt(col, 10), value)) {
+                    // Clear scratchpad when a final number is entered
+                    appState.activeCell.querySelectorAll('.scratch-pad-digit').forEach(d => d.style.visibility = 'hidden');
+                    appState.activeCell.querySelector('.cell-value').textContent = value;
 
-                if (value !== '') {
-                    highlightMatchingCells(value);
+                    const move = {
+                        type: 'move',
+                        row: row,
+                        col: col,
+                        value: value
+                    };
+
+                    dataChannels.forEach(otherChannel => {
+                        if (otherChannel.readyState === 'open') {
+                            otherChannel.send(JSON.stringify(move));
+                        }
+                    });
+
+                    appState.activeCell.classList.remove('active-cell');
+                    clearAllHighlights();
+                    checkGridState();
+                    appState.activeCell = null;
+
+                    if (value !== '') {
+                        highlightMatchingCells(value);
+                    }
+                } else {
+                    highlightConflictingCells(parseInt(row, 10), parseInt(col, 10), value.toString());
+                    playBeepSound(); // Play sound for invalid move
+                    // Clear the highlights after a short delay
+                    setTimeout(() => {
+                        document.querySelectorAll('.invalid-cell').forEach(c => c.classList.remove('invalid-cell'));
+                        validatePuzzle(); // Re-validate to restore any legitimate invalid cells
+                    }, 1000);
                 }
             }
         }

@@ -145,6 +145,38 @@ export function clearAllHighlights() {
 }
 
 /**
+ * Highlights cells that conflict with a potential move.
+ * @param {number} row - The row of the attempted move.
+ * @param {number} col - The column of the attempted move.
+ * @param {string} value - The number value that is causing the conflict.
+ */
+export function highlightConflictingCells(row, col, value) {
+    // Highlight row and column conflicts
+    for (let i = 0; i < 9; i++) {
+        const rowCell = document.getElementById(`cell-${row}-${i}`);
+        if (rowCell.querySelector('.cell-value').textContent.trim() === value) {
+            rowCell.classList.add('invalid-cell');
+        }
+        const colCell = document.getElementById(`cell-${i}-${col}`);
+        if (colCell.querySelector('.cell-value').textContent.trim() === value) {
+            colCell.classList.add('invalid-cell');
+        }
+    }
+
+    // Highlight subgrid conflicts
+    const startRow = Math.floor(row / 3) * 3;
+    const startCol = Math.floor(col / 3) * 3;
+    for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+            const subgridCell = document.getElementById(`cell-${startRow + r}-${startCol + c}`);
+            if (subgridCell.querySelector('.cell-value').textContent.trim() === value) {
+                subgridCell.classList.add('invalid-cell');
+            }
+        }
+    }
+}
+
+/**
  * Loads a new puzzle onto the grid. Can be generated locally or received from a peer.
  * @param {string} difficulty - The difficulty level ('easy', 'medium', 'hard') for local generation.
  * @param {number[][]} [puzzleData] - Optional puzzle data received from a peer.

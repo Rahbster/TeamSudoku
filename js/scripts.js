@@ -122,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.playerRoleSelect = document.getElementById('player-role');
     dom.signalingMethodSelect = document.getElementById('signaling-method');
     dom.newPuzzleButton = document.getElementById('new-puzzle-btn');
-    dom.sudokuLoadPuzzleArea = document.getElementById('sudoku-loadpuzzle-area');
     dom.hostButton = document.getElementById('host-btn');
     dom.instructionsModal = document.getElementById('instructions-modal');
     dom.numberPad = document.getElementById('number-pad');
@@ -155,6 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.p2PeerStatus = document.getElementById('p2-peer-status');
     dom.generateNewIDButton = document.getElementById('generate-new-id-btn');
     dom.channelList = document.getElementById('channel-list');
+    dom.gameContainer = document.querySelector('.game-container');
     dom.showChannelsBtn = document.getElementById('show-channels-btn');
 
     // Set the initial state for UI elements.
