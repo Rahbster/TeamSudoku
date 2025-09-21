@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Meta tags for character set, viewport, and PWA manifest -->
     <title>Sudoku P2P Proof-of-Concept</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="icon" href="assets/SudokuIcon.png" type="image/png">
@@ -12,9 +13,7 @@
 <body>
     <div id="background-image-container"></div>
 
-    <!--
-    src="https://www.youtube.com/embed/VIDEOID?autoplay=1&mute=1&loop=1&playlist=VIDEOID&controls=0&disablekb=1&modestbranding=1&rel=0"
-    -->
+    <!-- Optional video background container -->
     <div class="video-background">
         <div class="video-foreground">
             <iframe frameborder="0"
@@ -23,9 +22,11 @@
         </div>
     </div>
 
+    <!-- Overlay for displaying QR scan progress messages -->
     <div id="scan-overlay-message" class="hidden"></div>
 
     <main>
+        <!-- Main game area, containing the number pad and the Sudoku grid -->
         <section id="sudoku-grid-area">
             <div id="number-pad">
                 <button class="number-btn" id="number-btn-1">1</button>
@@ -40,6 +41,7 @@
                 <button class="number-btn" id="empty-btn">X</button>
             </div>
 
+            <!-- Modal for initial instructions -->
             <div id="instructions-modal" class="modal">
                 <div class="modal-content">
                     <h2>Instructions</h2>
@@ -47,6 +49,7 @@
                 </div>
             </div>
 
+            <!-- The main container for the 9x9 Sudoku grid -->
             <div id="puzzle-area">
                 <div id="sudoku-grid">
 
@@ -54,6 +57,7 @@
             </div>
         </section>
 
+        <!-- Section for game controls like timer, theme, difficulty, and connection toggle -->
         <section id="game-controls">
             <div id="timer-area">
                 <h2>Time: <span id="timer-display">00:00</span></h2>
@@ -74,6 +78,7 @@
                 <label for="difficulty-select">Choose a Difficulty</label>
                 <div class="difficulty-selector">
                     <select id="difficulty-select">
+                        <option value="very-easy">Very Easy</option>
                         <option value="easy">Easy</option>
                         <option value="medium">Medium</option>
                         <option value="hard">Hard</option>
@@ -85,10 +90,12 @@
             <button class="theme-button" id="host-btn">Toggle Configuration</button>
         </section>
 
+        <!-- Main signaling area, hidden by default -->
         <section id="signaling-area" class="hidden">
             <h1>P2P Sudoku PoC</h1>
             <p>Open the URL in separate browsers or tabs to connect players. Follow the steps below to connect them.</p>
 
+            <!-- Dropdowns for selecting connection method and player role -->
             <label for="signaling-method">Choose Connection Method:</label>
             <br />
             <select id="signaling-method">
@@ -106,6 +113,7 @@
                 <option value="joiner">Player 2 (Joiner)</option>
             </select>
 
+            <!-- UI for Manual Copy/Paste Signaling -->
             <div id="manual-signaling-area" class="hidden">
                 <div id="p1-manual-area" class="hidden">
                     <div class="container">
@@ -157,6 +165,7 @@
                 </div>
             </div>
 
+            <!-- UI for QR Code Signaling -->
             <div id="qr-signaling-area" class="hidden">
                 <div id="p1-qr-area" class="hidden">
                     <div class="container">
@@ -210,6 +219,7 @@
                 </div>
             </div>
 
+            <!-- UI for PeerJS Signaling -->
             <div id="peer-signaling-area" class="container mt-4 hidden">
                 <div id="p1-peer-area" class="hidden">
                     <div class="host-id-container">
@@ -230,6 +240,7 @@
                 </div>
             </div>
 
+            <!-- Display area for currently connected data channels -->
             <div id="data-channels-display">
                 <h3>Connected Channels:</h3>
                 <ul id="channel-list"></ul>
@@ -238,9 +249,11 @@
         </section>
     </main>
 
+    <!-- External libraries for QR code generation/scanning and PeerJS -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+    <script src="js/generator.js" type="module"></script>
     <script src="js/scripts.js" type="module"></script>
 </body>
 </html>

@@ -113,12 +113,16 @@ export function generatePuzzle(difficulty) {
 
     // Determine the number of cells to remove based on difficulty.
     let attempts;
-    if (difficulty === 'easy') {
-        attempts = 35;
+    if (difficulty === 'very-easy') {
+        attempts = 40;
+    } else if (difficulty === 'easy') {
+        attempts = 50;
     } else if (difficulty === 'medium') {
-        attempts = 45;
-    } else { // hard
         attempts = 55;
+    } else if (difficulty === 'hard') {
+        attempts = 60;
+    } else { // hard
+        attempts = 52; // Default to medium if difficulty is unknown
     }
 
     // "Poke holes" in the board by removing numbers.

@@ -3,9 +3,7 @@
 //==============================
 
 import { dom,
-         appState,
-         pressTimer,
-         dataChannels,
+         appState, dataChannels,
          startPressTimer
 } from './scripts.js';
 
@@ -52,7 +50,7 @@ export function createGrid() {
             cell.addEventListener('touchstart', startPressTimer);
             cell.addEventListener('mouseup', handleCellClick);
             cell.addEventListener('touchend', handleCellClick);
-            cell.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+            cell.addEventListener('mouseleave', () => clearTimeout(appState.pressTimer));
 
             dom.sudokuGrid.appendChild(cell);
         }
@@ -67,7 +65,7 @@ let activeCellSelectCount = 0;
  * @param {Event} event - The mouse or touch event.
  */
 export function handleCellClick(event) {
-    clearTimeout(pressTimer);
+    clearTimeout(appState.pressTimer);
     // Debounce rapid events to prevent double-firing on some devices.
     const currentTime = new Date().getTime();
     if (currentTime - appState.lastEventTimestamp < 100) {
@@ -97,30 +95,8 @@ export function handleCellClick(event) {
         clearAllHighlights();
     }
 
-    // If the same cell is clicked multiple times, offer a hint.
-    if (appState.activeCell == cell) {
-        activeCellSelectCount++;
-        if (activeCellSelectCount > 3) {
-            // Create a 2D array representation of the current board state.
-            let board = [];
-            for (let row = 0; row < 9; row++) {
-                board[row] = [];
-                for (let col = 0; col < 9; col++) {
-                    const cellValue = document.getElementById(`cell-${row}-${col}`).textContent.trim();
-                    const value = cellValue === '' ? 0 : parseInt(cellValue, 10);
-                    board[row][col] = value;
-                }
-            }
-            // Get a hint for the active cell and display it.
-            let hintValue = getHint(board);
-            if (hintValue != null) {
-                appState.activeCell.textContent = hintValue.value;
-                highlightMatchingCells(appState.activeCell.textContent);
-            }
-        }
-        checkGridState();
-    }
-    else {
+    // Reset the multi-click counter if a different cell is selected.
+    if (appState.activeCell !== cell) {
         activeCellSelectCount = 0;
     }
 
@@ -128,19 +104,6 @@ export function handleCellClick(event) {
     appState.activeCell = cell;
     cell.classList.add('active-cell');
     const value = appState.activeCell.textContent.trim();
-    if (value !== '') {
-        highlightMatchingCells(value);
-    }
-}
-
-//Handles a cell long-press
-/**
- * Handles a long-press event on a grid cell, highlighting matching numbers.
- * @param {HTMLElement} cell - The cell that was long-pressed.
- */
-export function handleLongPress(cell) {
-    appState.isLongPressActive = true;
-    const value = cell.textContent.trim();
     if (value !== '') {
         highlightMatchingCells(value);
     }

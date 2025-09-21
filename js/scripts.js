@@ -1,28 +1,34 @@
+//==============================
+// Main Script
+//==============================
+// This script serves as the entry point for the application. It imports necessary modules,
+// defines global state and variables, and initializes the application when the DOM is ready.
+
 import {
     createGrid,
 } from './game.js';
 
 import {
     toggleSignalingUI,
-    initializeEventListeners
+    initializeEventListeners,
+    handleLongPress
 } from './ui.js';
 
 //==============================
-//Global Variables and DOM Elements
+// Global Variables and State
 //==============================
-//Cache DOM elements for faster access
-export const dom = {};
 
-export let dataChannels = []; // This will hold the WebRTC data channels
-export let pressTimer = null;
+export const dom = {}; // Object to cache DOM elements for faster access.
+export let dataChannels = []; // Array to hold all active WebRTC data channels.
 
 
-//State object to manage application state
+// Global state object to manage the application's state throughout its lifecycle.
 export const appState = {
-    isInitiator: false,
-    isAnswer: false,
-    initialSudokuState: [],
-    activeCell: null,
+    isInitiator: false, // Is this client the host (Player 1)?
+    isAnswer: false, // Is the current QR code generation for an answer SDP?
+    initialSudokuState: [], // Stores the initial state of the puzzle for resets or reference.
+    activeCell: null, // The currently selected cell in the Sudoku grid.
+    pressTimer: null, // Timer for handling long-press events on the grid.
     //QR state
     offerChunks: [],
     currentOfferChunkIndex: 0,
@@ -31,12 +37,12 @@ export const appState = {
     scannedChunks: [],
     totalChunksToScan: 0,
     //Input state
-    isLongPressActive: false,
-    lastEventTimestamp: 0
+    isLongPressActive: false, // Flag to track if a long-press action is active.
+    lastEventTimestamp: 0 // Timestamp to help debounce rapid click/tap events.
 };
 
 // Copies the offer or answer to the clipboard
-async function copyToClipboard(elementId) {
+export async function copyToClipboard(elementId) {
     const textToCopy = document.getElementById(elementId).value;
     try {
         await navigator.clipboard.writeText(textToCopy);
@@ -63,23 +69,26 @@ async function copyToClipboard(elementId) {
     }
 }
 
-//Starts the timer for a long press
+/**
+ * Starts a timer on mouse-down or touch-start to detect a long-press.
+ * @param {Event} event - The mousedown or touchstart event.
+ */
 export function startPressTimer(event) {
-    clearTimeout(pressTimer);
-    appState.isLongPressActive = false;
-    const cell = event.target;
+    const cell = event.target.closest('.grid-cell');
+    if (!cell) return;
 
-    pressTimer = setTimeout(() => {
+    appState.pressTimer = setTimeout(() => {
         handleLongPress(cell);
-    }, 500);
+    }, 500); // 500ms for a long-press
 }
 
 //==============================
-//Initial Setup
+// Initial Setup
 //==============================
+// This event listener fires when the initial HTML document has been completely loaded and parsed.
 document.addEventListener('DOMContentLoaded', () => {
-    // APP State
-    appState.selectedDifficulty = 'easy';
+    // Set initial application state. Default to the first option in the dropdown.
+    appState.selectedDifficulty = 'very-easy';
     // DOM setup
     dom.offerTextarea = document.getElementById('offer-text');
     dom.receivedOfferTextarea = document.getElementById('received-offer-text');
@@ -145,16 +154,17 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.channelList = document.getElementById('channel-list');
     dom.showChannelsBtn = document.getElementById('show-channels-btn');
 
-    // Initial UI setup
+    // Set the initial state for UI elements.
     dom.prevQrBtn.disabled = true;
     dom.nextQrBtn.disabled = true;
     dom.prevQrAnswerBtn.disabled = true;
     dom.nextQrAnswerBtn.disabled = true;
 
+    // Initialize UI visibility and create the game grid.
     toggleSignalingUI();
     createGrid();
 
-    // Call the initialization function from the UI file
+    // Attach all necessary event listeners to the DOM elements.
     initializeEventListeners();
 
     dom.body.classList.add('default');
@@ -162,6 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
+        // Register the service worker for Progressive Web App (PWA) capabilities like offline access.
         navigator.serviceWorker.register('/TeamSudoku/sw.js')
             .then((registration) => {
                 console.log('Service Worker registered! Scope: ', registration.scope);

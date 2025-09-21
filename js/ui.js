@@ -2,7 +2,7 @@
 //UI Logic
 //==============================
 // This module handles all user interface interactions, from button clicks to dynamic UI updates.
-import { appState, dom, dataChannels, startPressTimer } from './scripts.js';
+import { appState, dom, dataChannels } from './scripts.js';
 import { clearAllHighlights, loadPuzzle, checkGridState, highlightMatchingCells } from './game.js';
 import { clearTextbox, createQrCodeChunks, playBeepSound } from './misc.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
@@ -73,6 +73,18 @@ export function toggleSignalingUI() {
         } else {
             dom.p2PeerArea.classList.remove('hidden');
         }
+    }
+}
+
+/**
+ * Handles a long-press event on a grid cell, highlighting matching numbers.
+ * @param {HTMLElement} cell - The cell that was long-pressed.
+ */
+export function handleLongPress(cell) {
+    appState.isLongPressActive = true;
+    const value = cell.textContent.trim();
+    if (value !== '') {
+        highlightMatchingCells(value);
     }
 }
 
@@ -582,24 +594,6 @@ export function initializeEventListeners() {
     // Event listener for the theme selector
     dom.difficultySelector.addEventListener('change', (event) => {
         appState.selectedDifficulty = event.target.value;
-    });
-
-    // Event listeners for cell interactions (click and long-press)
-    dom.sudokuGrid.addEventListener('mousedown', (e) => startPressTimer(e));
-    dom.sudokuGrid.addEventListener('mouseup', () => {
-        clearTimeout(appState.pressTimer);
-        appState.isLongPressActive = false; // Reset the state
-    });
-    dom.sudokuGrid.addEventListener('mouseleave', () => {
-        clearTimeout(appState.pressTimer);
-        appState.isLongPressActive = false; // Reset the state
-    });
-
-    // For mobile devices
-    dom.sudokuGrid.addEventListener('touchstart', (e) => startPressTimer(e));
-    dom.sudokuGrid.addEventListener('touchend', () => {
-        clearTimeout(appState.pressTimer);
-        appState.isLongPressActive = false; // Reset the state
     });
 
     // Event listener to the number pad
