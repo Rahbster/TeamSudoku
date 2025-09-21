@@ -57,8 +57,6 @@ export function createGrid() {
     }
 }
 
-let activeCellSelectCount = 0;
-
 /**
  * Handles a click or tap event on a grid cell.
  * Manages cell selection, highlighting, and triggers hint generation on multiple taps.
@@ -93,11 +91,6 @@ export function handleCellClick(event) {
     if (appState.activeCell) {
         appState.activeCell.classList.remove('active-cell');
         clearAllHighlights();
-    }
-
-    // Reset the multi-click counter if a different cell is selected.
-    if (appState.activeCell !== cell) {
-        activeCellSelectCount = 0;
     }
 
     // Set the new active cell and highlight it.

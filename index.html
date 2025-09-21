@@ -26,8 +26,14 @@
     <div id="scan-overlay-message" class="hidden"></div>
 
     <main>
-        <!-- Main game area, containing the number pad and the Sudoku grid -->
-        <section id="sudoku-grid-area">
+        <div class="game-container">
+            <!-- Modal for initial instructions -->
+            <div id="instructions-modal" class="modal">
+                <div class="modal-content">
+                    <h2>Instructions</h2>
+                    <p id="instructions">Once connected, click on a grid cell to change its value. The change will appear on the other player's screen.</p>
+                </div>
+            </div>
             <div id="number-pad">
                 <button class="number-btn" id="number-btn-1">1</button>
                 <button class="number-btn" id="number-btn-2">2</button>
@@ -40,55 +46,48 @@
                 <button class="number-btn" id="number-btn-9">9</button>
                 <button class="number-btn" id="empty-btn">X</button>
             </div>
+            <!-- Main game area, containing the number pad and the Sudoku grid -->
+            <section id="sudoku-grid-area">
+                <div id="puzzle-area">
+                    <div id="sudoku-grid">
 
-            <!-- Modal for initial instructions -->
-            <div id="instructions-modal" class="modal">
-                <div class="modal-content">
-                    <h2>Instructions</h2>
-                    <p id="instructions">Once connected, click on a grid cell to change its value. The change will appear on the other player's screen.</p>
+                    </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- The main container for the 9x9 Sudoku grid -->
-            <div id="puzzle-area">
-                <div id="sudoku-grid">
-
+            <!-- Section for game controls like timer, theme, difficulty, and connection toggle -->
+            <section id="game-controls">
+                <div id="timer-area">
+                    <h2>Time: <span id="timer-display">00:00</span></h2>
                 </div>
-            </div>
-        </section>
-
-        <!-- Section for game controls like timer, theme, difficulty, and connection toggle -->
-        <section id="game-controls">
-            <div id="timer-area">
-                <h2>Time: <span id="timer-display">00:00</span></h2>
-            </div>
-            <div class="theme-selector">
-                <label for="theme-select">Choose a Theme</label>
-                <div>
-                    <select id="theme-select">
-                        <option value="default">Default</option>
-                        <option value="banished">Banished</option>
-                        <option value="forerunner">Forerunner</option>
-                        <option value="unsc">UNSC</option>
-                    </select>
+                <div class="theme-selector">
+                    <label for="theme-select">Choose a Theme</label>
+                    <div>
+                        <select id="theme-select">
+                            <option value="default">Default</option>
+                            <option value="banished">Banished</option>
+                            <option value="forerunner">Forerunner</option>
+                            <option value="unsc">UNSC</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
-
-            <div id="sudoku-loadpuzzle-area">
-                <label for="difficulty-select">Choose a Difficulty</label>
-                <div class="difficulty-selector">
-                    <select id="difficulty-select">
-                        <option value="very-easy">Very Easy</option>
-                        <option value="easy">Easy</option>
-                        <option value="medium">Medium</option>
-                        <option value="hard">Hard</option>
-                    </select>
-                    <button class="theme-button" id="new-puzzle-btn">Load New Puzzle</button>
+    
+                <div id="sudoku-loadpuzzle-area">
+                    <label for="difficulty-select">Choose a Difficulty</label>
+                    <div class="difficulty-selector">
+                        <select id="difficulty-select">
+                            <option value="very-easy">Very Easy</option>
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                        <button class="theme-button" id="new-puzzle-btn">Load New Puzzle</button>
+                    </div>
                 </div>
-            </div>
-
-            <button class="theme-button" id="host-btn">Toggle Configuration</button>
-        </section>
+    
+                <button class="theme-button" id="host-btn">Toggle Configuration</button>
+            </section>
+        </div>
 
         <!-- Main signaling area, hidden by default -->
         <section id="signaling-area" class="hidden">

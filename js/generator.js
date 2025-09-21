@@ -122,7 +122,7 @@ export function generatePuzzle(difficulty) {
     } else if (difficulty === 'hard') {
         attempts = 60;
     } else { // hard
-        attempts = 52; // Default to medium if difficulty is unknown
+        attempts = 55; // Default to medium if difficulty is unknown
     }
 
     // "Poke holes" in the board by removing numbers.
