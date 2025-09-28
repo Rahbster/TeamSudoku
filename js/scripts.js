@@ -162,11 +162,25 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.prevQrAnswerBtn.disabled = true;
     dom.nextQrAnswerBtn.disabled = true;
 
+    // Load saved theme from localStorage, or default to 'default'
+    const savedTheme = localStorage.getItem('sudokuTheme') || 'default';
+    dom.body.classList.add(savedTheme);
+    dom.themeSelector.value = savedTheme;
+
+    // Load saved connection method and role from localStorage BEFORE initializing the UI
+    const savedConnectionMethod = localStorage.getItem('sudokuConnectionMethod');
+    if (savedConnectionMethod) {
+        dom.signalingMethodSelect.value = savedConnectionMethod;
+    }
+    const savedPlayerRole = localStorage.getItem('sudokuPlayerRole');
+    if (savedPlayerRole) {
+        dom.playerRoleSelect.value = savedPlayerRole;
+    }
+
     // Initialize UI visibility and create the game grid.
     toggleSignalingUI();
     createGrid();
     initializeEventListeners();
-    dom.body.classList.add('default');
 });
 
 if ('serviceWorker' in navigator) {

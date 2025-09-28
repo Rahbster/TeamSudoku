@@ -29,7 +29,9 @@ function toggleSignalingArea() {
  */
 export function toggleSignalingUI() {
     const signalingMethod = dom.signalingMethodSelect.value;
+    localStorage.setItem('sudokuConnectionMethod', signalingMethod); // Save the connection method
     const playerRole = dom.playerRoleSelect.value;
+    localStorage.setItem('sudokuPlayerRole', playerRole); // Save the player role
     if (signalingMethod === 'none' ||
         playerRole === 'none') {
         return;
@@ -551,6 +553,7 @@ export function initializeEventListeners() {
         const selectedTheme = event.target.value;
         dom.body.classList.remove('default', 'banished', 'unsc', 'forerunner');
         dom.body.classList.add(selectedTheme);
+        localStorage.setItem('sudokuTheme', selectedTheme); // Save the theme choice
     });
 
     // Event listeners for the "Toggle P2P Configuration" button
