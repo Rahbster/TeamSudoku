@@ -799,18 +799,20 @@ body.banished .highlight-cell {
 }
 
 body.banished .active-cell {
-    background-color: #C22D2D;
-    color: #FFFFFF;
+    border: 2px solid #C22D2D;
+    box-shadow: inset 0 0 10px #C22D2D;
 }
 
 body.banished .invalid-cell {
     background-color: #FF0000;
     color: #FFFFFF;
+    text-shadow: 0 0 5px #FF0000;
 }
 
 body.banished .solved-puzzle {
     background-color: #5C4B2E;
     color: #E0DEDF;
+    animation: solved-pulse 1.5s infinite;
 }
 
 /* Themed buttons and dropdowns */
@@ -818,10 +820,12 @@ body.banished button,
 body.banished .number-btn,
 body.banished #empty-btn,
 body.banished select {
-    background-color: #8C2F2F;
+    background-color: transparent;
     color: #E0DEDF;
-    border-color: #5C4B2E;
-    clip-path: none;
+    border: 2px solid #8C2F2F;
+    font-family: var(--font-main);
+    clip-path: polygon(0 15%, 15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%);
+    box-shadow: none;
 }
 
 body.banished button:hover,
@@ -829,8 +833,8 @@ body.banished .number-btn:hover,
 body.banished #empty-btn:hover,
 body.banished select:hover {
     background-color: #C22D2D;
-    border-color: #8C2F2F;
     color: #FFFFFF;
+    box-shadow: 0 0 15px rgba(194, 45, 45, 0.7);
 }
 
 /* Transparent red 'X' button for this theme */
@@ -880,12 +884,13 @@ body.unsc .highlight-cell {
 }
 
 body.unsc .active-cell {
-    background-color: #3D6B51;
-    color: #CDCFCC;
+    border: 2px solid #EFB82A;
+    box-shadow: inset 0 0 10px #EFB82A;
 }
 
 body.unsc .invalid-cell {
     background-color: #B53835;
+    text-shadow: 0 0 5px #B53835;
 }
 
 body.unsc .solved-puzzle {
@@ -898,19 +903,21 @@ body.unsc button,
 body.unsc .number-btn,
 body.unsc #empty-btn,
 body.unsc select {
-    background-color: #3D6B51;
+    background-color: transparent;
     color: #CDCFCC;
-    border-color: #2D6A4F;
-    clip-path: none;
+    border: 2px solid #2D6A4F;
+    font-family: var(--font-main);
+    clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%, 0 10%);
+    box-shadow: none;
 }
 
 body.unsc button:hover,
 body.unsc .number-btn:hover,
 body.unsc #empty-btn:hover,
 body.unsc select:hover {
-    background-color: #EFB82A;
-    color: #1A1A1A;
-    border-color: #EFB82A;
+    background-color: #3D6B51;
+    color: #FFFFFF;
+    box-shadow: 0 0 15px rgba(61, 107, 81, 0.7);
 }
 
 /* Red 'X' button for this theme */

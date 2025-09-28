@@ -173,7 +173,8 @@ export function handleCellClick(cell) {
 export function highlightMatchingCells(value) {
     const allCells = document.querySelectorAll('.grid-cell');
     allCells.forEach(cell => {
-        if (cell.querySelector('.cell-value').textContent.trim() === value) {
+        // Ensure comparison is always string-to-string to avoid type mismatches.
+        if (cell.querySelector('.cell-value').textContent.trim() === value.toString()) {
             cell.classList.add('highlight-cell');
         }
     });

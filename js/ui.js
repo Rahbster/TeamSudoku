@@ -793,14 +793,12 @@ export function initializeEventListeners() {
                         }
                     }
 
-                    appState.activeCell.classList.remove('active-cell');
+                    // The move is valid, so update highlights for the new value.
                     clearAllHighlights();
-                    checkGridState();
-                    appState.activeCell = null;
-
                     if (value !== '') {
                         highlightMatchingCells(value);
                     }
+                    checkGridState();
                 } else {
                     highlightConflictingCells(parseInt(row, 10), parseInt(col, 10), value.toString());
                     playBeepSound(); // Play sound for invalid move
