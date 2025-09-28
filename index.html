@@ -56,17 +56,6 @@
                 <button class="number-btn" id="empty-btn">X</button>
             </div>
 
-            <!-- Section for team selection -->
-            <section id="team-selection-area" class="hidden">
-                <h2>Join or Create a Team</h2>
-                <div class="team-creation">
-                    <input type="text" id="team-name-input" placeholder="Enter New Team Name">
-                    <button id="create-team-btn">Create Team</button>
-                </div>
-                <h3>Available Teams:</h3>
-                <ul id="team-list"></ul>
-            </section>
-
             <!-- Main game area, containing the number pad and the Sudoku grid -->
             <section id="sudoku-grid-area">
                 <div id="puzzle-area">
@@ -152,6 +141,17 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Section for team selection, visible after connection -->
+                <section id="team-selection-area" class="hidden">
+                    <h2>Join or Create a Team</h2>
+                    <div class="team-creation">
+                        <input type="text" id="team-name-input" placeholder="Enter New Team Name">
+                        <button id="create-team-btn">Create Team</button>
+                    </div>
+                    <h3>Available Teams:</h3>
+                    <ul id="team-list"></ul>
+                </section>
     
                 <!-- UI for Manual Copy/Paste Signaling -->
                 <div id="manual-signaling-area" class="hidden">

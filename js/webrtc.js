@@ -47,6 +47,12 @@ function setupDataChannel(channel) {
         dataChannels.push(channel); // Store the new channel
         if (appState.isInitiator) {
             showTeamSelection();
+            // When a new player connects, send them the current list of teams.
+            const teamListMessage = {
+                type: 'team-list-update',
+                teams: Object.keys(appState.teams)
+            };
+            channel.send(JSON.stringify(teamListMessage));
         }
     };
 

@@ -94,6 +94,7 @@ export function hideSignalingUI() {
  */
 export function showTeamSelection() {
     dom.teamSelectionArea.classList.remove('hidden');
+    // Ensure the game grid is hidden when team selection is shown
     dom.sudokuGridArea.classList.add('hidden');
     dom.numberPad.classList.add('hidden');
 }
