@@ -4,9 +4,9 @@
 // This module handles all user interface interactions, from button clicks to dynamic UI updates.
 import { appState, dom, dataChannels } from './scripts.js';
 import { clearAllHighlights, loadPuzzle, checkGridState, highlightMatchingCells, isMoveValid, highlightConflictingCells, updateGridForTeam, validatePuzzle } from './game.js';
-import { clearTextbox, createQrCodeChunks, playBeepSound } from './misc.js';
+import { clearTextbox, createQrCodeChunks, playBeepSound, playRemoteMoveSound } from './misc.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
-import { createOffer, createAnswer } from './webrtc.js';
+import { createOffer, createAnswer, processAndBroadcastMove } from './webrtc.js';
 
 
 /**
@@ -119,6 +119,7 @@ export function updateTeamList(teams) {
     if (teams.length === 0) {
         dom.teamList.innerHTML = '<li>No teams created yet.</li>';
     } else {
+        teams.sort(); // Sort the team names alphabetically
         teams.forEach(teamName => {
             const li = document.createElement('li');
             // The remove button is only visible to the host, controlled by the .host-only class in CSS
@@ -598,11 +599,11 @@ export function initializeEventListeners() {
 
     // Event listeners for game-related buttons
     dom.newPuzzleButton.addEventListener('click', () => {
-        loadPuzzle(appState.selectedDifficulty);
+        loadPuzzle(appState.selectedDifficulty, null, false); // Do not reset teams
         dom.winnerModal.classList.add('hidden'); // Hide winner modal on new puzzle
     });
     dom.newPuzzleWinnerBtn.addEventListener('click', () => {
-        loadPuzzle(appState.selectedDifficulty);
+        loadPuzzle(appState.selectedDifficulty, null, false); // Do not reset teams
         dom.winnerModal.classList.add('hidden'); // Hide winner modal
     });
 
@@ -778,13 +779,19 @@ export function initializeEventListeners() {
                         row: parseInt(row, 10),
                         col: parseInt(col, 10),
                         value: value,
+                        playerId: appState.playerId, // The user-configurable name
+                        sessionId: appState.sessionId // The unique session ID
                     };
 
-                    dataChannels.forEach(channel => {
-                        if (channel.readyState === 'open') {
-                            channel.send(JSON.stringify(move));
+                    if (appState.isInitiator) {
+                        // Host processes its own move directly.
+                        processAndBroadcastMove(move);
+                    } else {
+                        // Joiner sends the move to the host for processing.
+                        if (dataChannels.length > 0 && dataChannels[0].readyState === 'open') {
+                            dataChannels[0].send(JSON.stringify(move));
                         }
-                    });
+                    }
 
                     appState.activeCell.classList.remove('active-cell');
                     clearAllHighlights();
@@ -857,7 +864,7 @@ export function initializeEventListeners() {
         }
         if (event.target.classList.contains('join-team-btn')) {
             const teamName = event.target.dataset.teamName;
-            const joinTeamMsg = { type: 'join-team', teamName: teamName, playerId: appState.playerId };
+            const joinTeamMsg = { type: 'join-team', teamName: teamName, playerId: appState.playerId, sessionId: appState.sessionId };
             
             appState.playerTeam = teamName;
             dom.teamDisplayArea.classList.remove('hidden');
@@ -867,7 +874,10 @@ export function initializeEventListeners() {
             if (appState.isInitiator) {
                 processLocalTeamJoin(joinTeamMsg); // Host processes their own join
             } else {
-                dataChannels[0].send(JSON.stringify(joinTeamMsg)); // Joiner sends request to host
+                // Ensure the data channel is open before sending
+                if (dataChannels.length > 0 && dataChannels[0].readyState === 'open') {
+                    dataChannels[0].send(JSON.stringify(joinTeamMsg)); // Joiner sends request to host
+                }
                 showScreen('game'); // Transition for the joiner
             }
         }
@@ -921,14 +931,12 @@ function processLocalTeamJoin(joinData) {
     // Update the host's own grid
     updateGridForTeam(newTeamName);
 
-    // Transition the host's UI to the game screen
-    showScreen('game');
-
     // Broadcast that the player has joined
-    const message = { type: 'player-joined-team', teamName: newTeamName, playerId: joiningPlayerId };
+    const message = { type: 'player-joined-team', teamName: newTeamName, playerId: joiningPlayerId, sessionId: joinData.sessionId };
     const messageString = JSON.stringify(message);
     dataChannels.forEach(c => c.send(messageString));
 }
+
 /**
  * Toggles the visibility of the data channel list and updates the button text.
  */

@@ -16,6 +16,10 @@ import {
 } from './generator.js';
 
 import {
+    broadcastCellSelection
+} from './webrtc.js';
+
+import {
     showWinnerScreen
 } from './ui.js';
 
@@ -137,6 +141,29 @@ export function handleCellClick(cell) {
     if (value) {
         highlightMatchingCells(value);
     }
+
+    // If the player is on a team, notify teammates of the cell selection.
+    if (appState.playerTeam && dataChannels.length > 0) {
+        const [_, row, col] = cell.id.split('-');
+        const selectMessage = {
+            type: 'cell-select',
+            team: appState.playerTeam,
+            row: parseInt(row, 10),
+            col: parseInt(col, 10),
+            playerId: appState.playerId,
+            sessionId: appState.sessionId
+        };
+
+        if (appState.isInitiator) {
+            // Host broadcasts the selection directly.
+            broadcastCellSelection(selectMessage);
+        } else {
+            // Joiner sends the selection to the host for relaying.
+            if (dataChannels[0] && dataChannels[0].readyState === 'open') {
+                dataChannels[0].send(JSON.stringify(selectMessage));
+            }
+        }
+    }
 }
 
 /**
@@ -199,8 +226,9 @@ export function highlightConflictingCells(row, col, value) {
  * @param {string} difficulty - The difficulty level ('easy', 'medium', 'hard') for local generation.
  * @param {number[][]} [puzzleData] - Optional puzzle data received from a peer.
  * If provided, this puzzle is loaded instead of generating a new one.
+ * @param {boolean} [resetTeams=false] - Optional flag to reset the team state.
  */
-export async function loadPuzzle(difficulty, puzzleData) {
+export async function loadPuzzle(difficulty, puzzleData, resetTeams = false) {
     createGrid();
     let puzzle = puzzleData;
     let isRemoteLoad = !!puzzleData;
@@ -209,11 +237,18 @@ export async function loadPuzzle(difficulty, puzzleData) {
         // Generate puzzle locally instead of fetching from an API
         puzzle = generatePuzzle(difficulty);
         appState.initialSudokuState = JSON.parse(JSON.stringify(puzzle)); // Deep copy
-        // Reset teams and winner status
-        appState.teams = {};
+        if (resetTeams) {
+            appState.teams = {};
+        }
+        // Ensure all existing teams are updated with the new puzzle state
+        for (const teamName in appState.teams) {
+            appState.teams[teamName].puzzle = JSON.parse(JSON.stringify(puzzle));
+        }
+
         appState.winner = null;
         console.log('Generated new puzzle locally for difficulty:', difficulty);
     }
+    appState.initialSudokuState = JSON.parse(JSON.stringify(puzzle)); // Ensure initial state is always synced
     
     // Populate the grid cells with the puzzle numbers for initial display.
     for (let row = 0; row < 9; row++) {
@@ -226,32 +261,15 @@ export async function loadPuzzle(difficulty, puzzleData) {
             }
         }
     }
-    
+
     // If the puzzle was generated locally (by the host), broadcast it to all connected peers.
     if (!isRemoteLoad && dataChannels && dataChannels.length > 0) {
         appState.gameInProgress = true;
         const puzzleMessage = { type: 'initial-state', state: puzzle };
         const messageString = JSON.stringify(puzzleMessage);
-
-        // Broadcast the puzzle to all connected data channels.
-        dataChannels.forEach(channel => {
-            if (channel.readyState === 'open') {
-                channel.send(messageString);
-            }
-        });
-
-        // Also broadcast an empty team list to start
-        const teamListMessage = { type: 'team-list-update', teams: [] };
-        const teamListString = JSON.stringify(teamListMessage);
-        dataChannels.forEach(channel => {
-            if (channel.readyState === 'open') {
-                channel.send(teamListString);
-            }
-        });
-
-        // Reset UI for all players
-        document.getElementById('winner-modal').classList.add('hidden');
+        dataChannels.forEach(channel => channel.send(messageString));
     }
+    
     startTimer();
     return puzzle; // Return the generated puzzle
 }

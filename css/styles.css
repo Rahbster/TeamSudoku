@@ -261,6 +261,11 @@ button:disabled, select:disabled, .number-btn:disabled {
     gap: 8px; /* Add a gap between the buttons */
 }
 
+/* Ensure host-only buttons are hidden by default with higher specificity */
+.theme-button.host-only {
+    display: none;
+}
+
 /* New Puzzle Button Styles */
 #new-puzzle-btn {
     position: relative;

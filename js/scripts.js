@@ -47,6 +47,7 @@ export const appState = {
     // Team state
     playerTeam: null, // The team this player has joined.
     playerId: `Player ${Math.floor(100 + Math.random() * 900)}`, // A simple random ID for now
+    sessionId: Math.random().toString(36).substring(2, 15), // A unique ID for this browser session
     teams: {}, // Object to hold the state for each team. e.g., { teamName: { puzzle: [...] } }
     gameInProgress: false, // Is a game currently being played?
     winner: null // Which team won?

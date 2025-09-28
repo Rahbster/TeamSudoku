@@ -19,6 +19,28 @@ export function playBeepSound() {
     oscillator.stop(audioContext.currentTime + 0.1);
 }
 
+/**
+ * Plays a slightly higher-pitched beep sound to indicate a remote move.
+ */
+export function playRemoteMoveSound() {
+    const audioContext = new(window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    // Connect the nodes
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    // Set the tone and duration (higher pitch)
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(660, audioContext.currentTime); // 660 Hz is E5
+    gainNode.gain.setValueAtTime(0.8, audioContext.currentTime); // Slightly softer
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+}
+
 //Creates QR code chunks with embedded index and total count.
 export function createQrCodeChunks(data) {
     const MAX_CHUNK_SIZE = 128;
