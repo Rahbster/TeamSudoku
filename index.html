@@ -82,17 +82,6 @@
                     <h2>Time: <span id="timer-display">00:00</span></h2>
                 </div>
                 <div class="selector-container">
-                    <label for="theme-select">Choose a Theme</label>
-                    <div>
-                        <select id="theme-select">
-                            <option value="default">Default</option>
-                            <option value="banished">Banished</option>
-                            <option value="forerunner">Forerunner</option>
-                            <option value="unsc">UNSC</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="selector-container">
                     <label for="difficulty-select">Choose a Difficulty</label>
                     <div>
                         <select id="difficulty-select">
@@ -132,20 +121,24 @@
                 <div class="config-selectors">
                     <div class="selector-container"> <!-- Re-using theme-selector class for consistent styling -->
                         <label for="signaling-method">Choose Connection Method</label>
-                        <select id="signaling-method">
-                            <option value="none">-- Select a method --</option>
-                            <option value="manual">Manual Copy/Paste</option>
-                            <option value="qr">QR Code Scan</option>
-                            <option value="peerJS">PeerJS</option>
-                        </select>
+                        <div>
+                            <select id="signaling-method">
+                                <option value="none">-- Select a method --</option>
+                                <option value="manual">Manual Copy/Paste</option>
+                                <option value="qr">QR Code Scan</option>
+                                <option value="peerJS">PeerJS</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="selector-container"> <!-- Re-using theme-selector class for consistent styling -->
                         <label for="player-role">Choose Player Role</label>
-                        <select id="player-role">
-                            <option value="none">-- Select a role --</option>
-                            <option value="host">Player 1 (Host)</option>
-                            <option value="joiner">Player 2 (Joiner)</option>
-                        </select>
+                        <div>
+                            <select id="player-role">
+                                <option value="none">-- Select a role --</option>
+                                <option value="host">Player 1 (Host)</option>
+                                <option value="joiner">Player 2 (Joiner)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
     

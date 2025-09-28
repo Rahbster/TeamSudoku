@@ -628,18 +628,6 @@ export function initializeEventListeners() {
         }
     });
 
-    // Event listener for the theme selector
-    dom.themeSelector.addEventListener('change', (event) => {
-        const selectedTheme = event.target.value;
-        dom.body.classList.remove('default', 'banished', 'unsc', 'forerunner');
-        dom.body.classList.add(selectedTheme);
-    });
-
-    // Event listener for the theme selector
-    dom.difficultySelector.addEventListener('change', (event) => {
-        appState.selectedDifficulty = event.target.value;
-    });
-
     // Event listener for the pencil mode button
     dom.pencilButton.addEventListener('click', () => {
         appState.isPencilMode = !appState.isPencilMode;

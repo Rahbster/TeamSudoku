@@ -76,19 +76,6 @@ export async function copyToClipboard(elementId) {
     }
 }
 
-/**
- * Starts a timer on mouse-down or touch-start to detect a long-press.
- * @param {Event} event - The mousedown or touchstart event.
- */
-export function startPressTimer(event) {
-    const cell = event.target.closest('.grid-cell');
-    if (!cell) return;
-
-    appState.pressTimer = setTimeout(() => {
-        handleLongPress(cell);
-    }, 500); // 500ms for a long-press
-}
-
 //==============================
 // Initial Setup
 //==============================
@@ -130,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.hostButton = document.getElementById('host-btn');
     dom.instructionsModal = document.getElementById('instructions-modal');
     dom.numberPad = document.getElementById('number-pad');
-    dom.themeSelector = document.getElementById('theme-select');
     dom.difficultySelector = document.getElementById('difficulty-select');
     dom.pencilButton = document.getElementById('pencil-btn');
     dom.body = document.body;
@@ -178,11 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize UI visibility and create the game grid.
     toggleSignalingUI();
     createGrid();
-
-    // Attach all necessary event listeners to the DOM elements.
     initializeEventListeners();
-
-    dom.body.classList.add('default');
 });
 
 if ('serviceWorker' in navigator) {

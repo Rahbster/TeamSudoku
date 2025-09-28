@@ -2,9 +2,8 @@
 //Sudoku Game Logic
 //==============================
 
-import { dom,
-         appState, dataChannels,
-         startPressTimer
+import { dom, appState,
+         dataChannels
 } from './scripts.js';
 
 import {
@@ -66,11 +65,11 @@ export function createGrid() {
             }
             
             // Add event listeners for both mouse and touch to handle clicks and long-presses.
-            cell.addEventListener('mousedown', startPressTimer);
-            cell.addEventListener('touchstart', startPressTimer);
-            cell.addEventListener('mouseup', handleCellClick);
-            cell.addEventListener('touchend', handleCellClick);
-            cell.addEventListener('mouseleave', () => clearTimeout(appState.pressTimer));
+            cell.addEventListener('mousedown', (e) => handleInteractionStart(e, cell));
+            cell.addEventListener('touchstart', (e) => handleInteractionStart(e, cell));
+            cell.addEventListener('mouseup', (e) => handleInteractionEnd(e, cell));
+            cell.addEventListener('touchend', (e) => handleInteractionEnd(e, cell));
+            cell.addEventListener('mouseleave', () => clearTimeout(appState.pressTimer)); // Clear timer if mouse leaves
 
             dom.sudokuGrid.appendChild(cell);
         }
@@ -78,46 +77,64 @@ export function createGrid() {
 }
 
 /**
- * Handles a click or tap event on a grid cell.
- * Manages cell selection, highlighting, and triggers hint generation on multiple taps.
- * @param {Event} event - The mouse or touch event.
+ * Handles the start of a mouse or touch interaction on a cell.
+ * @param {Event} event - The mousedown or touchstart event.
+ * @param {HTMLElement} cell - The cell being interacted with.
  */
-export function handleCellClick(event) {
-    clearTimeout(appState.pressTimer);
-    // Debounce rapid events to prevent double-firing on some devices.
-    const currentTime = new Date().getTime();
-    if (currentTime - appState.lastEventTimestamp < 100) {
-        appState.lastEventTimestamp = 0;
-        return;
-    }
-    appState.lastEventTimestamp = currentTime;
+function handleInteractionStart(event, cell) {
+    // Prevent default behavior, especially for touch events, to avoid unwanted scrolling or zooming.
+    event.preventDefault();
+    clearTimeout(appState.pressTimer); // Clear any existing timers.
+    appState.isLongPressActive = false; // Reset long-press flag.
 
-    // If a long-press was just completed, do nothing.
+    // Start a new timer for long-press detection.
+    appState.pressTimer = setTimeout(() => {
+        appState.isLongPressActive = true;
+        const value = cell.querySelector('.cell-value').textContent.trim();
+        if (value) {
+            clearAllHighlights();
+            highlightMatchingCells(value);
+        }
+    }, 500); // 500ms threshold for a long press.
+}
+
+/**
+ * Handles the end of a mouse or touch interaction on a cell.
+ * @param {Event} event - The mouseup or touchend event.
+ * @param {HTMLElement} cell - The cell where the interaction ended.
+ */
+function handleInteractionEnd(event, cell) {
+    clearTimeout(appState.pressTimer); // Always clear the timer on interaction end.
+
+    // If a long press was just completed, reset the flag and do nothing else.
     if (appState.isLongPressActive) {
         appState.isLongPressActive = false;
         return;
     }
-    const cell = event.target.closest('.grid-cell');
-    // If the cell is pre-filled, just highlight matching numbers.
-    if (cell.classList.contains('preloaded-cell')) {
-        const value = cell.querySelector('.cell-value').textContent.trim();
-        if (value !== '') {
-            highlightMatchingCells(value);
-        }
-        return;
-    }
-    
-    // If there is an existing active cell, remove its 'active' class and clear highlights.
+
+    // This is a short click. Proceed with selection and highlighting.
+    handleCellClick(cell);
+}
+
+/**
+ * Handles a click or tap event on a grid cell.
+ * Manages cell selection, highlighting, and triggers hint generation on multiple taps.
+ * @param {HTMLElement} cell - The cell that was clicked.
+ */
+export function handleCellClick(cell) {
+    clearAllHighlights();
+
     if (appState.activeCell) {
         appState.activeCell.classList.remove('active-cell');
-        clearAllHighlights();
     }
 
-    // Set the new active cell and highlight it.
     appState.activeCell = cell;
-    cell.classList.add('active-cell');
-    const value = appState.activeCell.querySelector('.cell-value').textContent.trim();
-    if (value !== '') {
+    if (!cell.classList.contains('preloaded-cell')) {
+        cell.classList.add('active-cell');
+    }
+
+    const value = cell.querySelector('.cell-value').textContent.trim();
+    if (value) {
         highlightMatchingCells(value);
     }
 }
@@ -129,11 +146,8 @@ export function handleCellClick(event) {
 export function highlightMatchingCells(value) {
     const allCells = document.querySelectorAll('.grid-cell');
     allCells.forEach(cell => {
-        if (cell.querySelector('.cell-value').textContent.trim() === value && !cell.classList.contains('invalid-cell') && !cell.classList.contains('solved-puzzle')) {
+        if (cell.querySelector('.cell-value').textContent.trim() === value) {
             cell.classList.add('highlight-cell');
-        }
-        else {
-            cell.classList.remove('highlight-cell');
         }
     });
 }

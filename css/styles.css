@@ -1,9 +1,58 @@
 /*==============================
+  Halo-Inspired Theme
+==============================*/
+
+/* Import futuristic font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+/* Define CSS variables for the new theme */
+:root {
+    --background-dark: #0D1117;
+    --primary-cyan: #00A0C0;
+    --primary-cyan-glow: rgba(0, 160, 192, 0.5);
+    --secondary-orange: #EFB82A;
+    --text-light: #C0D0E0;
+    --text-dark: #0D1117;
+    --border-color: #4A6A8A;
+    --error-red: #CC3333;
+    --solved-green: #208060;
+    --container-bg: rgba(26, 42, 58, 0.85);
+    --font-main: 'Orbitron', sans-serif;
+}
+
+/*==============================
 � Core Sudoku Game Styles
 ==============================*/
 html {
     font-size: min(3dvw, 3dvh);
+    background-color: var(--background-dark);
 }
+
+/* Stylize the labels for the selectors */
+.selector-container label {
+    background-color: var(--primary-cyan);
+    color: var(--text-dark);
+    padding: 5px 15px;
+    border-radius: 5px;
+    text-transform: uppercase;
+    font-size: 1rem;
+    font-weight: bold;
+    box-shadow: 0 0 10px var(--primary-cyan-glow);
+    margin-bottom: 5px;
+}
+
+body {
+    font-family: var(--font-main);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    background-color: var(--background-dark);
+    color: var(--text-light);
+    transition: background-color 0.5s ease;
+}
+
 
 p, ul {
     font-size: 1rem;
@@ -11,29 +60,19 @@ p, ul {
 
 h1 {
     font-size: 2rem;
+    color: var(--primary-cyan);
+    text-shadow: 0 0 5px var(--primary-cyan-glow);
+    text-transform: uppercase;
 }
 
 h2, label {
     font-size: 1.5rem;
-}
-
-.selector-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-/* Stylize the labels for the selectors */
-.selector-container label {
-    background-color: #34495e;
-    color: white;
-    padding: 5px 15px;
-    border-radius: 5px;
     text-transform: uppercase;
-    font-size: 1rem;
-    font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    margin-bottom: 5px;
+}
+
+h3 {
+    font-size: 1.25rem;
+    text-transform: uppercase;
 }
 
 .config-selectors {
@@ -41,20 +80,6 @@ h2, label {
     align-items: flex-start;
     flex-direction: column;
     gap: 15px; /* Add a consistent gap between each label/select group */
-}
-
-h3 {
-    font-size: 1.25rem;
-}
-
-body {
-    font-family: sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    min-height: 100dvh;
-    box-sizing: border-box;
-    transition: background-color 0.5s ease;
 }
 
 main {
@@ -125,16 +150,18 @@ body.connection-background #background-image-container {
 
 /* Team Selection Area */
 #team-selection-area {
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: var(--container-bg);
     padding: 20px;
     border-radius: 10px;
     text-align: center;
     margin: 20px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 0 20px var(--primary-cyan-glow);
+    clip-path: polygon(5% 0, 100% 0, 100% 95%, 95% 100%, 0 100%, 0 5%);
 }
 
 #team-selection-area h2, #team-selection-area h3 {
-    color: #333;
+    color: var(--primary-cyan);
+    text-shadow: 0 0 5px var(--primary-cyan-glow);
 }
 
 .team-creation {
@@ -142,10 +169,13 @@ body.connection-background #background-image-container {
 }
 
 #team-name-input {
+    background-color: var(--background-dark);
+    color: var(--text-light);
+    border: 2px solid var(--border-color);
     padding: 10px;
     font-size: 1rem;
     border-radius: 5px;
-    border: 1px solid #ccc;
+    font-family: var(--font-main);
 }
 
 #team-list {
@@ -158,7 +188,7 @@ body.connection-background #background-image-container {
     justify-content: space-between;
     align-items: center;
     padding: 10px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color);
 }
 
 /* Overlays and Information areas */
@@ -208,35 +238,39 @@ body.connection-background #background-image-container {
 
 /* Global Button and Input Styles */
 button, select, .number-btn {
-    background-color: #007bff;
-    color: #fff;
-    border: 2px solid #0056b3;
+    background-color: transparent;
+    color: var(--text-light);
+    border: 2px solid var(--primary-cyan);
     padding: 10px 20px;
     font-size: 1.5rem;
     font-weight: bold;
     text-transform: uppercase;
     cursor: pointer;
-    border-radius: 5px;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-family: var(--font-main);
+    clip-path: polygon(10% 0, 100% 0, 100% 80%, 90% 100%, 0 100%, 0 20%);
 }
 
 button:hover, select:hover, .number-btn:hover {
-    background-color: #0056b3;
-    border-color: #004494;
+    background-color: var(--primary-cyan);
+    color: var(--text-dark);
+    border-color: var(--primary-cyan);
     transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 15px var(--primary-cyan-glow);
 }
 
 button:active, select:active, .number-btn:active {
     transform: translateY(0);
-    box-shadow: 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 5px var(--primary-cyan-glow);
 }
 
 button:disabled, select:disabled, .number-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     box-shadow: none;
+    border-color: var(--border-color);
+    color: var(--border-color);
+    background-color: transparent;
 }
 
 /* Align icon and text inside buttons */
@@ -343,17 +377,22 @@ select {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    min-width: 200px;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+    min-width: 220px;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
     background-repeat: no-repeat;
     background-position: right 10px center;
 }
 
 select option {
     font-size: 1rem;
+    background-color: var(--background-dark);
+    color: var(--text-light);
 }
 
 textarea {
+    background-color: var(--background-dark);
+    color: var(--text-light);
+    border: 1px solid var(--border-color);
     width: 100%;
     height: 100px;
 }
@@ -420,7 +459,7 @@ textarea {
 .grid-cell {
     width: 100%;
     height: 100%;
-    border: 1px solid black;
+    border: 1px solid var(--border-color); /* Keep this for general grid lines */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -468,11 +507,11 @@ textarea {
 }
 
 .subgrid-border-right {
-    border-right: 5px solid black;
+    border-right: 3px solid var(--primary-cyan); /* Thicker border for subgrids */
 }
 
 .subgrid-border-bottom {
-    border-bottom: 5px solid black;
+    border-bottom: 3px solid var(--primary-cyan); /* Thicker border for subgrids */
 }
 
 /* Base Styles for Themed Elements */
@@ -482,24 +521,32 @@ textarea {
 }
 
 .highlight-cell {
-    background-color: #e0e0e0;
+    background-color: var(--secondary-orange); /* Bright orange for highlight */
+    border: 1px solid var(--secondary-orange); /* Add border for extra visibility */
+    box-shadow: 0 0 10px var(--secondary-orange); /* Subtle glow */
 }
 
 .active-cell {
-    border: 2px solid red;
+    border: 3px solid var(--primary-cyan); /* Bright cyan border for active */
+    box-shadow: inset 0 0 15px var(--primary-cyan-glow); /* Stronger glow */
 }
 
 .invalid-cell {
-    background-color: #ff0000;
+    background-color: var(--error-red); /* Solid red for invalid */
+    color: var(--text-light);
+    text-shadow: 0 0 8px var(--error-red);
 }
 
 .pencil-active {
-    background-color: #0056b3 !important;
-    color: white !important;
+    background-color: var(--primary-cyan) !important;
+    color: var(--text-dark) !important;
+    box-shadow: 0 0 20px var(--primary-cyan-glow);
 }
 
 .solved-puzzle {
-    background-color: lightgreen;
+    background-color: var(--solved-green);
+    color: var(--text-light);
+    animation: solved-pulse 1.5s infinite;
 }
 
 /* ------------------------------------------ */
@@ -559,7 +606,7 @@ textarea {
         display: grid;
         grid-template-columns: repeat(9, 1fr);
         grid-template-rows: repeat(9, 1fr);
-        border: 3px solid black;
+        border: 3px solid var(--primary-cyan); /* Consistent grid border */
         margin: 0 auto;
         aspect-ratio: 1 / 1;
     }
@@ -579,7 +626,7 @@ textarea {
 
     .grid-cell {
         font-size: 2rem;
-        background-color: rgba(255, 255, 255, .75);
+        background-color: var(--container-bg); /* Consistent cell background */
     }
 }
 
@@ -652,7 +699,7 @@ textarea {
         display: grid;
         grid-template-columns: repeat(9, 1fr);
         grid-template-rows: repeat(9, 1fr);
-        border: 3px solid black;
+        border: 3px solid var(--primary-cyan); /* Consistent grid border */
     }
 
     #instructions {
@@ -661,7 +708,7 @@ textarea {
 
     .grid-cell {
         font-size: 2rem;
-        background-color: rgba(255, 255, 255, .75);
+        background-color: var(--container-bg); /* Consistent cell background */
     }
 }
 
@@ -974,17 +1021,31 @@ body.forerunner #empty-btn:hover {
     top: 0;
     width: 100%; /* Full width */
     height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    overflow: auto;
+    background-color: rgba(13, 17, 23, 0.8); /* Dark overlay */
+    backdrop-filter: blur(5px);
 }
 
 /* Modal Content/Box */
 .modal-content {
-    background-color: #fefefe;
+    background-color: var(--container-bg);
     margin: 15% auto; /* 15% from the top and centered */
     padding: 20px;
-    border: 1px solid #888;
+    border: 2px solid var(--primary-cyan);
     width: 80%; /* Could be more or less, depending on screen size */
-    border-radius: 8px;
     text-align: center;
+    box-shadow: 0 0 20px var(--primary-cyan-glow);
+    clip-path: polygon(5% 0, 100% 0, 100% 95%, 95% 100%, 0 100%, 0 5%);
+}
+
+@keyframes solved-pulse {
+    0% {
+        box-shadow: inset 0 0 15px var(--solved-green);
+    }
+    50% {
+        box-shadow: inset 0 0 5px rgba(32, 128, 96, 0.5);
+    }
+    100% {
+        box-shadow: inset 0 0 15px var(--solved-green);
+    }
 }
