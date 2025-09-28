@@ -779,6 +779,9 @@ export function initializeEventListeners() {
             dataChannels[0].send(JSON.stringify(joinTeamMsg)); // Send to host
             appState.playerTeam = teamName;
             dom.teamSelectionArea.classList.add('hidden');
+            // After joining a team, hide the config and show the game.
+            dom.gameContainer.classList.remove('config-active');
+            document.body.classList.remove('connection-background');
             dom.numberPad.classList.remove('hidden');
         }
     });

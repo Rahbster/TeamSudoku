@@ -22,7 +22,7 @@ export function initializeWebRTC() {
         if (connection.connectionState === 'connected') {
             console.log('WebRTC connection established!');
             if (!appState.isInitiator) {
-                hideSignalingUI(); //Hide all signaling UI when connected
+                // Don't hide the entire signaling area, just show the team selection part.
                 showTeamSelection();
             }
         }
@@ -65,6 +65,7 @@ function setupDataChannel(channel) {
                 case 'create-team':
                     if (!appState.teams[data.teamName]) {
                         appState.teams[data.teamName] = { puzzle: JSON.parse(JSON.stringify(appState.initialSudokuState)), members: [] };
+                        updateTeamList(Object.keys(appState.teams)); // Update host's own list
                         broadcast({ type: 'team-list-update', teams: Object.keys(appState.teams) });
                     }
                     break;
