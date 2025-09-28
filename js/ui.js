@@ -546,6 +546,13 @@ export function initializeEventListeners() {
         dom.winnerModal.classList.add('hidden'); // Hide winner modal
     });
 
+    // Event listener for the theme selector
+    dom.themeSelector.addEventListener('change', (event) => {
+        const selectedTheme = event.target.value;
+        dom.body.classList.remove('default', 'banished', 'unsc', 'forerunner');
+        dom.body.classList.add(selectedTheme);
+    });
+
     // Event listeners for the "Toggle P2P Configuration" button
     dom.hostButton.addEventListener('change', () => {
         toggleSignalingArea();

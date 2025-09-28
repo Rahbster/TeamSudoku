@@ -23,23 +23,6 @@
 /*==============================
 � Core Sudoku Game Styles
 ==============================*/
-html {
-    font-size: min(3dvw, 3dvh);
-    background-color: var(--background-dark);
-}
-
-/* Stylize the labels for the selectors */
-.selector-container label {
-    background-color: var(--primary-cyan);
-    color: var(--text-dark);
-    padding: 5px 15px;
-    border-radius: 5px;
-    text-transform: uppercase;
-    font-size: 1rem;
-    font-weight: bold;
-    box-shadow: 0 0 10px var(--primary-cyan-glow);
-    margin-bottom: 5px;
-}
 
 body {
     font-family: var(--font-main);
@@ -53,6 +36,26 @@ body {
     transition: background-color 0.5s ease;
 }
 
+html {
+    font-size: min(3dvw, 3dvh);
+}
+
+/* Stylize the labels for the selectors */
+.selector-container label {
+    background-color: #34495e;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 5px;
+    text-transform: uppercase;
+    font-size: 1rem;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    margin-bottom: 5px;
+}
+
+body, body.default, body.banished, body.unsc {
+    font-family: sans-serif;
+}
 
 p, ul {
     font-size: 1rem;
@@ -60,8 +63,6 @@ p, ul {
 
 h1 {
     font-size: 2rem;
-    color: var(--primary-cyan);
-    text-shadow: 0 0 5px var(--primary-cyan-glow);
     text-transform: uppercase;
 }
 
@@ -150,37 +151,12 @@ body.connection-background #background-image-container {
 
 /* Team Selection Area */
 #team-selection-area {
-    background-color: var(--container-bg);
+    background-color: rgba(255, 255, 255, 0.9);
     padding: 20px;
     border-radius: 10px;
     text-align: center;
     margin: 20px;
-    box-shadow: 0 0 20px var(--primary-cyan-glow);
-    clip-path: polygon(5% 0, 100% 0, 100% 95%, 95% 100%, 0 100%, 0 5%);
-}
-
-#team-selection-area h2, #team-selection-area h3 {
-    color: var(--primary-cyan);
-    text-shadow: 0 0 5px var(--primary-cyan-glow);
-}
-
-.team-creation {
-    margin-bottom: 20px;
-}
-
-#team-name-input {
-    background-color: var(--background-dark);
-    color: var(--text-light);
-    border: 2px solid var(--border-color);
-    padding: 10px;
-    font-size: 1rem;
-    border-radius: 5px;
-    font-family: var(--font-main);
-}
-
-#team-list {
-    list-style: none;
-    padding: 0;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 #team-list li {
@@ -188,7 +164,7 @@ body.connection-background #background-image-container {
     justify-content: space-between;
     align-items: center;
     padding: 10px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid #eee;
 }
 
 /* Overlays and Information areas */
@@ -238,39 +214,35 @@ body.connection-background #background-image-container {
 
 /* Global Button and Input Styles */
 button, select, .number-btn {
-    background-color: transparent;
-    color: var(--text-light);
-    border: 2px solid var(--primary-cyan);
+    background-color: #007bff;
+    color: #fff;
+    border: 2px solid #0056b3;
     padding: 10px 20px;
     font-size: 1.5rem;
     font-weight: bold;
     text-transform: uppercase;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-family: var(--font-main);
-    clip-path: polygon(10% 0, 100% 0, 100% 80%, 90% 100%, 0 100%, 0 20%);
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 button:hover, select:hover, .number-btn:hover {
-    background-color: var(--primary-cyan);
-    color: var(--text-dark);
-    border-color: var(--primary-cyan);
+    background-color: #0056b3;
+    border-color: #004494;
     transform: translateY(-2px);
-    box-shadow: 0 0 15px var(--primary-cyan-glow);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
 }
 
 button:active, select:active, .number-btn:active {
     transform: translateY(0);
-    box-shadow: 0 0 5px var(--primary-cyan-glow);
+    box-shadow: 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 button:disabled, select:disabled, .number-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     box-shadow: none;
-    border-color: var(--border-color);
-    color: var(--border-color);
-    background-color: transparent;
 }
 
 /* Align icon and text inside buttons */
@@ -378,21 +350,16 @@ select {
     -webkit-appearance: none;
     -moz-appearance: none;
     min-width: 220px;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>');
     background-repeat: no-repeat;
     background-position: right 10px center;
 }
 
 select option {
     font-size: 1rem;
-    background-color: var(--background-dark);
-    color: var(--text-light);
 }
 
 textarea {
-    background-color: var(--background-dark);
-    color: var(--text-light);
-    border: 1px solid var(--border-color);
     width: 100%;
     height: 100px;
 }
@@ -459,7 +426,7 @@ textarea {
 .grid-cell {
     width: 100%;
     height: 100%;
-    border: 1px solid var(--border-color); /* Keep this for general grid lines */
+    border: 1px solid black;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -507,11 +474,11 @@ textarea {
 }
 
 .subgrid-border-right {
-    border-right: 3px solid var(--primary-cyan); /* Thicker border for subgrids */
+    border-right: 5px solid black;
 }
 
 .subgrid-border-bottom {
-    border-bottom: 3px solid var(--primary-cyan); /* Thicker border for subgrids */
+    border-bottom: 5px solid black;
 }
 
 /* Base Styles for Themed Elements */
@@ -521,32 +488,24 @@ textarea {
 }
 
 .highlight-cell {
-    background-color: var(--secondary-orange); /* Bright orange for highlight */
-    border: 1px solid var(--secondary-orange); /* Add border for extra visibility */
-    box-shadow: 0 0 10px var(--secondary-orange); /* Subtle glow */
+    background-color: #e0e0e0;
 }
 
 .active-cell {
-    border: 3px solid var(--primary-cyan); /* Bright cyan border for active */
-    box-shadow: inset 0 0 15px var(--primary-cyan-glow); /* Stronger glow */
+    border: 2px solid red;
 }
 
 .invalid-cell {
-    background-color: var(--error-red); /* Solid red for invalid */
-    color: var(--text-light);
-    text-shadow: 0 0 8px var(--error-red);
+    background-color: #ff0000;
 }
 
 .pencil-active {
-    background-color: var(--primary-cyan) !important;
-    color: var(--text-dark) !important;
-    box-shadow: 0 0 20px var(--primary-cyan-glow);
+    background-color: #0056b3 !important;
+    color: white !important;
 }
 
 .solved-puzzle {
-    background-color: var(--solved-green);
-    color: var(--text-light);
-    animation: solved-pulse 1.5s infinite;
+    background-color: lightgreen;
 }
 
 /* ------------------------------------------ */
@@ -606,7 +565,7 @@ textarea {
         display: grid;
         grid-template-columns: repeat(9, 1fr);
         grid-template-rows: repeat(9, 1fr);
-        border: 3px solid var(--primary-cyan); /* Consistent grid border */
+        border: 3px solid black;
         margin: 0 auto;
         aspect-ratio: 1 / 1;
     }
@@ -626,7 +585,7 @@ textarea {
 
     .grid-cell {
         font-size: 2rem;
-        background-color: var(--container-bg); /* Consistent cell background */
+        background-color: rgba(255, 255, 255, .75);
     }
 }
 
@@ -699,7 +658,7 @@ textarea {
         display: grid;
         grid-template-columns: repeat(9, 1fr);
         grid-template-rows: repeat(9, 1fr);
-        border: 3px solid var(--primary-cyan); /* Consistent grid border */
+        border: 3px solid black;
     }
 
     #instructions {
@@ -708,7 +667,7 @@ textarea {
 
     .grid-cell {
         font-size: 2rem;
-        background-color: var(--container-bg); /* Consistent cell background */
+        background-color: rgba(255, 255, 255, .75);
     }
 }
 
@@ -782,6 +741,7 @@ body.default select {
     background-color: #007bff;
     color: #E0DEDF;
     border-color: #5C4B2E;
+    clip-path: none;
 }
 
 body.default button:hover,
@@ -853,6 +813,7 @@ body.banished select {
     background-color: #8C2F2F;
     color: #E0DEDF;
     border-color: #5C4B2E;
+    clip-path: none;
 }
 
 body.banished button:hover,
@@ -922,6 +883,7 @@ body.unsc select {
     background-color: #3D6B51;
     color: #CDCFCC;
     border-color: #2D6A4F;
+    clip-path: none;
 }
 
 body.unsc button:hover,
@@ -942,46 +904,96 @@ body.unsc #empty-btn:hover {
     background-color: #c82333;
 }
 
-/*==============================
-� Forerunner Theme
-==============================*/
+/*==============================*/
+/* Forerunner Theme             */
+/*==============================*/
 body.forerunner {
+    font-family: var(--font-main);
     background-color: #1A2A3A;
     color: #C0D0E0;
 }
 
+body.forerunner .selector-container label {
+    background-color: var(--primary-cyan);
+    color: var(--text-dark);
+    box-shadow: 0 0 10px var(--primary-cyan-glow);
+}
+
+body.forerunner h1 {
+    color: var(--primary-cyan);
+    text-shadow: 0 0 5px var(--primary-cyan-glow);
+}
+
+body.forerunner #team-selection-area {
+    background-color: var(--container-bg);
+    box-shadow: 0 0 20px var(--primary-cyan-glow);
+    clip-path: polygon(5% 0, 100% 0, 100% 95%, 95% 100%, 0 100%, 0 5%);
+}
+
+body.forerunner #team-selection-area h2, body.forerunner #team-selection-area h3 {
+    color: var(--primary-cyan);
+    text-shadow: 0 0 5px var(--primary-cyan-glow);
+}
+
+body.forerunner #team-name-input {
+    background-color: var(--background-dark);
+    color: var(--text-light);
+    border: 2px solid var(--border-color);
+    font-family: var(--font-main);
+}
+
+body.forerunner #team-list li {
+    border-bottom: 1px solid var(--border-color);
+}
+
+body.forerunner textarea {
+    background-color: var(--background-dark);
+    color: var(--text-light);
+    border: 1px solid var(--border-color);
+}
+
 body.forerunner #sudoku-grid {
-    border-color: #4A6A8A;
+    border: 3px solid var(--primary-cyan);
 }
 
 body.forerunner .grid-cell {
     border-color: #3A5A7A;
-    background-color: rgba(26, 42, 58, .75);
+    background-color: var(--container-bg);
 }
 
 body.forerunner .preloaded-cell {
     background-color: #2A4A6A;
     color: #F0F8FF;
+    font-weight: bold;
 }
 
 body.forerunner .highlight-cell {
-    background-color: #6A8AA0;
-    color: #1A2A3A;
+    background-color: var(--secondary-orange);
+    border: 1px solid var(--secondary-orange);
+    box-shadow: 0 0 10px var(--secondary-orange);
 }
 
 body.forerunner .active-cell {
-    background-color: #00A0C0;
-    color: #1A2A3A;
+    border: 3px solid var(--primary-cyan);
+    box-shadow: inset 0 0 15px var(--primary-cyan-glow);
 }
 
 body.forerunner .invalid-cell {
     background-color: #CC3333;
-    color: #F0F8FF;
+    color: var(--text-light);
+    text-shadow: 0 0 8px var(--error-red);
 }
 
 body.forerunner .solved-puzzle {
     background-color: #208060;
-    color: #F0F8FF;
+    color: var(--text-light);
+    animation: solved-pulse 1.5s infinite;
+}
+
+body.forerunner .pencil-active {
+    background-color: var(--primary-cyan) !important;
+    color: var(--text-dark) !important;
+    box-shadow: 0 0 20px var(--primary-cyan-glow);
 }
 
 /* Themed buttons and dropdowns */
@@ -989,18 +1001,22 @@ body.forerunner button,
 body.forerunner .number-btn,
 body.forerunner #empty-btn,
 body.forerunner select {
-    background-color: #4A6A8A;
-    color: #C0D0E0;
-    border-color: #3A5A7A;
+    background-color: transparent;
+    color: var(--text-light);
+    border: 2px solid var(--primary-cyan);
+    font-family: var(--font-main);
+    clip-path: polygon(10% 0, 100% 0, 100% 80%, 90% 100%, 0 100%, 0 20%);
+    box-shadow: none;
 }
 
 body.forerunner button:hover,
 body.forerunner .number-btn:hover,
 body.forerunner #empty-btn:hover,
 body.forerunner select:hover {
-    background-color: #00A0C0;
-    color: #1A2A3A;
-    border-color: #00A0C0;
+    background-color: var(--primary-cyan);
+    color: var(--text-dark);
+    border-color: var(--primary-cyan);
+    box-shadow: 0 0 15px var(--primary-cyan-glow);
 }
 
 /* Red 'X' button for this theme */
@@ -1010,6 +1026,23 @@ body.forerunner #empty-btn {
 
 body.forerunner #empty-btn:hover {
     background-color: #c82333;
+}
+
+body.forerunner button:disabled, body.forerunner select:disabled, body.forerunner .number-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    border-color: var(--border-color);
+    color: var(--border-color);
+    background-color: transparent;
+}
+
+body.forerunner select {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+}
+body.forerunner select option {
+    background-color: var(--background-dark);
+    color: var(--text-light);
 }
 
 /* The Modal (background) */
@@ -1028,12 +1061,18 @@ body.forerunner #empty-btn:hover {
 
 /* Modal Content/Box */
 .modal-content {
-    background-color: var(--container-bg);
+    background-color: #fefefe;
     margin: 15% auto; /* 15% from the top and centered */
     padding: 20px;
-    border: 2px solid var(--primary-cyan);
+    border: 1px solid #888;
     width: 80%; /* Could be more or less, depending on screen size */
+    border-radius: 8px;
     text-align: center;
+}
+
+body.forerunner .modal-content {
+    background-color: var(--container-bg);
+    border: 2px solid var(--primary-cyan);
     box-shadow: 0 0 20px var(--primary-cyan-glow);
     clip-path: polygon(5% 0, 100% 0, 100% 95%, 95% 100%, 0 100%, 0 5%);
 }

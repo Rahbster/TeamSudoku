@@ -117,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.hostButton = document.getElementById('host-btn');
     dom.instructionsModal = document.getElementById('instructions-modal');
     dom.numberPad = document.getElementById('number-pad');
+    dom.themeSelector = document.getElementById('theme-select');
     dom.difficultySelector = document.getElementById('difficulty-select');
     dom.pencilButton = document.getElementById('pencil-btn');
     dom.body = document.body;
@@ -165,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleSignalingUI();
     createGrid();
     initializeEventListeners();
+    dom.body.classList.add('default');
 });
 
 if ('serviceWorker' in navigator) {
