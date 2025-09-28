@@ -3,7 +3,7 @@
 //==============================
 // This module handles all user interface interactions, from button clicks to dynamic UI updates.
 import { appState, dom, dataChannels } from './scripts.js';
-import { clearAllHighlights, loadPuzzle, checkGridState, highlightMatchingCells, isMoveValid, highlightConflictingCells, updateGridForTeam } from './game.js';
+import { clearAllHighlights, loadPuzzle, checkGridState, highlightMatchingCells, isMoveValid, highlightConflictingCells, updateGridForTeam, validatePuzzle } from './game.js';
 import { clearTextbox, createQrCodeChunks, playBeepSound } from './misc.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
 import { createOffer, createAnswer } from './webrtc.js';
