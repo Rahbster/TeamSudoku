@@ -4,7 +4,7 @@
 
 import { appState, dom, dataChannels } from './scripts.js';
 import { loadPuzzle, checkGridState, updateGridForTeam } from './game.js';
-import { hideSignalingUI, showTeamSelection, updateTeamList, showWinnerScreen } from './ui.js';
+import { hideSignalingUI, showTeamSelection, updateTeamList, showWinnerScreen, showToast } from './ui.js';
 
 //Initializes the WebRTC PeerConnection
 export function initializeWebRTC() {
@@ -38,7 +38,7 @@ export function initializeWebRTC() {
 
 //Sets up the event handlers for the data channel
 function setupDataChannel(channel) {
-    channel.onopen = () => {
+    channel.onopen = async () => {
         console.log('Data Channel is open!');
         dom.p1Status.textContent = 'Status: Connected!';
         dom.p2Status.textContent = 'Status: Connected!';
@@ -47,7 +47,20 @@ function setupDataChannel(channel) {
         dataChannels.push(channel); // Store the new channel
         if (appState.isInitiator) {
             showTeamSelection();
-            // When a new player connects, send them the current list of teams.
+            let currentPuzzleState = appState.initialSudokuState;
+            // If this is the first connection, the host should load the puzzle.
+            if (dataChannels.length === 1) {
+                currentPuzzleState = await loadPuzzle(appState.selectedDifficulty); // Await the puzzle generation
+            }
+
+            // When a new player connects, send them the initial puzzle state and the current list of teams.
+            const puzzleMessage = {
+                type: 'initial-state',
+                state: currentPuzzleState // Use the generated puzzle directly
+            };
+            channel.send(JSON.stringify(puzzleMessage));
+
+            // Also send the current list of teams to the new player.
             const teamListMessage = {
                 type: 'team-list-update',
                 teams: Object.keys(appState.teams)
@@ -64,23 +77,46 @@ function setupDataChannel(channel) {
             switch (data.type) {
                 case 'create-team':
                     if (!appState.teams[data.teamName]) {
-                        appState.teams[data.teamName] = { puzzle: JSON.parse(JSON.stringify(appState.initialSudokuState)), members: [] };
-                        updateTeamList(Object.keys(appState.teams)); // Update host's own list
                         broadcast({ type: 'team-list-update', teams: Object.keys(appState.teams) });
                     }
                     break;
                 case 'join-team':
                     // Add player to team and send them the current team puzzle state
+                    const joiningPlayerId = data.playerId;
+                    const newTeamName = data.teamName;
+
+                    // Check if the player was on a different team before
+                    let oldTeamName = null;
+                    for (const team in appState.teams) {
+                        const memberIndex = appState.teams[team].members.indexOf(joiningPlayerId);
+                        if (memberIndex > -1) {
+                            oldTeamName = team;
+                            appState.teams[team].members.splice(memberIndex, 1); // Remove from old team
+                            break;
+                        }
+                    }
+
+                    // Notify the old team that the player has left
+                    if (oldTeamName && oldTeamName !== newTeamName) {
+                        broadcast({ type: 'player-left-team', teamName: oldTeamName, playerId: joiningPlayerId });
+                    }
+
+                    // Add player to the new team
+                    if (appState.teams[newTeamName] && !appState.teams[newTeamName].members.includes(joiningPlayerId)) {
+                        appState.teams[newTeamName].members.push(joiningPlayerId);
+                    }
+
+                    // Send the puzzle state to the joining player
                     const playerChannel = dataChannels.find(c => c.label === channel.label);
                     if (playerChannel) {
-                        appState.teams[data.teamName].members.push(channel.label);
                         const teamStateMessage = {
                             type: 'team-state-update',
-                            teamName: data.teamName,
-                            puzzle: appState.teams[data.teamName].puzzle
+                            teamName: newTeamName,
+                            puzzle: appState.teams[newTeamName].puzzle
                         };
                         playerChannel.send(JSON.stringify(teamStateMessage));
                     }
+                    broadcast({ type: 'player-joined-team', teamName: newTeamName, playerId: joiningPlayerId });
                     break;
                 case 'move':
                     // Update the puzzle for the specific team and broadcast to team members
@@ -98,6 +134,9 @@ function setupDataChannel(channel) {
         switch (data.type) {
             case 'initial-state':
                 loadPuzzle(appState.selectedDifficulty, data.state);
+                if (!appState.isInitiator) {
+                    appState.gameInProgress = true;
+                }
                 break;
             case 'team-list-update':
                 updateTeamList(data.teams);
@@ -120,6 +159,17 @@ function setupDataChannel(channel) {
                 break;
             case 'game-over':
                 showWinnerScreen(data.winningTeam);
+                break;
+            case 'player-joined-team':
+                // Show toast only if this client is on the same team and isn't the one who just joined
+                if (data.teamName === appState.playerTeam && data.playerId !== appState.playerId) {
+                    showToast(`${data.playerId} has joined the team.`);
+                }
+                break;
+            case 'player-left-team':
+                if (data.teamName === appState.playerTeam && data.playerId !== appState.playerId) {
+                    showToast(`${data.playerId} has left the team.`);
+                }
                 break;
         }
     };

@@ -6,12 +6,15 @@
 
 import {
     createGrid,
+    loadPuzzle
 } from './game.js';
 
 import {
     toggleSignalingUI,
     initializeEventListeners,
-    handleLongPress
+    handleLongPress,
+    showScreen,
+    updateTeamList
 } from './ui.js';
 
 //==============================
@@ -43,6 +46,7 @@ export const appState = {
     isPencilMode: false,
     // Team state
     playerTeam: null, // The team this player has joined.
+    playerId: `Player ${Math.floor(100 + Math.random() * 900)}`, // A simple random ID for now
     teams: {}, // Object to hold the state for each team. e.g., { teamName: { puzzle: [...] } }
     gameInProgress: false, // Is a game currently being played?
     winner: null // Which team won?
@@ -115,9 +119,12 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.signalingMethodSelect = document.getElementById('signaling-method');
     dom.newPuzzleButton = document.getElementById('new-puzzle-btn');
     dom.hostButton = document.getElementById('host-btn');
+    dom.configBtn = document.getElementById('config-btn');
     dom.instructionsModal = document.getElementById('instructions-modal');
+    dom.backToGameBtn = document.getElementById('back-to-game-btn');
     dom.numberPad = document.getElementById('number-pad');
     dom.themeSelector = document.getElementById('theme-select');
+    dom.themeSelectorConfig = document.getElementById('theme-select-config');
     dom.difficultySelector = document.getElementById('difficulty-select');
     dom.pencilButton = document.getElementById('pencil-btn');
     dom.body = document.body;
@@ -125,7 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.teamSelectionArea = document.getElementById('team-selection-area');
     dom.teamNameInput = document.getElementById('team-name-input');
     dom.createTeamBtn = document.getElementById('create-team-btn');
+    dom.teamDisplayArea = document.getElementById('team-display-area');
+    dom.teamNameDisplay = document.getElementById('team-name-display');
+    dom.playerNameDisplay = document.getElementById('player-name-display');
     dom.teamList = document.getElementById('team-list');
+    dom.playerNameInput = document.getElementById('player-name-input');
     dom.createOfferManualBtn = document.getElementById('create-offer-manual-btn');
     dom.copyOfferBtn = document.getElementById('copy-offer-btn');
     dom.clearOfferBtn = document.getElementById('clear-offer-btn');
@@ -150,7 +161,8 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.p2PeerStatus = document.getElementById('p2-peer-status');
     dom.generateNewIDButton = document.getElementById('generate-new-id-btn');
     dom.channelList = document.getElementById('channel-list');
-    dom.gameContainer = document.querySelector('.game-container');
+    dom.gameScreen = document.getElementById('game-screen');
+    dom.configScreen = document.getElementById('config-screen');
     dom.showChannelsBtn = document.getElementById('show-channels-btn');
     dom.hardResetBtn = document.getElementById('hard-reset-btn');
 
@@ -167,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('sudokuTheme') || 'default';
     dom.body.classList.add(savedTheme);
     dom.themeSelector.value = savedTheme;
+    dom.themeSelectorConfig.value = savedTheme;
 
     // Load saved connection method and role from localStorage BEFORE initializing the UI
     const savedConnectionMethod = localStorage.getItem('sudokuConnectionMethod');
@@ -178,10 +191,29 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.playerRoleSelect.value = savedPlayerRole;
     }
 
+    // Load saved player name or generate a default one
+    appState.playerId = localStorage.getItem('sudokuPlayerName') || `Player ${Math.floor(100 + Math.random() * 900)}`;
+    dom.playerNameInput.value = appState.playerId;
+
     // Initialize UI visibility and create the game grid.
-    toggleSignalingUI();
     createGrid();
     initializeEventListeners();
+    loadPuzzle(appState.selectedDifficulty); // Load a puzzle for solo play
+
+    // Load saved teams from localStorage (for the host)
+    const savedTeams = JSON.parse(localStorage.getItem('sudokuTeams') || '[]');
+    if (savedTeams.length > 0) {
+        savedTeams.forEach(teamName => {
+            // Reconstruct the team object with the current puzzle state
+            appState.teams[teamName] = { puzzle: JSON.parse(JSON.stringify(appState.initialSudokuState)), members: [] };
+        });
+        updateTeamList(savedTeams); // Update the UI with the loaded teams
+    }
+
+    showScreen('game'); // Start on the game screen
+
+    // Manually trigger the UI update to reflect any loaded preferences.
+    toggleSignalingUI();
 });
 
 if ('serviceWorker' in navigator) {

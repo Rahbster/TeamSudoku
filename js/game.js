@@ -253,6 +253,7 @@ export async function loadPuzzle(difficulty, puzzleData) {
         document.getElementById('winner-modal').classList.add('hidden');
     }
     startTimer();
+    return puzzle; // Return the generated puzzle
 }
 
 /**
@@ -266,6 +267,12 @@ export function updateGridForTeam(teamName) {
             const cell = document.getElementById(`cell-${r}-${c}`);
             const value = puzzle[r][c];
             cell.querySelector('.cell-value').textContent = value === 0 ? '' : value;
+            // When a joiner gets the grid, we need to mark the initial cells as preloaded.
+            // We can check against the host's initial state for this.
+            const initialValue = appState.initialSudokuState[r][c];
+            if (initialValue !== 0) {
+                cell.classList.add('preloaded-cell');
+            }
         }
     }
     checkGridState();

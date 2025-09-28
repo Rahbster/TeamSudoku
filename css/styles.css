@@ -107,33 +107,12 @@ body.connection-background #background-image-container {
     opacity: 0.25;
 }
 
-/* When in config mode, hide game-specific UI elements */
-.game-container.config-active #number-pad,
-.game-container.config-active #sudoku-grid-area, 
-.game-container.config-active #game-controls > *:not(.toggle-switch-container) {
-    display: none;
-}
-
-/* Hide the signaling area by default */
-#signaling-area {
-    display: none;
-}
-
-/* When in config mode, re-style the controls container to be a simple top bar */
-.game-container.config-active #game-controls {
-    order: 0; /* Ensure it's at the very top */
-    flex-direction: row;
-    justify-content: center;
-    height: auto; /* Override the fixed height */
+.host-only {
+    display: none; /* Hide host-only elements by default */
 }
 
 .hidden {
     display: none !important;
-}
-
-/* When in config mode, show the signaling area */
-.game-container.config-active #signaling-area {
-    display: block; /* Or 'flex', 'grid', etc., depending on its internal layout */
 }
 
 .blink {
@@ -167,6 +146,12 @@ body.connection-background #background-image-container {
     border-bottom: 1px solid #eee;
 }
 
+#team-list li .join-team-btn,
+#team-list li .remove-team-btn {
+    margin-left: 10px;
+}
+
+
 /* Overlays and Information areas */
 #scan-overlay-message {
     position: fixed;
@@ -197,6 +182,24 @@ body.connection-background #background-image-container {
     border-radius: 5px;    
     z-index: 1; /* Lower the z-index */
     display: inline-block;
+}
+
+#team-display-area {
+    padding: 10px 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#player-name-input,
+#team-name-input {
+    font-size: 1.2em;
+    text-align: center;
+}
+
+body.forerunner #team-display-area {
+    background-color: var(--container-bg);
 }
 
 #p1-peer-id {
@@ -514,13 +517,13 @@ textarea {
 
 /* Portrait and narrow screens */
 @media (orientation: portrait) {
-    main {
+    #game-screen {
         display: flex;
         flex-direction: column;
         align-items: center;
     }
 
-    .game-container {
+    #game-screen {
         flex-direction: column;
         justify-content: flex-start;
         align-items: center;
@@ -591,13 +594,13 @@ textarea {
 
 /* Landscape and wider screens */
 @media (orientation: landscape) {
-    main {
+    #game-screen {
         display: flex;
         align-items: center;
         justify-content: space-evenly;
     }
 
-    .game-container {
+    #game-screen {
         display: flex;
         flex-direction: row;
         justify-content: center; /* Center the items with gaps */
@@ -695,7 +698,7 @@ textarea {
 � Default Theme
 ==============================*/
 body.default {
-    background-color: #E0DEDF;
+    background-color: #E0DEDF !important;
     color: #2F2F2F;
 }
 
@@ -767,7 +770,7 @@ body.default #empty-btn:hover {
 � Banished Theme
 ==============================*/
 body.banished {
-    background-color: #262125;
+    background-color: #262125 !important;
     color: #E0DEDF;
 }
 
@@ -832,6 +835,16 @@ body.banished #empty-btn {
 
 body.banished #empty-btn:hover {
     background-color: rgba(200, 35, 51, 0.8);
+}
+
+body.banished #team-selection-area {
+    background-color: rgba(38, 33, 37, .9);
+    border: 1px solid #8C2F2F;
+}
+
+body.banished #team-selection-area h2,
+body.banished #team-selection-area h3 {
+    color: #C22D2D;
 }
 
 /*==============================
@@ -904,12 +917,22 @@ body.unsc #empty-btn:hover {
     background-color: #c82333;
 }
 
+body.unsc #team-selection-area {
+    background-color: rgba(26, 26, 26, .9);
+    border: 1px solid #2D6A4F;
+}
+
+body.unsc #team-selection-area h2,
+body.unsc #team-selection-area h3 {
+    color: #EFB82A;
+}
+
 /*==============================*/
 /* Forerunner Theme             */
 /*==============================*/
 body.forerunner {
     font-family: var(--font-main);
-    background-color: #1A2A3A;
+    background-color: #1A2A3A !important;
     color: #C0D0E0;
 }
 
@@ -1087,4 +1110,32 @@ body.forerunner .modal-content {
     100% {
         box-shadow: inset 0 0 15px var(--solved-green);
     }
+}
+
+/* Toast Notification Styles */
+.toast-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--primary-cyan);
+    color: var(--text-dark);
+    padding: 15px 25px;
+    border-radius: 5px;
+    z-index: 3000;
+    font-family: var(--font-main);
+    font-size: 1rem;
+    box-shadow: 0 0 20px var(--primary-cyan-glow);
+    opacity: 0;
+    transition: opacity 0.5s ease, bottom 0.5s ease;
+    animation: fadeInOut 4s ease-in-out;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; bottom: 0px; }
+    10%, 90% { opacity: 1; bottom: 20px; }
+}
+
+body.host .host-only {
+    display: block; /* Show host-only elements only for the host */
 }

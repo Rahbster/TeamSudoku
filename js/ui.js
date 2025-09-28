@@ -8,18 +8,22 @@ import { clearTextbox, createQrCodeChunks, playBeepSound } from './misc.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
 import { createOffer, createAnswer } from './webrtc.js';
 
+
 /**
- * Toggles the visibility between the main signaling/configuration area and the Sudoku game grid.
- * Also adjusts the background and scrolls the relevant section into view.
+ * Manages the visibility of the main application screens.
+ * @param {'config' | 'game'} screenName - The name of the screen to show.
  */
-function toggleSignalingArea() {
-    dom.gameContainer.classList.toggle('config-active');
+export function showScreen(screenName) {
+    dom.gameScreen.classList.add('hidden');
+    dom.configScreen.classList.add('hidden');
+    document.body.classList.remove('connection-background');
 
-    // Toggle the 'connection-background' class on the body
-    document.body.classList.toggle('connection-background');
-
-    if (dom.gameContainer.classList.contains('config-active')) {
-        dom.signalingArea.scrollIntoView({ behavior: 'smooth' });
+    if (screenName === 'config') {
+        dom.configScreen.classList.remove('hidden');
+        document.body.classList.add('connection-background');
+        dom.backToGameBtn.classList.remove('hidden'); // Always show the back button
+    } else if (screenName === 'game') {
+        dom.gameScreen.classList.remove('hidden');
     }
 }
 
@@ -32,17 +36,23 @@ export function toggleSignalingUI() {
     localStorage.setItem('sudokuConnectionMethod', signalingMethod); // Save the connection method
     const playerRole = dom.playerRoleSelect.value;
     localStorage.setItem('sudokuPlayerRole', playerRole); // Save the player role
-    if (signalingMethod === 'none' ||
-        playerRole === 'none') {
-        return;
-    }
 
     appState.isInitiator = playerRole === 'host';
+    // Add a 'host' class to the body if this client is the host
+    // This is used by CSS to show/hide host-only controls
+    if (appState.isInitiator) {
+        document.body.classList.add('host');
+    } else {
+        document.body.classList.remove('host');
+    }
 
     // Hide all signaling areas first
     [dom.manualSignalingArea, dom.qrSignalingArea, dom.peerSignalingArea,
      dom.p1ManualArea, dom.p2ManualArea, dom.p1QrArea, dom.p2QrArea,
      dom.p1PeerArea, dom.p2PeerArea].forEach(el => el.classList.add('hidden'));
+
+    // If the user is the host, always show the team selection area on the config screen
+    dom.teamSelectionArea.classList.toggle('hidden', !appState.isInitiator);
 
     if (signalingMethod === 'manual') {
         dom.manualSignalingArea.classList.remove('hidden');
@@ -60,11 +70,8 @@ export function toggleSignalingUI() {
         }
     } else if (signalingMethod === 'peerJS') {
         dom.peerSignalingArea.classList.remove('hidden');
-        if (appState.isInitiator) {
-            dom.p1PeerArea.classList.remove('hidden');
-        } else {
-            dom.p2PeerArea.classList.remove('hidden');
-        }
+        // The PeerJSInitiate function will handle showing the correct sub-area
+        PeerJSInitiate(); // This should be called for both Host and Joiner
     }
 }
 
@@ -85,18 +92,22 @@ export function handleLongPress(cell) {
  * to focus the user on the game grid.
  */
 export function hideSignalingUI() {
-    dom.signalingArea.style.display = 'none';
-    dom.sudokuGridArea.classList.remove('hidden');
+    showScreen('game');
 }
 
 /**
  * Shows the team selection area and hides the main game grid.
  */
 export function showTeamSelection() {
+    // Set the header text based on the player's role
+    const header = document.getElementById('team-selection-header');
+    if (appState.isInitiator) {
+        header.textContent = 'Join or Create a Team';
+    } else {
+        header.textContent = 'Join a Team';
+    }
     dom.teamSelectionArea.classList.remove('hidden');
-    // Ensure the game grid is hidden when team selection is shown
-    dom.sudokuGridArea.classList.add('hidden');
-    dom.numberPad.classList.add('hidden');
+    // The parent screen is already handling visibility of the grid
 }
 
 /**
@@ -110,7 +121,10 @@ export function updateTeamList(teams) {
     } else {
         teams.forEach(teamName => {
             const li = document.createElement('li');
-            li.innerHTML = `<span>${teamName}</span><button class="join-team-btn" data-team-name="${teamName}">Join</button>`;
+            // The remove button is only visible to the host, controlled by the .host-only class in CSS
+            li.innerHTML = `<span>${teamName}</span>
+                            <button class="remove-team-btn host-only" data-team-name="${teamName}">Remove</button>
+                            <button class="join-team-btn" data-team-name="${teamName}">Join</button>`;
             dom.teamList.appendChild(li);
         });
     }
@@ -137,6 +151,23 @@ export function showWinnerScreen(winningTeam) {
         dom.sudokuGridArea.classList.add('hidden');
         dom.numberPad.classList.add('hidden');
     }
+}
+
+/**
+ * Displays a short-lived toast notification at the bottom of the screen.
+ * @param {string} message - The message to display in the toast.
+ */
+export function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    // The animation will handle the fade-in and fade-out, but we remove the element after.
+    setTimeout(() => {
+        toast.remove();
+    }, 4000); // Matches the animation duration
 }
 
 /**
@@ -274,42 +305,50 @@ async function createAnswerManual() {
 //...Manual Connection=====
 
 //=====PeerJS functions...
+
 /**
  * Initiates the PeerJS connection for the host. It creates a unique peer ID,
  * waits for a joiner to connect, and then orchestrates the WebRTC offer/answer exchange.
  */
 async function PeerJSInitiate() {
+    if (appState.isInitiator) {
+        await setupPeerHost();
+    } else {
+        await setupPeerJoiner();
+    }
+}
+
+/**
+ * Sets up the host's PeerJS instance and listeners.
+ */
+async function setupPeerHost() {
     try {
-        // Step 1: Initialize PeerJS. The returned value is the PeerJS 'Peer' object.
+        // Step 1: Initialize PeerJS for the Host.
+        dom.p1PeerArea.classList.remove('hidden');
+        dom.p2PeerArea.classList.add('hidden');
         const peerJSObject = await initializePeerJs(true);
 
-        // Step 2: Listen for the 'connection' event to get the actual data connection.
+        // Step 2: Listen for a connection from a Joiner.
         peerJSObject.on('connection', async (peerJSConnection) => {
             dom.p1PeerStatus.textContent = 'Status: PeerJS connection received. Starting WebRTC signaling...';
 
-            dom.p1PeerStatus.textContent = 'Status: PeerJS connection received. Creating offer...';
-
-            // Step 3: Create the WebRTC offer once the PeerJS connection is open.
-            // You must wait for the 'open' event before sending data.
+            // Step 3: Wait for the PeerJS data channel to open.
             peerJSConnection.on('open', async () => {
-
                 rtcConnection = await createOffer();
 
                 rtcConnection.onicegatheringstatechange = () => {
                     if (rtcConnection.iceGatheringState === 'complete') {
                         const offerData = JSON.stringify(rtcConnection.localDescription);
-                        // Step 4: Send the offer over the PeerJS connection.
+                        // Step 4: Send the WebRTC offer to the Joiner.
                         sendOffer(peerJSConnection, offerData);
-                        dom.p1PeerStatus.textContent = 'Status: Offer sent to joiner. Waiting for answer...';
+                        dom.p1PeerStatus.textContent = 'Status: Offer sent. Waiting for answer...';
 
-                        // Step 5: Listen for the answer from the joiner.
+                        // Step 5: Listen for the WebRTC answer from the Joiner.
                         peerJSConnection.on('data', async (data) => {
                             const message = JSON.parse(data);
                             if (message.type === 'answer') {
                                 dom.p1PeerStatus.textContent = 'Status: Answer received. WebRTC connection established.';
                                 await rtcConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(message.answer)));
-
-                                // Close the PeerJS connection and object as they are no longer needed.
                                 peerJSConnection.close();
                                 peerJSObject.destroy();
                             }
@@ -319,15 +358,33 @@ async function PeerJSInitiate() {
             });
         });
     } catch (error) {
-        console.error('Failed to initialize PeerJS:', error);
+        console.error('Host: Failed to initialize PeerJS:', error);
+        dom.p1PeerStatus.textContent = `Error: ${error.message}`;
     }
 }
+
+/**
+ * Sets up the joiner's PeerJS instance.
+ */
+async function setupPeerJoiner() {
+    try {
+        // For the Joiner, we just need to initialize their PeerJS object.
+        dom.p1PeerArea.classList.add('hidden');
+        dom.p2PeerArea.classList.remove('hidden');
+        // The actual connection logic is handled when they click the "Connect" button.
+        await initializePeerJs(false);
+        dom.p2PeerStatus.textContent = 'Status: Ready. Enter Host ID and connect.';
+    } catch (error) {
+        console.error('Joiner: Failed to initialize PeerJS:', error);
+        dom.p2PeerStatus.textContent = `Error: ${error.message}`;
+    }
+}
+
 //...PeerJS functions=====
 
 //=====QR functions...
 let qrScanner = null;
 let qrScannerHost = null;
-
 /**
  * Initializes and starts the QR code scanner for the joiner to scan the host's offer codes.
  */
@@ -550,17 +607,23 @@ export function initializeEventListeners() {
     });
 
     // Event listener for the theme selector
-    dom.themeSelector.addEventListener('change', (event) => {
-        const selectedTheme = event.target.value;
-        dom.body.classList.remove('default', 'banished', 'unsc', 'forerunner');
-        dom.body.classList.add(selectedTheme);
-        localStorage.setItem('sudokuTheme', selectedTheme); // Save the theme choice
+    dom.themeSelector.addEventListener('change', handleThemeChange);
+    dom.themeSelectorConfig.addEventListener('change', handleThemeChange);
+
+    // Event listener for the player name input
+    dom.playerNameInput.addEventListener('change', (event) => {
+        const newName = event.target.value.trim();
+        if (newName) {
+            appState.playerId = newName;
+            localStorage.setItem('sudokuPlayerName', newName);
+            showToast(`Name set to: ${newName}`);
+        }
     });
 
     // Event listeners for the "Toggle P2P Configuration" button
-    dom.hostButton.addEventListener('change', () => {
-        toggleSignalingArea();
-    });
+    dom.configBtn.addEventListener('click', () => showScreen('config'));
+    dom.backToGameBtn.addEventListener('click', () => showScreen('game'));
+
 
     // Event listeners for the manual signaling buttons
     dom.createOfferManualBtn.addEventListener('click', createOfferManual);
@@ -582,22 +645,13 @@ export function initializeEventListeners() {
     dom.prevQrAnswerBtn.addEventListener('click', showPrevAnswerChunk);
     dom.nextQrAnswerBtn.addEventListener('click', showNextAnswerChunk);
 
-    // Event listener for PeerJS role selection.
-    dom.playerRoleSelect.addEventListener('change', async (event) => {
-        if (dom.signalingMethodSelect.value === 'peerJS') {
-
-            if (appState.isInitiator) {
-                await PeerJSInitiate();
-            }
-        }
-    });
-
     // Event listener for generating a new PeerJS ID for the host.
     dom.generateNewIDButton.addEventListener('click', async () => {
         if (dom.signalingMethodSelect.value === 'peerJS') {
 
+            // Re-initialize for the host to get a new ID
             if (appState.isInitiator) {
-                await PeerJSInitiate();
+                await setupPeerHost();
             }
         }
     });
@@ -762,27 +816,60 @@ export function initializeEventListeners() {
     dom.createTeamBtn.addEventListener('click', () => {
         const teamName = dom.teamNameInput.value.trim();
         if (teamName) {
-            const createTeamMsg = { type: 'create-team', teamName: teamName };
-            dataChannels.forEach(channel => {
-                if (channel.readyState === 'open') {
-                    channel.send(JSON.stringify(createTeamMsg));
-                }
-            });
+            // Host creates the team locally
+            if (!appState.teams[teamName]) {
+                appState.teams[teamName] = { puzzle: JSON.parse(JSON.stringify(appState.initialSudokuState)), members: [] };
+                updateTeamList(Object.keys(appState.teams)); // Update host's own list
+
+                // Broadcast the new team list to all joiners
+                const teamListUpdateMsg = { type: 'team-list-update', teams: Object.keys(appState.teams) };
+                const messageString = JSON.stringify(teamListUpdateMsg);
+                dataChannels.forEach(c => c.send(messageString));
+
+                // Save the updated team list to localStorage
+                const teamNames = Object.keys(appState.teams);
+                localStorage.setItem('sudokuTeams', JSON.stringify(teamNames));
+            }
+
             dom.teamNameInput.value = '';
         }
     });
 
     dom.teamList.addEventListener('click', (event) => {
+        if (event.target.classList.contains('remove-team-btn')) {
+            if (!appState.isInitiator) return; // Safety check
+
+            const teamName = event.target.dataset.teamName;
+            if (confirm(`Are you sure you want to remove the team "${teamName}"?`)) {
+                // Remove from state
+                delete appState.teams[teamName];
+
+                // Update localStorage
+                const teamNames = Object.keys(appState.teams);
+                localStorage.setItem('sudokuTeams', JSON.stringify(teamNames));
+
+                // Update UI for host and broadcast to joiners
+                updateTeamList(teamNames);
+                const teamListUpdateMsg = { type: 'team-list-update', teams: teamNames };
+                const messageString = JSON.stringify(teamListUpdateMsg);
+                dataChannels.forEach(c => c.send(messageString));
+            }
+        }
         if (event.target.classList.contains('join-team-btn')) {
             const teamName = event.target.dataset.teamName;
-            const joinTeamMsg = { type: 'join-team', teamName: teamName };
-            dataChannels[0].send(JSON.stringify(joinTeamMsg)); // Send to host
+            const joinTeamMsg = { type: 'join-team', teamName: teamName, playerId: appState.playerId };
+            
             appState.playerTeam = teamName;
-            dom.teamSelectionArea.classList.add('hidden');
-            // After joining a team, hide the config and show the game.
-            dom.gameContainer.classList.remove('config-active');
-            document.body.classList.remove('connection-background');
-            dom.numberPad.classList.remove('hidden');
+            dom.teamDisplayArea.classList.remove('hidden');
+            dom.playerNameDisplay.textContent = appState.playerId;
+            dom.teamNameDisplay.textContent = teamName;
+
+            if (appState.isInitiator) {
+                processLocalTeamJoin(joinTeamMsg); // Host processes their own join
+            } else {
+                dataChannels[0].send(JSON.stringify(joinTeamMsg)); // Joiner sends request to host
+                showScreen('game'); // Transition for the joiner
+            }
         }
     });
 
@@ -796,6 +883,52 @@ export function initializeEventListeners() {
     }, 3000); // Set to 3 seconds as you originally intended
 }
 
+/**
+ * Processes a team join action locally for the host and broadcasts the result.
+ * This prevents the host from having to send a message to itself.
+ * @param {object} joinData - The data for the join event.
+ */
+function processLocalTeamJoin(joinData) {
+    const joiningPlayerId = joinData.playerId;
+    const newTeamName = joinData.teamName;
+
+    // Set the team for the local player (the host)
+    appState.playerTeam = newTeamName;
+
+    // Check if the player was on a different team before
+    let oldTeamName = null;
+    for (const team in appState.teams) {
+        const memberIndex = appState.teams[team].members.indexOf(joiningPlayerId);
+        if (memberIndex > -1) {
+            oldTeamName = team;
+            appState.teams[team].members.splice(memberIndex, 1); // Remove from old team
+            break;
+        }
+    }
+
+    // Notify the old team that the player has left
+    if (oldTeamName && oldTeamName !== newTeamName) {
+        const message = { type: 'player-left-team', teamName: oldTeamName, playerId: joiningPlayerId };
+        const messageString = JSON.stringify(message);
+        dataChannels.forEach(c => c.send(messageString));
+    }
+
+    // Add player to the new team
+    if (appState.teams[newTeamName] && !appState.teams[newTeamName].members.includes(joiningPlayerId)) {
+        appState.teams[newTeamName].members.push(joiningPlayerId);
+    }
+
+    // Update the host's own grid
+    updateGridForTeam(newTeamName);
+
+    // Transition the host's UI to the game screen
+    showScreen('game');
+
+    // Broadcast that the player has joined
+    const message = { type: 'player-joined-team', teamName: newTeamName, playerId: joiningPlayerId };
+    const messageString = JSON.stringify(message);
+    dataChannels.forEach(c => c.send(messageString));
+}
 /**
  * Toggles the visibility of the data channel list and updates the button text.
  */
@@ -852,6 +985,22 @@ async function performHardReset() {
         alert('An error occurred during the reset. Please try clearing your browser cache manually.');
     }
 }
+
+/**
+ * Handles a change in the theme selection from either dropdown.
+ * Updates the body class, saves the choice to localStorage, and syncs both dropdowns.
+ * @param {Event} event - The change event from the select element.
+ */
+function handleThemeChange(event) {
+    const selectedTheme = event.target.value;
+    dom.body.classList.remove('default', 'banished', 'unsc', 'forerunner');
+    dom.body.classList.add(selectedTheme);
+    localStorage.setItem('sudokuTheme', selectedTheme); // Save the theme choice
+    // Sync both dropdowns
+    dom.themeSelector.value = selectedTheme;
+    dom.themeSelectorConfig.value = selectedTheme;
+}
+
 /**
  * Renders the list of currently active WebRTC data channels in the UI,
  * including a "Disconnect" button for each.
