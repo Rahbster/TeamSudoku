@@ -3,7 +3,7 @@
 //==============================
 // This module handles all user interface interactions, from button clicks to dynamic UI updates.
 import { appState, dom, dataChannels } from './scripts.js';
-import { clearAllHighlights, loadPuzzle, checkGridState, highlightMatchingCells, isMoveValid, highlightConflictingCells } from './game.js';
+import { clearAllHighlights, loadPuzzle, checkGridState, highlightMatchingCells, isMoveValid, highlightConflictingCells, updateGridForTeam } from './game.js';
 import { clearTextbox, createQrCodeChunks, playBeepSound } from './misc.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
 import { createOffer, createAnswer } from './webrtc.js';
@@ -85,6 +85,55 @@ export function handleLongPress(cell) {
 export function hideSignalingUI() {
     dom.signalingArea.style.display = 'none';
     dom.sudokuGridArea.classList.remove('hidden');
+}
+
+/**
+ * Shows the team selection area and hides the main game grid.
+ */
+export function showTeamSelection() {
+    dom.teamSelectionArea.classList.remove('hidden');
+    dom.sudokuGridArea.classList.add('hidden');
+    dom.numberPad.classList.add('hidden');
+}
+
+/**
+ * Updates the list of available teams in the UI.
+ * @param {string[]} teams - An array of team names.
+ */
+export function updateTeamList(teams) {
+    dom.teamList.innerHTML = '';
+    if (teams.length === 0) {
+        dom.teamList.innerHTML = '<li>No teams created yet.</li>';
+    } else {
+        teams.forEach(teamName => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${teamName}</span><button class="join-team-btn" data-team-name="${teamName}">Join</button>`;
+            dom.teamList.appendChild(li);
+        });
+    }
+}
+
+/**
+ * Displays a winner screen when a team solves the puzzle.
+ * @param {string} winningTeam - The name of the team that won.
+ */
+export function showWinnerScreen(winningTeam) {
+    if (appState.winner) return; // Already showing
+
+    appState.winner = winningTeam;
+    appState.gameInProgress = false;
+
+    dom.winnerModal.classList.remove('hidden');
+    dom.winnerText.textContent = `Team "${winningTeam}" has won the game!`;
+
+    // Highlight the solved puzzle for the winning team
+    if (appState.playerTeam === winningTeam) {
+        document.querySelectorAll('.grid-cell').forEach(cell => cell.classList.add('solved-puzzle'));
+    } else {
+        // For other teams, just show the modal without the green solved effect
+        dom.sudokuGridArea.classList.add('hidden');
+        dom.numberPad.classList.add('hidden');
+    }
 }
 
 /**
@@ -490,6 +539,11 @@ export function initializeEventListeners() {
     // Event listeners for game-related buttons
     dom.newPuzzleButton.addEventListener('click', () => {
         loadPuzzle(appState.selectedDifficulty);
+        dom.winnerModal.classList.add('hidden'); // Hide winner modal on new puzzle
+    });
+    dom.newPuzzleWinnerBtn.addEventListener('click', () => {
+        loadPuzzle(appState.selectedDifficulty);
+        dom.winnerModal.classList.add('hidden'); // Hide winner modal
     });
 
     // Event listeners for the "Toggle P2P Configuration" button
@@ -667,14 +721,15 @@ export function initializeEventListeners() {
 
                     const move = {
                         type: 'move',
-                        row: row,
-                        col: col,
-                        value: value
+                        team: appState.playerTeam,
+                        row: parseInt(row, 10),
+                        col: parseInt(col, 10),
+                        value: value,
                     };
 
-                    dataChannels.forEach(otherChannel => {
-                        if (otherChannel.readyState === 'open') {
-                            otherChannel.send(JSON.stringify(move));
+                    dataChannels.forEach(channel => {
+                        if (channel.readyState === 'open') {
+                            channel.send(JSON.stringify(move));
                         }
                     });
 
@@ -699,19 +754,61 @@ export function initializeEventListeners() {
         }
     });
 
-    dom.showChannelsBtn.addEventListener('click', renderChannelList);
+    dom.showChannelsBtn.addEventListener('click', toggleChannelList);
     dom.channelList.addEventListener('click', disconnectChannel);
 
-    dom.instructionsModal.style.display = "block";
+    // Event listeners for team selection
+    dom.createTeamBtn.addEventListener('click', () => {
+        const teamName = dom.teamNameInput.value.trim();
+        if (teamName) {
+            const createTeamMsg = { type: 'create-team', teamName: teamName };
+            dataChannels.forEach(channel => {
+                if (channel.readyState === 'open') {
+                    channel.send(JSON.stringify(createTeamMsg));
+                }
+            });
+            dom.teamNameInput.value = '';
+        }
+    });
 
-    // Hide the intructions after 6 seconds
+    dom.teamList.addEventListener('click', (event) => {
+        if (event.target.classList.contains('join-team-btn')) {
+            const teamName = event.target.dataset.teamName;
+            const joinTeamMsg = { type: 'join-team', teamName: teamName };
+            dataChannels[0].send(JSON.stringify(joinTeamMsg)); // Send to host
+            appState.playerTeam = teamName;
+            dom.teamSelectionArea.classList.add('hidden');
+            dom.numberPad.classList.remove('hidden');
+        }
+    });
+
+    dom.instructionsModal.classList.remove('hidden');
+
+    // Hide the instructions after 3 seconds
     setTimeout(() => {
         if (dom.instructionsModal) {
-            dom.instructionsModal.style.display = 'none';
+            dom.instructionsModal.classList.add('hidden');
         }
-    }, 3000);
+    }, 3000); // Set to 3 seconds as you originally intended
 }
 
+/**
+ * Toggles the visibility of the data channel list and updates the button text.
+ */
+function toggleChannelList() {
+    const isHidden = dom.channelList.classList.contains('hidden');
+
+    if (isHidden) {
+        // If hidden, render the list, show it, and update button text
+        renderChannelList();
+        dom.channelList.classList.remove('hidden');
+        dom.showChannelsBtn.textContent = 'Hide Channels';
+    } else {
+        // If visible, hide it and revert button text
+        dom.channelList.classList.add('hidden');
+        dom.showChannelsBtn.textContent = 'Show Channels';
+    }
+}
 /**
  * Renders the list of currently active WebRTC data channels in the UI,
  * including a "Disconnect" button for each.

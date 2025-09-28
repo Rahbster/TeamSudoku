@@ -16,6 +16,10 @@ import {
     generatePuzzle
 } from './generator.js';
 
+import {
+    showWinnerScreen
+} from './ui.js';
+
 //==============================
 //Game UI and Logic
 //==============================
@@ -190,11 +194,14 @@ export async function loadPuzzle(difficulty, puzzleData) {
     if (!isRemoteLoad) {
         // Generate puzzle locally instead of fetching from an API
         puzzle = generatePuzzle(difficulty);
-        appState.initialSudokuState = puzzle;
+        appState.initialSudokuState = JSON.parse(JSON.stringify(puzzle)); // Deep copy
+        // Reset teams and winner status
+        appState.teams = {};
+        appState.winner = null;
         console.log('Generated new puzzle locally for difficulty:', difficulty);
     }
     
-    // Populate the grid cells with the puzzle numbers.
+    // Populate the grid cells with the puzzle numbers for initial display.
     for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
             const cell = document.getElementById(`cell-${row}-${col}`);
@@ -206,10 +213,9 @@ export async function loadPuzzle(difficulty, puzzleData) {
         }
     }
     
-    checkGridState();
-
     // If the puzzle was generated locally (by the host), broadcast it to all connected peers.
     if (!isRemoteLoad && dataChannels && dataChannels.length > 0) {
+        appState.gameInProgress = true;
         const puzzleMessage = { type: 'initial-state', state: puzzle };
         const messageString = JSON.stringify(puzzleMessage);
 
@@ -219,8 +225,36 @@ export async function loadPuzzle(difficulty, puzzleData) {
                 channel.send(messageString);
             }
         });
+
+        // Also broadcast an empty team list to start
+        const teamListMessage = { type: 'team-list-update', teams: [] };
+        const teamListString = JSON.stringify(teamListMessage);
+        dataChannels.forEach(channel => {
+            if (channel.readyState === 'open') {
+                channel.send(teamListString);
+            }
+        });
+
+        // Reset UI for all players
+        document.getElementById('winner-modal').classList.add('hidden');
     }
     startTimer();
+}
+
+/**
+ * Updates the DOM to reflect the puzzle state of the player's current team.
+ * @param {string} teamName - The name of the team whose puzzle should be rendered.
+ */
+export function updateGridForTeam(teamName) {
+    const puzzle = appState.teams[teamName].puzzle;
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            const cell = document.getElementById(`cell-${r}-${c}`);
+            const value = puzzle[r][c];
+            cell.querySelector('.cell-value').textContent = value === 0 ? '' : value;
+        }
+    }
+    checkGridState();
 }
 
 /**
@@ -321,11 +355,19 @@ export function checkGridState() {
     const { isValid, isComplete } = validatePuzzle();
     // The puzzle is solved if it's completely filled and has no conflicts.
     if (isComplete && isValid) {
-        document.querySelectorAll('.grid-cell').forEach(cell => {
-            cell.classList.add('solved-puzzle');
-        });
-        stopTimer();
-        alert("Congratulations! The puzzle is solved!");
+        if (appState.isInitiator && !appState.winner) {
+            // Host declares a winner
+            appState.winner = appState.playerTeam;
+            appState.gameInProgress = false;
+            const gameOverMessage = { type: 'game-over', winningTeam: appState.playerTeam };
+            const messageString = JSON.stringify(gameOverMessage);
+            dataChannels.forEach(channel => {
+                if (channel.readyState === 'open') {
+                    channel.send(messageString);
+                }
+            });
+            showWinnerScreen(appState.playerTeam);
+        }
     }
 }
 

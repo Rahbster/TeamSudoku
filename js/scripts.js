@@ -40,7 +40,12 @@ export const appState = {
     isLongPressActive: false, // Flag to track if a long-press action is active.
     lastEventTimestamp: 0, // Timestamp to help debounce rapid click/tap events.
     // Game state
-    isPencilMode: false
+    isPencilMode: false,
+    // Team state
+    playerTeam: null, // The team this player has joined.
+    teams: {}, // Object to hold the state for each team. e.g., { teamName: { puzzle: [...] } }
+    gameInProgress: false, // Is a game currently being played?
+    winner: null // Which team won?
 };
 
 // Copies the offer or answer to the clipboard
@@ -130,6 +135,10 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.pencilButton = document.getElementById('pencil-btn');
     dom.body = document.body;
     //Manual signaling buttons
+    dom.teamSelectionArea = document.getElementById('team-selection-area');
+    dom.teamNameInput = document.getElementById('team-name-input');
+    dom.createTeamBtn = document.getElementById('create-team-btn');
+    dom.teamList = document.getElementById('team-list');
     dom.createOfferManualBtn = document.getElementById('create-offer-manual-btn');
     dom.copyOfferBtn = document.getElementById('copy-offer-btn');
     dom.clearOfferBtn = document.getElementById('clear-offer-btn');
@@ -158,6 +167,9 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.showChannelsBtn = document.getElementById('show-channels-btn');
 
     // Set the initial state for UI elements.
+    dom.winnerModal = document.getElementById('winner-modal');
+    dom.winnerText = document.getElementById('winner-text');
+    dom.newPuzzleWinnerBtn = document.getElementById('new-puzzle-winner-btn');
     dom.prevQrBtn.disabled = true;
     dom.nextQrBtn.disabled = true;
     dom.prevQrAnswerBtn.disabled = true;

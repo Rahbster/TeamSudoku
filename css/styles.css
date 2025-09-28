@@ -123,6 +123,44 @@ body.connection-background #background-image-container {
     }
 }
 
+/* Team Selection Area */
+#team-selection-area {
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    margin: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+#team-selection-area h2, #team-selection-area h3 {
+    color: #333;
+}
+
+.team-creation {
+    margin-bottom: 20px;
+}
+
+#team-name-input {
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+#team-list {
+    list-style: none;
+    padding: 0;
+}
+
+#team-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
 /* Overlays and Information areas */
 #scan-overlay-message {
     position: fixed;
@@ -929,9 +967,9 @@ body.forerunner #empty-btn:hover {
 
 /* The Modal (background) */
 .modal {
-    display: none; /* Hidden by default */
+    /* display: none; is replaced by .hidden class */
     position: fixed; /* Stay in place */
-    z-index: 1; /* Sit on top */
+    z-index: 2000; /* Sit on top of everything */
     left: 0;
     top: 0;
     width: 100%; /* Full width */
@@ -948,4 +986,5 @@ body.forerunner #empty-btn:hover {
     border: 1px solid #888;
     width: 80%; /* Could be more or less, depending on screen size */
     border-radius: 8px;
+    text-align: center;
 }

@@ -3,8 +3,8 @@
 //==============================
 
 import { appState, dom, dataChannels } from './scripts.js';
-import { loadPuzzle, checkGridState } from './game.js';
-import { hideSignalingUI } from './ui.js';
+import { loadPuzzle, checkGridState, updateGridForTeam } from './game.js';
+import { hideSignalingUI, showTeamSelection, updateTeamList, showWinnerScreen } from './ui.js';
 
 //Initializes the WebRTC PeerConnection
 export function initializeWebRTC() {
@@ -23,6 +23,7 @@ export function initializeWebRTC() {
             console.log('WebRTC connection established!');
             if (!appState.isInitiator) {
                 hideSignalingUI(); //Hide all signaling UI when connected
+                showTeamSelection();
             }
         }
     };
@@ -44,35 +45,86 @@ function setupDataChannel(channel) {
         dom.p1QrStatus.textContent = 'Status: Connected!';
         dom.p2QrStatus.textContent = 'Status: Connected!';
         dataChannels.push(channel); // Store the new channel
+        if (appState.isInitiator) {
+            showTeamSelection();
+        }
     };
 
     channel.onmessage = event => {
         const data = JSON.parse(event.data);
-        if (data.type === 'move') {
-            const cell = document.getElementById(`cell-${data.row}-${data.col}`);
-            if (cell) {
-                cell.textContent = data.value;
 
-                // Add the blink class to the cell
-                cell.classList.add('blink');
-
-                // Set a timer to remove the blink class after 3 seconds
-                setTimeout(() => {
-                    cell.classList.remove('blink');
-                }, 3000);
+        // Host processes all messages and broadcasts updates
+        if (appState.isInitiator) {
+            switch (data.type) {
+                case 'create-team':
+                    if (!appState.teams[data.teamName]) {
+                        appState.teams[data.teamName] = { puzzle: JSON.parse(JSON.stringify(appState.initialSudokuState)), members: [] };
+                        broadcast({ type: 'team-list-update', teams: Object.keys(appState.teams) });
+                    }
+                    break;
+                case 'join-team':
+                    // Add player to team and send them the current team puzzle state
+                    const playerChannel = dataChannels.find(c => c.label === channel.label);
+                    if (playerChannel) {
+                        appState.teams[data.teamName].members.push(channel.label);
+                        const teamStateMessage = {
+                            type: 'team-state-update',
+                            teamName: data.teamName,
+                            puzzle: appState.teams[data.teamName].puzzle
+                        };
+                        playerChannel.send(JSON.stringify(teamStateMessage));
+                    }
+                    break;
+                case 'move':
+                    // Update the puzzle for the specific team and broadcast to team members
+                    const team = appState.teams[data.team];
+                    if (team) {
+                        team.puzzle[data.row][data.col] = data.value === '' ? 0 : data.value;
+                        const moveUpdate = { type: 'move-update', team: data.team, row: data.row, col: data.col, value: data.value };
+                        broadcast(moveUpdate); // Broadcast to all, clients will filter by team
+                    }
+                    break;
             }
-            checkGridState();
+        }
 
-            // Broadcast the move to all other players
-            dataChannels.forEach(otherChannel => {
-                if (otherChannel.readyState === 'open' && otherChannel !== channel) {
-                    otherChannel.send(event.data);
+        // All clients (including host) process broadcasted messages
+        switch (data.type) {
+            case 'initial-state':
+                loadPuzzle(appState.selectedDifficulty, data.state);
+                break;
+            case 'team-list-update':
+                updateTeamList(data.teams);
+                break;
+            case 'team-state-update':
+                appState.playerTeam = data.teamName;
+                appState.teams[data.teamName] = { puzzle: data.puzzle };
+                updateGridForTeam(data.teamName);
+                document.getElementById('team-selection-area').classList.add('hidden');
+                document.getElementById('sudoku-grid-area').classList.remove('hidden');
+                break;
+            case 'move-update':
+                if (data.team === appState.playerTeam) {
+                    const cell = document.getElementById(`cell-${data.row}-${data.col}`);
+                    if (cell) {
+                        cell.querySelector('.cell-value').textContent = data.value;
+                        checkGridState();
+                    }
                 }
-            });
-        } else if (data.type === 'initial-state') {
-            loadPuzzle(appState.selectedDifficulty, data.state);
+                break;
+            case 'game-over':
+                showWinnerScreen(data.winningTeam);
+                break;
         }
     };
+}
+
+function broadcast(data) {
+    const message = JSON.stringify(data);
+    dataChannels.forEach(channel => {
+        if (channel.readyState === 'open') {
+            channel.send(message);
+        }
+    });
 }
 
 //The createOffer code should be used by all the connection methods

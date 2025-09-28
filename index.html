@@ -26,14 +26,23 @@
     <div id="scan-overlay-message" class="hidden"></div>
 
     <main>
+        <!-- Modal for initial instructions -->
+        <div id="instructions-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Instructions</h2>
+                <p id="instructions">Once connected, click on a grid cell to change its value. The change will appear on the other player's screen.</p>
+            </div>
+        </div>
         <div class="game-container">
-            <!-- Modal for initial instructions -->
-            <div id="instructions-modal" class="modal">
+            <!-- Modal for winner announcement -->
+            <div id="winner-modal" class="modal hidden">
                 <div class="modal-content">
-                    <h2>Instructions</h2>
-                    <p id="instructions">Once connected, click on a grid cell to change its value. The change will appear on the other player's screen.</p>
+                    <h2>Game Over!</h2>
+                    <p id="winner-text"></p>
+                    <button id="new-puzzle-winner-btn">Play New Puzzle</button>
                 </div>
             </div>
+
             <div id="number-pad">
                 <button class="number-btn" id="number-btn-1">1</button>
                 <button class="number-btn" id="number-btn-2">2</button>
@@ -46,6 +55,18 @@
                 <button class="number-btn" id="number-btn-9">9</button>
                 <button class="number-btn" id="empty-btn">X</button>
             </div>
+
+            <!-- Section for team selection -->
+            <section id="team-selection-area" class="hidden">
+                <h2>Join or Create a Team</h2>
+                <div class="team-creation">
+                    <input type="text" id="team-name-input" placeholder="Enter New Team Name">
+                    <button id="create-team-btn">Create Team</button>
+                </div>
+                <h3>Available Teams:</h3>
+                <ul id="team-list"></ul>
+            </section>
+
             <!-- Main game area, containing the number pad and the Sudoku grid -->
             <section id="sudoku-grid-area">
                 <div id="puzzle-area">
@@ -258,7 +279,7 @@
                 <!-- Display area for currently connected data channels -->
                 <div id="data-channels-display">
                     <h3>Connected Channels:</h3>
-                    <ul id="channel-list"></ul>
+                    <ul id="channel-list" class="hidden"></ul>
                     <button class="theme-button" id="show-channels-btn">Show Channels</button>
                 </div>
             </section>
