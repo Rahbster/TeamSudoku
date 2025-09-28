@@ -152,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.channelList = document.getElementById('channel-list');
     dom.gameContainer = document.querySelector('.game-container');
     dom.showChannelsBtn = document.getElementById('show-channels-btn');
+    dom.hardResetBtn = document.getElementById('hard-reset-btn');
 
     // Set the initial state for UI elements.
     dom.winnerModal = document.getElementById('winner-modal');

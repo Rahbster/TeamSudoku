@@ -754,6 +754,8 @@ export function initializeEventListeners() {
 
     dom.showChannelsBtn.addEventListener('click', toggleChannelList);
     dom.channelList.addEventListener('click', disconnectChannel);
+    dom.hardResetBtn.addEventListener('click', performHardReset);
+
 
     // Event listeners for team selection
     dom.createTeamBtn.addEventListener('click', () => {
@@ -805,6 +807,45 @@ function toggleChannelList() {
         // If visible, hide it and revert button text
         dom.channelList.classList.add('hidden');
         dom.showChannelsBtn.textContent = 'Show Channels';
+    }
+}
+
+/**
+ * Performs a "hard reset" of the application by unregistering service workers,
+ * clearing caches, and clearing local storage before reloading the page.
+ */
+async function performHardReset() {
+    if (!confirm('Are you sure you want to perform a hard reset? This will clear all saved data and reload the application.')) {
+        return;
+    }
+
+    try {
+        // 1. Unregister all service workers
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const registration of registrations) {
+                await registration.unregister();
+                console.log('Service Worker unregistered:', registration);
+            }
+        }
+
+        // 2. Clear all caches
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(key => caches.delete(key)));
+            console.log('All caches cleared.');
+        }
+
+        // 3. Clear localStorage for this site
+        localStorage.clear();
+        console.log('localStorage cleared.');
+
+        // 4. Inform the user and reload
+        alert('Application has been reset. The page will now reload.');
+        window.location.reload();
+    } catch (error) {
+        console.error('Error during hard reset:', error);
+        alert('An error occurred during the reset. Please try clearing your browser cache manually.');
     }
 }
 /**
