@@ -262,14 +262,6 @@ export async function loadPuzzle(difficulty, puzzleData, resetTeams = false) {
             }
         }
     }
-
-    // If the puzzle was generated locally (by the host), broadcast it to all connected peers.
-    if (!isRemoteLoad && dataChannels && dataChannels.length > 0) {
-        appState.gameInProgress = true;
-        const puzzleMessage = { type: 'initial-state', state: puzzle };
-        const messageString = JSON.stringify(puzzleMessage);
-        dataChannels.forEach(channel => channel.send(messageString));
-    }
     
     startTimer();
     return puzzle; // Return the generated puzzle

@@ -176,6 +176,9 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.prevQrAnswerBtn.disabled = true;
     dom.nextQrAnswerBtn.disabled = true;
 
+    // Expose dom object globally for access from other modules (e.g., generator.js)
+    window.dom = dom;
+
     // Load saved theme from localStorage, or default to 'default'
     const savedTheme = localStorage.getItem('sudokuTheme') || 'default';
     dom.body.classList.add(savedTheme);

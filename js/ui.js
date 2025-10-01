@@ -929,10 +929,7 @@ function processLocalTeamJoin(joinData) {
     // Update the host's own grid
     updateGridForTeam(newTeamName);
 
-    // Broadcast that the player has joined
-    const message = { type: 'player-joined-team', teamName: newTeamName, playerId: joiningPlayerId, sessionId: joinData.sessionId };
-    const messageString = JSON.stringify(message);
-    dataChannels.forEach(c => c.send(messageString));
+    showScreen('game');
 }
 
 /**

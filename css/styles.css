@@ -53,12 +53,8 @@ html {
     margin-bottom: 5px;
 }
 
-body, body.default, body.banished, body.unsc {
+body {
     font-family: sans-serif;
-}
-
-p, ul {
-    font-size: 1rem;
 }
 
 h1 {
@@ -105,6 +101,11 @@ main {
 body.connection-background #background-image-container {
     background-image: url('../assets/StageConnection.png');
     opacity: 0.25;
+}
+
+/* Hide the fancy background when not using the default Forerunner theme */
+body:not(.forerunner) #background-image-container {
+    display: none;
 }
 
 .host-only {
@@ -259,6 +260,29 @@ button:disabled, select:disabled, .number-btn:disabled {
     display: flex;
     align-items: center;
     gap: 8px; /* Add a gap between the buttons */
+}
+
+/* Halo Waypoint-inspired style for the "Back to Game" button */
+#back-to-game-btn {
+    background: linear-gradient(180deg, #10283B 0%, #0A1822 100%);
+    border: 1px solid #2495B4;
+    border-radius: 9999px; /* Creates the pill shape */
+    box-shadow: 0px 0px 10px rgba(36, 149, 180, 0.5);
+    color: #FFFFFF;
+    font-family: sans-serif; /* A clean sans-serif font matches the style well */
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 12px 24px;
+    font-size: 1rem;
+    clip-path: none; /* Remove any clip-path from theme styles */
+    justify-content: center;
+}
+
+#back-to-game-btn:hover {
+    background: linear-gradient(180deg, #163852 0%, #0F2433 100%);
+    box-shadow: 0px 0px 15px rgba(36, 149, 180, 0.7);
+    border-color: #3ccde8;
+    transform: translateY(-1px); /* A more subtle hover effect */
 }
 
 /* Ensure host-only buttons are hidden by default with higher specificity */
@@ -522,17 +546,18 @@ textarea {
 
 /* Portrait and narrow screens */
 @media (orientation: portrait) {
+    #config-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2dvh 2dvw;
+        gap: 2dvh;
+    }
+
     #game-screen {
         display: flex;
         flex-direction: column;
         align-items: center;
-    }
-
-    #game-screen {
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: center;
-        gap: 2dvh;
     }
 
     /* This section now contains the grid and number pad */
@@ -599,12 +624,6 @@ textarea {
 
 /* Landscape and wider screens */
 @media (orientation: landscape) {
-    #game-screen {
-        display: flex;
-        align-items: center;
-        justify-content: space-evenly;
-    }
-
     #game-screen {
         display: flex;
         flex-direction: row;
@@ -703,7 +722,7 @@ textarea {
 � Default Theme
 ==============================*/
 body.default {
-    background-color: #E0DEDF !important;
+    background-color: #E0DEDF;
     color: #2F2F2F;
 }
 
@@ -746,9 +765,9 @@ body.default button,
 body.default .number-btn,
 body.default #empty-btn,
 body.default select {
-    background-color: #007bff;
-    color: #E0DEDF;
-    border-color: #5C4B2E;
+    background-color: #6c757d;
+    color: #fff;
+    border-color: #5a6268;
     clip-path: none;
 }
 
@@ -756,9 +775,8 @@ body.default button:hover,
 body.default .number-btn:hover,
 body.default #empty-btn:hover,
 body.default select:hover {
-    background-color: #0056b3;
-    border-color: #004494;
-    color: #FFFFFF;
+    background-color: #5a6268;
+    border-color: #545b62;
 }
 
 /* Red 'X' button for this theme */
@@ -770,12 +788,11 @@ body.default #empty-btn:hover {
     background-color: #c82333;
 }
 
-
 /*==============================
 � Banished Theme
 ==============================*/
 body.banished {
-    background-color: #262125 !important;
+    background-color: #262125;
     color: #E0DEDF;
 }
 
@@ -820,21 +837,19 @@ body.banished button,
 body.banished .number-btn,
 body.banished #empty-btn,
 body.banished select {
-    background-color: transparent;
+    background-color: rgba(255, 255, 255, 0.1);
     color: #E0DEDF;
-    border: 2px solid #8C2F2F;
-    font-family: var(--font-main);
-    clip-path: polygon(0 15%, 15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%);
-    box-shadow: none;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    clip-path: none;
 }
 
 body.banished button:hover,
 body.banished .number-btn:hover,
 body.banished #empty-btn:hover,
 body.banished select:hover {
-    background-color: #C22D2D;
-    color: #FFFFFF;
-    box-shadow: 0 0 15px rgba(194, 45, 45, 0.7);
+    background-color: rgba(255, 255, 255, 0.75);
+    color: #000;
+    border-color: #fff;
 }
 
 /* Transparent red 'X' button for this theme */
@@ -854,6 +869,11 @@ body.banished #team-selection-area {
 body.banished #team-selection-area h2,
 body.banished #team-selection-area h3 {
     color: #C22D2D;
+}
+
+body.banished select option {
+    background-color: #262125;
+    color: #E0DEDF;
 }
 
 /*==============================
@@ -899,27 +919,90 @@ body.unsc .solved-puzzle {
 }
 
 /* Themed buttons and dropdowns */
-body.unsc button,
-body.unsc .number-btn,
-body.unsc #empty-btn,
+body.unsc button:not(#back-to-game-btn), body.unsc .number-btn, body.unsc #empty-btn, body.unsc .select-wrapper {
+    position: relative;
+    background-color: rgba(61, 107, 81, 0.6); /* Mostly opaque green background */
+    color: #CDCFCC;
+    border: 1px solid rgba(45, 106, 79, 0.5); /* Lighter base green border */
+    clip-path: none;
+    box-shadow: none;
+    padding: 12px 24px;
+    z-index: 1;
+    transition: color 200ms ease-in-out, background-color 200ms ease-in-out;
+    overflow: hidden;
+    border-radius: 2px; /* Very slight rounding */
+}
+
+/* Use ::before for the TOP yellow bar and top corners */
+body.unsc button:not(#back-to-game-btn)::before, body.unsc .number-btn::before, body.unsc #empty-btn::before, body.unsc .select-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 10%; /* The height of the corner pieces */
+    background-color: #EFB82A; /* UNSC Gold */
+    z-index: -1;
+    transition: all 200ms ease-in-out;
+    /* This clip-path creates the top bar and the top 10% of the side bars */
+    clip-path: polygon(0 100%, 1px 100%, 1px 2px, calc(100% - 1px) 2px, calc(100% - 1px) 100%, 100% 100%, 100% 0, 0 0);
+}
+
+/* Use ::after for the BOTTOM yellow bar and bottom corners */
+body.unsc button:not(#back-to-game-btn)::after, body.unsc .number-btn::after, body.unsc #empty-btn::after, body.unsc .select-wrapper::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 10%;
+    background-color: #EFB82A;
+    z-index: -1;
+    transition: all 200ms ease-in-out;
+    /* This clip-path creates the bottom bar and the bottom 10% of the side bars */
+    clip-path: polygon(0 0, 1px 0, 1px calc(100% - 2px), calc(100% - 1px) calc(100% - 2px), calc(100% - 1px) 0, 100% 0, 100% 100%, 0 100%);
+}
+
+body.unsc button:not(#back-to-game-btn):hover, body.unsc .number-btn:hover,
+body.unsc #empty-btn:hover, .unsc .select-wrapper:hover {
+    background-color: rgba(61, 107, 81, 0.8); /* Fill background on hover */
+    color: #FFFFFF;
+}
+
+body.unsc button:not(#back-to-game-btn):hover::before, body.unsc .number-btn:hover::before, body.unsc #empty-btn:hover::before, body.unsc .select-wrapper:hover::before {
+    height: 20%; /* Double the height of the top corner pieces on hover */
+}
+
+body.unsc button:not(#back-to-game-btn):hover::after, body.unsc .number-btn:hover::after, body.unsc #empty-btn:hover::after, body.unsc .select-wrapper:hover::after {
+    height: 20%; /* Double the height of the bottom corner pieces on hover */
+}
+
+/* Style select elements to match the button aesthetic as closely as possible */
 body.unsc select {
+    position: relative; /* To place it on top of the wrapper's pseudo-elements */
+    z-index: 2;
     background-color: transparent;
     color: #CDCFCC;
-    border: 2px solid #2D6A4F;
-    font-family: var(--font-main);
-    clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%, 0 10%);
-    box-shadow: none;
+    border: none; /* The wrapper handles the border */
+    border-radius: 0; /* Sharp corners */
+    padding: 12px 24px;
+    transition: color 200ms ease-in-out, background-color 200ms ease-in-out;
+    width: 100%;
 }
 
-body.unsc button:hover,
-body.unsc .number-btn:hover,
-body.unsc #empty-btn:hover,
-body.unsc select:hover {
-    background-color: #3D6B51;
-    color: #FFFFFF;
-    box-shadow: 0 0 15px rgba(61, 107, 81, 0.7);
+body.unsc .select-wrapper {
+    display: inline-block;
 }
 
+body.unsc .select-wrapper:hover select {
+    color: #FFFFFF; /* Match text color on hover */
+}
+
+/* Remove the default browser outline and add a theme-appropriate focus style */
+body.unsc select:focus {
+    outline: none;
+    box-shadow: 0 0 8px rgba(239, 184, 42, 0.6); /* Gold glow effect */
+}
 /* Red 'X' button for this theme */
 body.unsc #empty-btn {
     background-color: #dc3545;
@@ -939,12 +1022,17 @@ body.unsc #team-selection-area h3 {
     color: #EFB82A;
 }
 
+body.unsc select option {
+    background-color: #1A1A1A;
+    color: #CDCFCC;
+}
+
 /*==============================*/
 /* Forerunner Theme             */
 /*==============================*/
 body.forerunner {
     font-family: var(--font-main);
-    background-color: #1A2A3A !important;
+    background-color: #1A2A3A;
     color: #C0D0E0;
 }
 

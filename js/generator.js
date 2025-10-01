@@ -77,29 +77,31 @@ function fillBoard(board) {
  * @param {number[][]} board - The 9x9 Sudoku grid.
  * @returns {number} - The total number of solutions found.
  */
-function countSolutions(board) {
-    let solutionCount = 0;
-
-    function solve() {
-        for (let row = 0; row < 9; row++) {
-            for (let col = 0; col < 9; col++) {
-                if (board[row][col] === 0) {
-                    for (let num = 1; num <= 9; num++) {
-                        if (isValid(board, row, col, num)) {
-                            board[row][col] = num;
-                            solve();
-                            board[row][col] = 0; // Backtrack to find all solutions
-                        }
+function solve(board, state) {
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            if (board[row][col] === 0) {
+                for (let num = 1; num <= 9; num++) {
+                    if (state.count > 1) return; // Optimization: stop if we already found multiple solutions
+                    if (isValid(board, row, col, num)) {
+                        board[row][col] = num;
+                        solve(board, state);
+                        board[row][col] = 0; // Backtrack
                     }
-                    return;
                 }
+                return;
             }
         }
-        solutionCount++; // Found a full solution
     }
+    state.count++;
+}
 
-    solve();
-    return solutionCount;
+function countSolutions(board) {
+    const state = { count: 0 };
+    // It is critical to work on a copy so the original board passed in is not mutated.
+    const localBoard = board.map(arr => [...arr]);
+    solve(localBoard, state);
+    return state.count;
 }
 
 /**
@@ -108,46 +110,118 @@ function countSolutions(board) {
  * @returns {number[][]} - A 9x9 array representing the puzzle.
  */
 export function generatePuzzle(difficulty) {
-    const board = Array(9).fill(0).map(() => Array(9).fill(0));
-    fillBoard(board); // Create a full, valid Sudoku board.
+    const solution = Array(9).fill(0).map(() => Array(9).fill(0));
+    fillBoard(solution); // Create a full, valid Sudoku board.
 
-    // Determine the number of cells to remove based on difficulty.
-    let attempts;
-    if (difficulty === 'very-easy') {
-        attempts = 40;
-    } else if (difficulty === 'easy') {
-        attempts = 50;
-    } else if (difficulty === 'medium') {
-        attempts = 55;
-    } else if (difficulty === 'hard') {
-        attempts = 60;
-    } else { // hard
-        attempts = 55; // Default to medium if difficulty is unknown
+    const puzzle = solution.map(arr => [...arr]); // Create a copy to poke holes in
+
+    // Create a list of all cell coordinates and shuffle them
+    const cells = [];
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            cells.push([r, c]);
+        }
     }
+    shuffle(cells);
 
-    // "Poke holes" in the board by removing numbers.
-    let removed = 0;
-    while (attempts > 0 && removed < 64) { // Max 64 holes for a valid puzzle
-        const row = Math.floor(Math.random() * 9);
-        const col = Math.floor(Math.random() * 9);
+    // Difficulty settings: max clues to remove and a difficulty score threshold.
+    // A higher score means a harder puzzle (requires more advanced techniques).
+    const difficultySettings = {
+        'very-easy': { maxRemoved: 40, scoreThreshold: 5 },
+        'easy':      { maxRemoved: 45, scoreThreshold: 20 },
+        'medium':    { maxRemoved: 50, scoreThreshold: 50 },
+        'hard':      { maxRemoved: 55, scoreThreshold: 200 }
+    };
 
-        if (board[row][col] !== 0) {
-            const backup = board[row][col];
-            board[row][col] = 0;
+    const settings = difficultySettings[difficulty] || difficultySettings['medium'];
+    let removedCount = 0;
 
-            // Create a copy to test for a unique solution.
-            const boardCopy = board.map(arr => [...arr]);
-            const solutions = countSolutions(boardCopy);
+    for (const [row, col] of cells) {
+        if (removedCount >= settings.maxRemoved) {
+            break;
+        }
 
-            if (solutions !== 1) {
-                // If removing this number results in multiple or no solutions, put it back.
-                board[row][col] = backup;
+        const backup = puzzle[row][col];
+        puzzle[row][col] = 0;
+
+        // Create a DEEP copy to pass to the solver, preventing mutation of the original puzzle.
+        const solutions = countSolutions(JSON.parse(JSON.stringify(puzzle)));
+
+        if (solutions !== 1) {
+            // If removing this number results in multiple or no solutions, put it back.
+            puzzle[row][col] = backup;
+        } else {
+            // Check the difficulty score of the current puzzle state
+            // Create a DEEP copy for the scoring function to solve, so it doesn't modify the actual puzzle.
+            const scoreBoard = JSON.parse(JSON.stringify(puzzle));
+            const score = getDifficultyScore(scoreBoard);
+            if (score > settings.scoreThreshold) {
+                // This move made the puzzle too hard for the selected difficulty, so undo it.
+                puzzle[row][col] = backup;
             } else {
-                removed++;
+                removedCount++;
             }
         }
-        attempts--;
     }
 
-    return board;
+    return puzzle;
+}
+
+/**
+ * Calculates a difficulty score for a puzzle.
+ * A higher score indicates a more difficult puzzle.
+ * This is a simplified scoring model.
+ * @param {number[][]} board - The puzzle to score.
+ * @returns {number} - The difficulty score.
+ */
+function getDifficultyScore(board) {
+    let score = 1;
+    let changed;
+
+    do {
+        changed = false;
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                if (board[r][c] === 0) {
+                    const possibilities = getPossibilities(board, r, c);
+                    if (possibilities.length === 1) {
+                        board[r][c] = possibilities[0];
+                        changed = true;
+                    }
+                }
+            }
+        }
+        if (changed) {
+            score++; // Each pass of finding "singles" adds to the score.
+        }
+    } while (changed);
+
+    // If the puzzle isn't solved yet, it requires more advanced techniques.
+    // We can add a large penalty to the score to represent this.
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            if (board[r][c] === 0) {
+                score += 50; // Add a significant penalty for needing advanced logic.
+            }
+        }
+    }
+
+    return score;
+}
+
+/**
+ * Gets all possible valid numbers for a given empty cell.
+ * @param {number[][]} board - The Sudoku grid.
+ * @param {number} row - The row of the cell.
+ * @param {number} col - The column of the cell.
+ * @returns {number[]} - An array of possible numbers.
+ */
+function getPossibilities(board, row, col) {
+    const possibilities = [];
+    for (let num = 1; num <= 9; num++) {
+        if (isValid(board, row, col, num)) {
+            possibilities.push(num);
+        }
+    }
+    return possibilities;
 }
