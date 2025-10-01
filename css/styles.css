@@ -85,7 +85,7 @@ main {
 
 #background-image-container {
     position: fixed;
-    opacity: .25;
+    opacity: .15; /* Reduced opacity to work with both light and dark themes */
     top: 0;
     left: 0;
     width: 100%;
@@ -100,12 +100,6 @@ main {
 
 body.connection-background #background-image-container {
     background-image: url('../assets/StageConnection.png');
-    opacity: 0.25;
-}
-
-/* Hide the fancy background when not using the default Forerunner theme */
-body:not(.forerunner) #background-image-container {
-    display: none;
 }
 
 .host-only {
@@ -114,6 +108,13 @@ body:not(.forerunner) #background-image-container {
 
 .hidden {
     display: none !important;
+}
+
+/* Add consistent spacing to the main config area */
+#signaling-area {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .blink {
@@ -150,6 +151,11 @@ body:not(.forerunner) #background-image-container {
 #team-list li .join-team-btn,
 #team-list li .remove-team-btn {
     margin-left: 10px;
+}
+
+.team-buttons {
+    display: flex;
+    gap: 10px;
 }
 
 
@@ -722,7 +728,7 @@ textarea {
 � Default Theme
 ==============================*/
 body.default {
-    background-color: #E0DEDF;
+    background-color: #69665E; /* Bone white background */
     color: #2F2F2F;
 }
 
@@ -732,7 +738,7 @@ body.default #sudoku-grid {
 
 body.default .grid-cell {
     border-color: #4A4549;
-    background-color: rgba(255, 255, 255, .75);
+    background-color: rgba(245, 245, 220, .75); /* Beige/bone cell background */
 }
 
 body.default .preloaded-cell {
@@ -741,23 +747,23 @@ body.default .preloaded-cell {
 }
 
 body.default .highlight-cell {
-    background-color: #007bff;
-    color: #2F2F2F;
+    background-color: #cce5ff;
+    color: #004085;
 }
 
 body.default .active-cell {
-    background-color: #0056b3;
-    color: #E0DEDF;
+    background-color: #007bff;
+    color: #fff;
 }
 
 body.default .invalid-cell {
-    background-color: #DC143C;
+    background-color: #ffcdd2;
     color: #FFFFFF;
 }
 
 body.default .solved-puzzle {
-    background-color: #3CB371;
-    color: #E0DEDF;
+    background-color: #d4edda;
+    color: #155724;
 }
 
 /* Themed buttons and dropdowns */
@@ -786,6 +792,73 @@ body.default #empty-btn {
 
 body.default #empty-btn:hover {
     background-color: #c82333;
+}
+
+body.default #team-selection-area {
+    background-color: #F9F6EE;
+    border: 1px solid #ddd;
+}
+
+body.default #team-selection-area h2,
+body.default #team-selection-area h3 {
+    color: #333;
+}
+
+body.default .modal-content {
+    background-color: #F9F6EE;
+    border: 1px solid #888;
+}
+
+/*==============================
+ Dark Mode Theme
+==============================*/
+body.dark-mode {
+    background-color: #121212; /* Dark background */
+    color: #E0E0E0; /* Light text */
+}
+
+body.dark-mode #sudoku-grid {
+    border-color: #444;
+}
+
+body.dark-mode .grid-cell {
+    border-color: #333;
+    background-color: #1E1E1E; /* Dark cells */
+}
+
+body.dark-mode .preloaded-cell {
+    background-color: #2A2A2A;
+    color: #E0E0E0;
+}
+
+body.dark-mode .highlight-cell {
+    background-color: #333;
+    color: #E0E0E0;
+}
+
+body.dark-mode .active-cell {
+    background-color: #007bff;
+    color: #fff;
+}
+
+body.dark-mode .invalid-cell {
+    background-color: #DC143C;
+    color: #FFFFFF;
+}
+
+body.dark-mode .solved-puzzle {
+    background-color: #28a745;
+    color: #fff;
+}
+
+body.dark-mode #team-selection-area {
+    background-color: #1E1E1E;
+    border: 1px solid #444;
+}
+
+body.dark-mode .modal-content {
+    background-color: #1E1E1E;
+    border: 1px solid #444;
 }
 
 /*==============================
@@ -869,6 +942,12 @@ body.banished #team-selection-area {
 body.banished #team-selection-area h2,
 body.banished #team-selection-area h3 {
     color: #C22D2D;
+}
+
+body.banished .modal-content {
+    background-color: rgba(38, 33, 37, .9);
+    border: 1px solid #8C2F2F;
+    color: #E0DEDF;
 }
 
 body.banished select option {
@@ -1020,6 +1099,12 @@ body.unsc #team-selection-area {
 body.unsc #team-selection-area h2,
 body.unsc #team-selection-area h3 {
     color: #EFB82A;
+}
+
+body.unsc .modal-content {
+    background-color: rgba(26, 26, 26, .9);
+    border: 1px solid #2D6A4F;
+    color: #CDCFCC;
 }
 
 body.unsc select option {

@@ -124,8 +124,10 @@ export function updateTeamList(teams) {
             const li = document.createElement('li');
             // The remove button is only visible to the host, controlled by the .host-only class in CSS
             li.innerHTML = `<span>${teamName}</span>
-                            <button class="remove-team-btn host-only" data-team-name="${teamName}">Remove</button>
-                            <button class="join-team-btn" data-team-name="${teamName}">Join</button>`;
+                            <div class="team-buttons">
+                                <button class="remove-team-btn host-only" data-team-name="${teamName}">Remove</button>
+                                <button class="join-team-btn" data-team-name="${teamName}">Join</button>
+                            </div>`;
             dom.teamList.appendChild(li);
         });
     }
@@ -142,7 +144,12 @@ export function showWinnerScreen(winningTeam) {
     appState.gameInProgress = false;
 
     dom.winnerModal.classList.remove('hidden');
-    dom.winnerText.textContent = `Team "${winningTeam}" has won the game!`;
+    
+    if (winningTeam) {
+        dom.winnerText.textContent = `Team "${winningTeam}" has won the game!`;
+    } else {
+        dom.winnerText.textContent = 'You have won the game!';
+    }
 
     // Highlight the solved puzzle for the winning team
     if (appState.playerTeam === winningTeam) {
@@ -996,7 +1003,7 @@ async function performHardReset() {
  */
 function handleThemeChange(event) {
     const selectedTheme = event.target.value;
-    dom.body.classList.remove('default', 'banished', 'unsc', 'forerunner');
+    dom.body.classList.remove('default', 'dark-mode', 'banished', 'unsc', 'forerunner');
     dom.body.classList.add(selectedTheme);
     localStorage.setItem('sudokuTheme', selectedTheme); // Save the theme choice
     // Sync both dropdowns
