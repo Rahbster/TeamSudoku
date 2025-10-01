@@ -546,18 +546,18 @@ textarea {
 
 /* Portrait and narrow screens */
 @media (orientation: portrait) {
+    #game-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
     #config-screen {
         display: flex;
         flex-direction: column;
         align-items: center;
         padding: 2dvh 2dvw;
         gap: 2dvh;
-    }
-
-    #game-screen {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
     }
 
     /* This section now contains the grid and number pad */
@@ -765,9 +765,9 @@ body.default button,
 body.default .number-btn,
 body.default #empty-btn,
 body.default select {
-    background-color: #6c757d;
-    color: #fff;
-    border-color: #5a6268;
+    background-color: #f8f9fa;
+    color: #212529;
+    border: 1px solid #ced4da;
     clip-path: none;
 }
 
@@ -775,8 +775,8 @@ body.default button:hover,
 body.default .number-btn:hover,
 body.default #empty-btn:hover,
 body.default select:hover {
-    background-color: #5a6268;
-    border-color: #545b62;
+    background-color: #e2e6ea;
+    border-color: #adb5bd;
 }
 
 /* Red 'X' button for this theme */
