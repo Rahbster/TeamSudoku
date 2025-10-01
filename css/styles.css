@@ -79,6 +79,14 @@ h3 {
     gap: 15px; /* Add a consistent gap between each label/select group */
 }
 
+.config-selectors .selector-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    gap: 5px;
+}
+
 main {
     width: 100%;
 }
@@ -158,29 +166,6 @@ body.connection-background #background-image-container {
     gap: 10px;
 }
 
-
-/* Overlays and Information areas */
-#scan-overlay-message {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    font-size: 3rem;
-    font-weight: bold;
-    padding: 20px 40px;
-    border-radius: 10px;
-    z-index: 1000;
-    transition: opacity 0.3s ease-in-out;
-    opacity: 1;
-}
-
-#scan-overlay-message.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
 #timer-area {
     padding: 0px 20px;
     background-color: rgba(0, 0, 0, 0.7);
@@ -222,6 +207,33 @@ body.forerunner #team-display-area {
     display: inline-block;
 }
 
+/* W3.CSS-inspired panel for consistent section styling */
+.panel {
+    width: 100%;
+    padding: 16px;
+    margin-top: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+/* Overlays and Information areas */
+#scan-overlay-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-size: 3rem;
+    font-weight: bold;
+    padding: 20px 40px;
+    border-radius: 10px;
+    z-index: 1000;
+    transition: opacity 0.3s ease-in-out;
+    opacity: 1;
+}
+
 /* Global Button and Input Styles */
 button, select, .number-btn {
     background-color: #007bff;
@@ -260,6 +272,13 @@ button:disabled, select:disabled, .number-btn:disabled {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+}
+
+/* Ensure the pencil status symbol has a fixed width to prevent layout shift */
+#pencil-status {
+    font-family: monospace;
+    width: 3ch; /* Allocate enough width for 3 characters (e.g., "OFF") */
+    text-align: center; /* Center the character within the allocated space */
 }
 
 .button-row {
@@ -955,6 +974,12 @@ body.banished select option {
     color: #E0DEDF;
 }
 
+/* Themed active pencil button */
+body.banished .pencil-active {
+    background-color: #C22D2D !important;
+    color: #FFFFFF !important;
+}
+
 /*==============================
 � UNSC Theme
 ==============================*/
@@ -1110,6 +1135,13 @@ body.unsc .modal-content {
 body.unsc select option {
     background-color: #1A1A1A;
     color: #CDCFCC;
+}
+
+/* Themed active pencil button */
+body.unsc .pencil-active {
+    background-color: #EFB82A !important;
+    color: #1A1A1A !important;
+    border-color: #EFB82A;
 }
 
 /*==============================*/
