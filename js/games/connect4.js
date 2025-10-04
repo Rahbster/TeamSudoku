@@ -73,7 +73,8 @@ async function handleCellClick(event) {
                     if (aiColumn !== null) {
                         makeSoloMove(aiColumn, 2); // AI is always 2
                     }
-                    dom.sudokuGrid.style.pointerEvents = 'auto';                    
+                    dom.sudokuGrid.style.pointerEvents = 'auto';
+                    findAndHighlightImminentThreats(appState.soloGameState.board);
                 }, 500);
             }
         } else {

@@ -50,7 +50,6 @@ html {
     font-size: 1rem;
     font-weight: bold;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    margin-bottom: 5px;
 }
 
 body {
@@ -79,12 +78,10 @@ h3 {
     gap: 15px; /* Add a consistent gap between each label/select group */
 }
 
-.config-selectors .selector-container {
+.config-selectors > .selector-container {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    width: 100%;
-    gap: 5px;
 }
 
 main {
@@ -188,6 +185,11 @@ body.connection-background #background-image-container {
 #team-name-input {
     font-size: 1.2em;
     text-align: center;
+}
+
+/* Style for the custom word list textarea */
+#custom-word-list-input {
+    font-size: 1.2em;
 }
 
 body.forerunner #team-display-area {
@@ -1140,10 +1142,6 @@ body.unsc select {
     width: 100%;
 }
 
-body.unsc .select-wrapper {
-    display: inline-block;
-}
-
 body.unsc .select-wrapper:hover select {
     color: #FFFFFF; /* Match text color on hover */
 }
@@ -1528,5 +1526,71 @@ body.host .host-only {
     50% {
         box-shadow: 0 0 20px 8px rgba(255, 0, 0, 0.3);
     }
+}
+
+/*==============================
+  Word Search Game Styles
+==============================*/
+#word-search-list-area {
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    color: #333;
+    max-height: 90dvh;
+    overflow-y: auto;
+}
+
+#word-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+#word-list li {
+    padding: 2px 5px;
+    transition: all 0.3s ease;
+}
+
+#word-list li.found {
+    text-decoration: line-through;
+    color: #888;
+    background-color: #d4edda;
+}
+
+.wordsearch-grid {
+    display: grid;
+    grid-template-columns: repeat(15, 1fr);
+    grid-template-rows: repeat(15, 1fr);
+    border: 2px solid #333;
+}
+
+.wordsearch-grid .grid-cell {
+    font-size: 1.2rem;
+    user-select: none; /* Prevent text selection while dragging */
+}
+
+.wordsearch-grid .grid-cell.selecting {
+    background-color: #f0ad4e; /* Yellow selection */
+}
+
+.wordsearch-grid .grid-cell.found {
+    background-color: #5cb85c; /* Green for found words */
+    color: white;
+}
+
+body.dark-mode #word-search-list-area {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+}
+
+body.dark-mode #word-list li.found {
+    background-color: #27ae60;
+    color: #bdc3c7;
+}
+
+.wordsearch-grid .grid-cell.debug-highlight {
+    background-color: #ff69b4; /* Hot Pink */
+    border: 2px solid #ff1493; /* Deep Pink */
 }
 }

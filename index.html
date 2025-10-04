@@ -45,6 +45,12 @@
                 </div>
             </div>
 
+            <!-- Word Search Word List -->
+            <div id="word-search-list-area" class="hidden">
+                <h3>Words to Find:</h3>
+                <ul id="word-list"></ul>
+            </div>
+
             <div id="number-pad">
                 <button class="number-btn" id="number-btn-1">1</button>
                 <button class="number-btn" id="number-btn-2">2</button>
@@ -78,8 +84,8 @@
                     <h3 id="team-name-display"></h3>
                 </div>
                 <div class="selector-container">
-                    <label for="theme-select">Theme
-                        <div class="select-wrapper">
+                    <label for="theme-select">Theme</label>
+                    <div class="select-wrapper">
                             <select id="theme-select">
                                 <option value="default">Default</option>
                                 <option value="dark-mode">Dark Mode</option>
@@ -87,8 +93,7 @@
                                 <option value="forerunner">Forerunner</option>
                                 <option value="unsc">UNSC</option>
                             </select>
-                        </div>
-                    </label>
+                    </div>
                 </div>
     
                 <div class="button-row">
@@ -118,32 +123,33 @@
     
                 <div class="config-selectors">
                     <div class="selector-container"> <!-- Re-using theme-selector class for consistent styling -->
-                        <label for="signaling-method">Choose Connection Method
+                        <label for="signaling-method">Choose Connection Method</label>
+                        <div class="select-wrapper">
                             <select id="signaling-method">
                                 <option value="none">-- Select a method --</option>
                                 <option value="manual">Manual Copy/Paste</option>
                                 <option value="qr">QR Code Scan</option>
                                 <option value="peerJS">PeerJS</option>
                             </select>
-                        </label>
+                        </div>
                     </div>
                     <div class="selector-container"> <!-- Re-using theme-selector class for consistent styling -->
-                        <label for="player-role">Choose Player Role
+                        <label for="player-role">Choose Player Role</label>
+                        <div class="select-wrapper">
                             <select id="player-role">
                                 <option value="none">-- Select a role --</option>
                                 <option value="host">Player 1 (Host)</option>
                                 <option value="joiner">Player 2 (Joiner)</option>
                             </select>
-                        </label>
+                        </div>
                     </div>
                     <div class="selector-container">
-                        <label for="player-name-input">Player Name
-                            <input type="text" id="player-name-input" maxlength="16" placeholder="Enter your name">
-                        </label>
+                        <label for="player-name-input">Player Name</label>
+                        <input type="text" id="player-name-input" maxlength="16" placeholder="Enter your name">
                     </div>
                     <div class="selector-container">
-                        <label for="theme-select-config">Choose a Theme
-                            <div class="select-wrapper">
+                        <label for="theme-select-config">Theme</label>
+                        <div class="select-wrapper">
                                 <select id="theme-select-config">
                                     <option value="default">Default</option>
                                     <option value="dark-mode">Dark Mode</option>
@@ -151,40 +157,41 @@
                                     <option value="forerunner">Forerunner</option>
                                     <option value="unsc">UNSC</option>
                                 </select>
-                            </div>
-                        </label>
+                        </div>
                     </div>
                     <div class="selector-container host-only">
-                        <label for="game-select">Game
-                            <div class="select-wrapper">
-                                <select id="game-select">
-                                    <option value="sudoku">Sudoku</option>
-                                    <option value="connect4">Connect 4</option>
-                                </select>
-                            </div>
-                        </label>
+                        <label for="game-select">Game</label>
+                        <div class="select-wrapper">
+                            <select id="game-select">
+                                <option value="sudoku">Sudoku</option>
+                                <option value="connect4">Connect 4</option>
+                                <option value="wordsearch">Word Search</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="selector-container host-only" id="wordsearch-config-container" style="display: none;">
+                        <label for="custom-word-list-input">Custom Word List (one per line)</label>
+                        <textarea id="custom-word-list-input" rows="5" placeholder="Enter words here..."></textarea>
                     </div>
                     <div class="selector-container host-only" id="connect4-mode-container" style="display: none;">
-                        <label for="connect4-mode-select">Connect 4 Mode
-                            <div class="select-wrapper">
-                                <select id="connect4-mode-select">
-                                    <option value="standard">Standard (vs AI)</option>
-                                    <option value="sabotage">Co-op Sabotage</option>
-                                </select>
-                            </div>
-                        </label>
+                        <label for="connect4-mode-select">Connect 4 Mode</label>
+                        <div class="select-wrapper">
+                            <select id="connect4-mode-select">
+                                <option value="standard">Standard (vs AI)</option>
+                                <option value="sabotage">Co-op Sabotage</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="selector-container host-only">
-                        <label for="difficulty-select">Difficulty
-                            <div class="select-wrapper">
-                                <select id="difficulty-select">
-                                    <option value="very-easy">Very Easy</option>
-                                    <option value="easy">Easy</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="hard">Hard</option>
-                                </select>
-                            </div>
-                        </label>
+                        <label for="difficulty-select">Difficulty</label>
+                        <div class="select-wrapper">
+                            <select id="difficulty-select">
+                                <option value="very-easy">Very Easy</option>
+                                <option value="easy">Easy</option>
+                                <option value="medium">Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 

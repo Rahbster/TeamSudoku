@@ -132,6 +132,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.connect4ModeContainer = document.getElementById('connect4-mode-container');
     dom.connect4ModeSelect = document.getElementById('connect4-mode-select');
     dom.pencilButton = document.getElementById('pencil-btn');
+    dom.wordSearchListArea = document.getElementById('word-search-list-area');
+    dom.wordsearchConfigContainer = document.getElementById('wordsearch-config-container');
+    dom.customWordListInput = document.getElementById('custom-word-list-input');
+    dom.wordList = document.getElementById('word-list');
     dom.body = document.body;
     //Manual signaling buttons
     dom.teamSelectionArea = document.getElementById('team-selection-area');
@@ -207,6 +211,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedConnect4Mode = localStorage.getItem('sudokuConnect4Mode');
     if (savedConnect4Mode) {
         dom.connect4ModeSelect.value = savedConnect4Mode;
+    }
+
+    // Load saved custom word list
+    const savedWordList = localStorage.getItem('sudokuWordSearchList');
+    if (savedWordList) {
+        dom.customWordListInput.value = savedWordList;
     }
 
     // Load saved player name or generate a default one

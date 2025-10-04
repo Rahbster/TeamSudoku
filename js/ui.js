@@ -24,6 +24,7 @@ export function showScreen(screenName) {
         dom.backToGameBtn.classList.remove('hidden'); // Always show the back button
     } else if (screenName === 'game') {
         dom.gameScreen.classList.remove('hidden');
+        showInstructions(); // Show instructions every time the game screen is shown.
     }
 }
 
@@ -565,11 +566,19 @@ export function initializeEventListeners() {
         localStorage.setItem('sudokuGameType', selectedGame);
         // Show the Connect 4 mode selector only when Connect 4 is chosen
         const isConnect4 = selectedGame === 'connect4';
+        const isWordSearch = selectedGame === 'wordsearch';
+        const isSudoku = selectedGame === 'sudoku';
         dom.connect4ModeContainer.style.display = isConnect4 ? '' : 'none';
-        dom.difficultySelector.parentElement.style.display = isConnect4 ? 'none' : '';
+        dom.wordsearchConfigContainer.style.display = isWordSearch ? '' : 'none';
+        // Show difficulty for Sudoku, hide for others
+        dom.difficultySelector.parentElement.style.display = isSudoku ? '' : 'none';
     });
     dom.connect4ModeSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuConnect4Mode', event.target.value);
+    });
+    // Save the custom word list when the user is done editing it
+    dom.customWordListInput.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuWordSearchList', event.target.value);
     });
 
     // Event listeners for game-related buttons
@@ -869,14 +878,6 @@ export function initializeEventListeners() {
         }
     });
 
-    dom.instructionsModal.classList.remove('hidden');
-
-    // Hide the instructions after 3 seconds
-    setTimeout(() => {
-        if (dom.instructionsModal) {
-            dom.instructionsModal.classList.add('hidden');
-        }
-    }, 3000); // Set to 3 seconds as you originally intended
 }
 
 /**
@@ -960,6 +961,41 @@ export async function initializeSoloGame() {
     }
 }
 
+/**
+ * Displays the instructions modal with text relevant to the current game.
+ */
+function showInstructions() {
+    const instructionsP = document.getElementById('instructions');
+    const selectedGame = dom.gameSelector.value;
+
+    let instructionText = '';
+    switch (selectedGame) {
+        case 'sudoku':
+            instructionText = 'Click on a grid cell to change its value. Use the number pad to enter a number. Use the pencil button to make notes.';
+            break;
+        case 'connect4':
+            const gameMode = dom.connect4ModeSelect.value;
+            if (gameMode === 'standard') {
+                instructionText = 'You are Player 1 (Yellow/Theme Color 1). Play against the computer and try to get four of your pieces in a row.';
+            } else {
+                instructionText = 'Work with your teammates to fill the entire board without anyone getting four-in-a-row. A single line of four by any team results in a loss for everyone!';
+            }
+            break;
+        case 'wordsearch':
+            instructionText = 'Click and drag to highlight words in the grid. Find all the words in the list to win. This is a cooperative game!';
+            break;
+        default:
+            instructionText = 'Select a game and start playing!';
+    }
+
+    instructionsP.textContent = instructionText;
+    dom.instructionsModal.classList.remove('hidden');
+
+    // Hide the instructions after 4 seconds
+    setTimeout(() => {
+        dom.instructionsModal.classList.add('hidden');
+    }, 4000);
+}
 /**
  * Toggles the visibility of the data channel list and updates the button text.
  */
