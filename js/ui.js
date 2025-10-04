@@ -154,6 +154,8 @@ export function showWinnerScreen(winningTeam, losingTeam) {
         dom.winnerText.textContent = "It's a tie!";
     } else if (losingTeam) {
         dom.winnerText.textContent = `Game Over! Team "${losingTeam}" made a move that created a line.`;
+    } else if (winningTeam === 'You') {
+        dom.winnerText.textContent = 'You have won the game!';
     } else if (winningTeam) {
         dom.winnerText.textContent = `Team "${winningTeam}" has won the game!`;
     } else {
@@ -163,10 +165,6 @@ export function showWinnerScreen(winningTeam, losingTeam) {
     // Highlight the solved puzzle for the winning team
     if (appState.playerTeam === winningTeam) {
         document.querySelectorAll('.grid-cell').forEach(cell => cell.classList.add('solved-puzzle'));
-    } else {
-        // For other teams, just show the modal without the green solved effect
-        dom.sudokuGridArea.classList.add('hidden');
-        dom.numberPad.classList.add('hidden');
     }
 }
 
@@ -578,7 +576,17 @@ export function initializeEventListeners() {
     });
     // Save the custom word list when the user is done editing it
     dom.customWordListInput.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuWordSearchList', event.target.value);
+        const input = event.target;
+        const words = input.value.split(/[\n, ]+/)
+            .map(word => word.trim().toUpperCase())
+            .filter(word => word.length > 0);
+        
+        words.sort();
+        input.value = words.join('\n');
+        localStorage.setItem('sudokuWordSearchList', input.value);
+    });
+    dom.wordCountInput.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuWordSearchCount', event.target.value);
     });
 
     // Event listeners for game-related buttons

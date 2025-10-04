@@ -170,8 +170,12 @@
                         </div>
                     </div>
                     <div class="selector-container host-only" id="wordsearch-config-container" style="display: none;">
-                        <label for="custom-word-list-input">Custom Word List (one per line)</label>
-                        <textarea id="custom-word-list-input" rows="5" placeholder="Enter words here..."></textarea>
+                        <div class="selector-container">
+                            <label for="custom-word-list-input">Custom Word List (one per line)</label>
+                            <textarea id="custom-word-list-input" rows="5" placeholder="Enter words here..."></textarea>
+                        </div>
+                        <label for="word-count-input">Number of Words</label>
+                        <input type="number" id="word-count-input" min="5" max="20" value="10" style="font-size: 1.2em; text-align: center;">
                     </div>
                     <div class="selector-container host-only" id="connect4-mode-container" style="display: none;">
                         <label for="connect4-mode-select">Connect 4 Mode</label>

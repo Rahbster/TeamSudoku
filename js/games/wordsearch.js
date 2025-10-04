@@ -9,10 +9,6 @@ import { playRemoteMoveSound } from '../misc.js';
 const GRID_SIZE = 15;
 let isSelecting = false;
 let selectionPath = [];
-let hintState = {
-    word: null,
-    revealedLength: 0
-};
 
 export function initialize() {
     console.log("Word Search Initialized");
@@ -34,11 +30,6 @@ export function initialize() {
 export function cleanup() {
     console.log("Word Search Cleanup");
     dom.wordSearchListArea.classList.add('hidden');
-    // Reset hint state when cleaning up
-    hintState = {
-        word: null,
-        revealedLength: 0
-    };
 }
 
 export function createGrid() {
@@ -218,56 +209,16 @@ function updateWordListUI() {
         if (wordObj.found) {
             li.classList.add('found');
         }
-        li.addEventListener('click', () => handleWordListClick(wordObj.word));
         dom.wordList.appendChild(li);
     });
 }
 
 /**
- * Clears any existing debug highlights from the grid.
+ * Generates the grid and word list for a new Word Search puzzle.
  */
-function clearDebugHighlights() {
-    document.querySelectorAll('.wordsearch-grid .grid-cell.debug-highlight').forEach(cell => {
-        cell.classList.remove('debug-highlight');
-    });
-}
-
-/**
- * Handles clicking on a word in the list for debugging purposes.
- * @param {string} word The word that was clicked.
- */
-function handleWordListClick(word) {
-    // If a different word is clicked, reset the hint process for the new word.
-    if (hintState.word !== word) {
-        clearDebugHighlights();
-        hintState.word = word;
-        hintState.revealedLength = 0;
-    }
-
-    // Increment the number of revealed letters, but not past the word's length.
-    if (hintState.revealedLength < word.length) {
-        hintState.revealedLength++;
-    }
-
-    // Get the game state to find the solution path.
-    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam]?.gameState : appState.soloGameState;
-    if (!gameState || !gameState.solution) return;
-
-    const wordPath = gameState.solution[word];
-    if (!wordPath) return; // Should not happen if word is in the list.
-
-    // Highlight the progressive hint path.
-    for (let i = 0; i < hintState.revealedLength; i++) {
-        const pos = wordPath[i];
-        const cell = document.getElementById(`cell-${pos.r}-${pos.c}`);
-        if (cell) {
-            cell.classList.add('debug-highlight');
-        }
-    }
-}
-
 export function getInitialState() {
     let words;
+    const wordCount = parseInt(dom.wordCountInput.value, 10) || 10;
     const customWordList = dom.customWordListInput.value.trim();
 
     if (customWordList) {
@@ -275,15 +226,15 @@ export function getInitialState() {
         // Filter out empty strings and convert to uppercase.
         const customWords = customWordList.split(/[\n, ]+/)
             .map(word => word.trim().toUpperCase())
-            .filter(word => word.length > 1 && word.length <= 10); // Basic validation
+            .filter(word => word.length > 1 && word.length <= 12); // Basic validation
 
         if (customWords.length > 0) {
-            // Shuffle the array and take up to the first 10 words
+            // Shuffle the array and take the configured number of words
             for (let i = customWords.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [customWords[i], customWords[j]] = [customWords[j], customWords[i]];
             }
-            words = customWords.slice(0, 10); // Use up to 10 words from the custom list
+            words = customWords.slice(0, wordCount);
         }
     }
     
@@ -349,11 +300,6 @@ export function getInitialState() {
 
 export function loadPuzzle() {
     appState.winner = null;
-    // Reset hint state for the new puzzle
-    hintState = {
-        word: null,
-        revealedLength: 0
-    };
     const newState = getInitialState();
     if (appState.playerTeam) {
         const team = appState.teams[appState.playerTeam];

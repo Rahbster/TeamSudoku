@@ -1588,9 +1588,4 @@ body.dark-mode #word-list li.found {
     background-color: #27ae60;
     color: #bdc3c7;
 }
-
-.wordsearch-grid .grid-cell.debug-highlight {
-    background-color: #ff69b4; /* Hot Pink */
-    border: 2px solid #ff1493; /* Deep Pink */
-}
 }

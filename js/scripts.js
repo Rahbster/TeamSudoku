@@ -135,6 +135,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.wordSearchListArea = document.getElementById('word-search-list-area');
     dom.wordsearchConfigContainer = document.getElementById('wordsearch-config-container');
     dom.customWordListInput = document.getElementById('custom-word-list-input');
+    dom.wordCountInput = document.getElementById('word-count-input');
     dom.wordList = document.getElementById('word-list');
     dom.body = document.body;
     //Manual signaling buttons
@@ -217,6 +218,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedWordList = localStorage.getItem('sudokuWordSearchList');
     if (savedWordList) {
         dom.customWordListInput.value = savedWordList;
+    }
+
+    // Load saved word count
+    const savedWordCount = localStorage.getItem('sudokuWordSearchCount');
+    if (savedWordCount) {
+        dom.wordCountInput.value = savedWordCount;
     }
 
     // Load saved player name or generate a default one
