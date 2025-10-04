@@ -3,7 +3,7 @@
 //==============================
 // This module handles all user interface interactions, from button clicks to dynamic UI updates.
 import { appState, dom, dataChannels } from './scripts.js';
-import { loadGame, updateGridForTeam, loadPuzzle, createGrid } from './game_manager.js';
+import { loadGame, updateGridForTeam, loadPuzzle } from './game_manager.js';
 import { clearTextbox, createQrCodeChunks, playBeepSound, playRemoteMoveSound } from './misc.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
 import { createOffer, createAnswer, processAndBroadcastMove } from './webrtc.js';
@@ -136,24 +136,17 @@ export function updateTeamList(teams) {
 
 /**
  * Displays a winner screen when a team solves the puzzle.
- * @param {string} [winningTeam] - The name of the team that won, or 'all' for co-op win.
- * @param {string} [losingTeam] - The name of the team that caused a co-op loss.
+ * @param {string} winningTeam - The name of the team that won.
  */
-export function showWinnerScreen(winningTeam, losingTeam) {
-    if (appState.winner && winningTeam !== 'tie') return; // Already showing, allow tie to override
+export function showWinnerScreen(winningTeam) {
+    if (appState.winner) return; // Already showing
 
     appState.winner = winningTeam;
     appState.gameInProgress = false;
 
     dom.winnerModal.classList.remove('hidden');
-
-    if (winningTeam === 'all') {
-        dom.winnerText.textContent = 'Congratulations! All teams win!';
-    } else if (winningTeam === 'tie') {
-        dom.winnerText.textContent = "It's a tie!";
-    } else if (losingTeam) {
-        dom.winnerText.textContent = `Game Over! Team "${losingTeam}" made a move that created a line.`;
-    } else if (winningTeam) {
+    
+    if (winningTeam) {
         dom.winnerText.textContent = `Team "${winningTeam}" has won the game!`;
     } else {
         dom.winnerText.textContent = 'You have won the game!';
@@ -560,25 +553,14 @@ export function initializeEventListeners() {
     // Event listeners for drop-downs
     dom.signalingMethodSelect.addEventListener('change', toggleSignalingUI);
     dom.playerRoleSelect.addEventListener('change', toggleSignalingUI);
-    dom.gameSelector.addEventListener('change', (event) => {
-        const selectedGame = event.target.value;
-        localStorage.setItem('sudokuGameType', selectedGame);
-        // Show the Connect 4 mode selector only when Connect 4 is chosen
-        const isConnect4 = selectedGame === 'connect4';
-        dom.connect4ModeContainer.style.display = isConnect4 ? '' : 'none';
-        dom.difficultySelector.parentElement.style.display = isConnect4 ? 'none' : '';
-    });
-    dom.connect4ModeSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuConnect4Mode', event.target.value);
-    });
 
     // Event listeners for game-related buttons
     dom.newPuzzleButton.addEventListener('click', () => {
-        loadPuzzle(dom.difficultySelector.value, null, false); // Do not reset teams
+        loadPuzzle(appState.selectedDifficulty, null, false); // Do not reset teams
         dom.winnerModal.classList.add('hidden'); // Hide winner modal on new puzzle
     });
     dom.newPuzzleWinnerBtn.addEventListener('click', () => {
-        loadPuzzle(dom.difficultySelector.value, null, false); // Do not reset teams
+        loadPuzzle(appState.selectedDifficulty, null, false); // Do not reset teams
         dom.winnerModal.classList.add('hidden'); // Hide winner modal
     });
 
@@ -597,17 +579,9 @@ export function initializeEventListeners() {
     });
 
     // Event listeners for the "Toggle P2P Configuration" button
-    dom.configBtn.addEventListener('click', () => {
-        // Reset winner state when going back to config to allow starting a new game.
-        appState.winner = null;
-        showScreen('config');
-    });
-    dom.backToGameBtn.addEventListener('click', async () => {
-        // If the user is a host and hasn't joined a team,
-        // load the selected game so they can see it on the game screen.
-        await initializeSoloGame();
-        showScreen('game');
-    });
+    dom.configBtn.addEventListener('click', () => showScreen('config'));
+    dom.backToGameBtn.addEventListener('click', () => showScreen('game'));
+
 
     // Event listeners for the manual signaling buttons
     dom.createOfferManualBtn.addEventListener('click', createOfferManual);
@@ -808,13 +782,11 @@ export function initializeEventListeners() {
             if (!appState.teams[teamName]) {
                 const gameType = dom.gameSelector.value;
                 const difficulty = dom.difficultySelector.value;
-                const gameMode = dom.connect4ModeSelect.value;
 
                 appState.teams[teamName] = { 
                     gameType: gameType,
                     difficulty: difficulty,
                     gameState: null, // Will be initialized by the game-specific logic
-                    gameMode: gameMode, // Store the selected mode
                     members: [] 
                 };
                 
@@ -917,7 +889,7 @@ async function processLocalTeamJoin(joinData) {
         // If this is the first member, initialize the game state for the host
         if (team.members.length === 1 && !team.gameState) {
             const gameModule = await import(`./games/${team.gameType}.js`);
-            team.gameState = gameModule.getInitialState(team.difficulty, team.gameMode);
+            team.gameState = gameModule.getInitialState(team.difficulty);
 
             // For Connect 4, assign player numbers as teams join
             if (team.gameType === 'connect4') {
@@ -938,26 +910,6 @@ async function processLocalTeamJoin(joinData) {
     await updateGridForTeam(newTeamName);
 
     showScreen('game');
-}
-
-/**
- * Loads the correct game board for a host who is playing solo (not on a team).
- * This is used on initial page load and when returning from the config screen.
- */
-export async function initializeSoloGame() {
-    if (appState.isInitiator && !appState.playerTeam) {
-        const selectedGame = dom.gameSelector.value;
-        await loadGame(selectedGame);
-
-        // Initialize a solo game state for the host.
-        const gameModule = await import(`./games/${selectedGame}.js`);
-        const difficulty = dom.difficultySelector.value;
-        const gameMode = dom.connect4ModeSelect.value;
-        appState.soloGameState = gameModule.getInitialState(difficulty, gameMode);
-
-        // After loading the game module, explicitly create its grid.
-        createGrid();
-    }
 }
 
 /**

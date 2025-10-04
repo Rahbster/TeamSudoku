@@ -78,8 +78,7 @@
                     <h3 id="team-name-display"></h3>
                 </div>
                 <div class="selector-container">
-                    <label for="theme-select">Theme</label>
-                    <div>
+                    <label for="theme-select">Theme
                         <div class="select-wrapper">
                             <select id="theme-select">
                                 <option value="default">Default</option>
@@ -89,20 +88,7 @@
                                 <option value="unsc">UNSC</option>
                             </select>
                         </div>
-                    </div>
-                </div>
-                <div class="selector-container host-only">
-                    <label for="difficulty-select">Difficulty</label>
-                    <div>
-                        <div class="select-wrapper">
-                            <select id="difficulty-select">
-                                <option value="very-easy">Very Easy</option>
-                                <option value="easy">Easy</option>
-                                <option value="medium">Medium</option>
-                                <option value="hard">Hard</option>
-                            </select>
-                        </div>
-                    </div>
+                    </label>
                 </div>
     
                 <div class="button-row">
@@ -132,35 +118,31 @@
     
                 <div class="config-selectors">
                     <div class="selector-container"> <!-- Re-using theme-selector class for consistent styling -->
-                        <label for="signaling-method">Choose Connection Method</label>
-                        <div>
+                        <label for="signaling-method">Choose Connection Method
                             <select id="signaling-method">
                                 <option value="none">-- Select a method --</option>
                                 <option value="manual">Manual Copy/Paste</option>
                                 <option value="qr">QR Code Scan</option>
                                 <option value="peerJS">PeerJS</option>
                             </select>
-                        </div>
+                        </label>
                     </div>
                     <div class="selector-container"> <!-- Re-using theme-selector class for consistent styling -->
-                        <label for="player-role">Choose Player Role</label>
-                        <div>
+                        <label for="player-role">Choose Player Role
                             <select id="player-role">
                                 <option value="none">-- Select a role --</option>
                                 <option value="host">Player 1 (Host)</option>
                                 <option value="joiner">Player 2 (Joiner)</option>
                             </select>
-                        </div>
+                        </label>
                     </div>
                     <div class="selector-container">
-                        <label for="player-name-input">Player Name</label>
-                        <div>
+                        <label for="player-name-input">Player Name
                             <input type="text" id="player-name-input" maxlength="16" placeholder="Enter your name">
-                        </div>
+                        </label>
                     </div>
                     <div class="selector-container">
-                        <label for="theme-select-config">Choose a Theme</label>
-                        <div>
+                        <label for="theme-select-config">Choose a Theme
                             <div class="select-wrapper">
                                 <select id="theme-select-config">
                                     <option value="default">Default</option>
@@ -170,7 +152,39 @@
                                     <option value="unsc">UNSC</option>
                                 </select>
                             </div>
-                        </div>
+                        </label>
+                    </div>
+                    <div class="selector-container host-only">
+                        <label for="game-select">Game
+                            <div class="select-wrapper">
+                                <select id="game-select">
+                                    <option value="sudoku">Sudoku</option>
+                                    <option value="connect4">Connect 4</option>
+                                </select>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="selector-container host-only" id="connect4-mode-container" style="display: none;">
+                        <label for="connect4-mode-select">Connect 4 Mode
+                            <div class="select-wrapper">
+                                <select id="connect4-mode-select">
+                                    <option value="standard">Standard (vs AI)</option>
+                                    <option value="sabotage">Co-op Sabotage</option>
+                                </select>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="selector-container host-only">
+                        <label for="difficulty-select">Difficulty
+                            <div class="select-wrapper">
+                                <select id="difficulty-select">
+                                    <option value="very-easy">Very Easy</option>
+                                    <option value="easy">Easy</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                            </div>
+                        </label>
                     </div>
                 </div>
 
@@ -330,7 +344,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
-    <script src="js/generator.js" type="module"></script>
-    <script src="js/scripts.js" type="module"></script>
+    <script src="./js/generator.js" type="module"></script>
+    <script src="./js/scripts.js" type="module"></script>
 </body>
 </html>

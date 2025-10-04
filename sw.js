@@ -1,20 +1,23 @@
 const CACHE_NAME = 'sudoku-pwa-cache-v1';
 const localUrlsToCache = [
-    '/TeamSudoku/',
-    '/TeamSudoku/index.html',
-    '/TeamSudoku/css/styles.css',
-    '/TeamSudoku/js/scripts.js',
-    '/TeamSudoku/js/game.js',
-    '/TeamSudoku/js/misc.js',
-    '/TeamSudoku/js/peer.js',
-    '/TeamSudoku/js/ui.js',
-    '/TeamSudoku/js/webrtc.js',
-    '/TeamSudoku/sw.js',
-    '/TeamSudoku/manifest.json',
-    '/TeamSudoku/assets/ActiveSudoku.png',
-    '/TeamSudoku/assets/StageConnection.png',
-    '/TeamSudoku/icons/icon-192x192.png',
-    '/TeamSudoku/icons/icon-512x512.png'
+    './',
+    './index.html',
+    './css/styles.css',
+    './js/scripts.js',
+    './js/game_manager.js',
+    './js/games/sudoku.js',
+    './js/games/connect4.js',
+    './js/generator.js',
+    './js/misc.js',
+    './js/peer.js',
+    './js/ui.js',
+    './js/webrtc.js',
+    './sw.js',
+    './manifest.json',
+    './assets/ActiveSudoku.png',
+    './assets/StageConnection.png',
+    './icons/icon-192x192.png',
+    './icons/icon-512x512.png'
 ];
 
 const externalUrlsToCache = [

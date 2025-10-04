@@ -620,11 +620,6 @@ textarea {
     #sudoku-grid {
         width: 100%;
         height: 100%;
-        display: grid;
-        grid-template-columns: repeat(9, 1fr);
-        grid-template-rows: repeat(9, 1fr);
-        border: 3px solid black;
-        margin: 0 auto;
         aspect-ratio: 1 / 1;
     }
 
@@ -707,10 +702,6 @@ textarea {
     #sudoku-grid {
         width: 100%;
         height: 100%;
-        display: grid;
-        grid-template-columns: repeat(9, 1fr);
-        grid-template-rows: repeat(9, 1fr);
-        border: 3px solid black;
     }
 
     #instructions {
@@ -828,6 +819,25 @@ body.default .modal-content {
     border: 1px solid #888;
 }
 
+/* Default Theme for Connect 4 */
+body.default .connect4-grid {
+    background-color: #8B4513; /* SaddleBrown */
+    border-color: #5E2C04;
+}
+body.default .connect4-grid .grid-cell {
+    background-color: #F5DEB3; /* Wheat */
+    border-color: #8B4513;
+}
+body.default .connect4-grid .grid-cell.player1 {
+    background-color: #d9534f; /* Red */
+    border-color: #b52b27;
+}
+body.default .connect4-grid .grid-cell.player2 {
+    background-color: #f0ad4e; /* Yellow */
+    border-color: #df8a13;
+}
+
+
 /*==============================
  Dark Mode Theme
 ==============================*/
@@ -878,6 +888,24 @@ body.dark-mode #team-selection-area {
 body.dark-mode .modal-content {
     background-color: #1E1E1E;
     border: 1px solid #444;
+}
+
+/* Dark Mode Theme for Connect 4 */
+body.dark-mode .connect4-grid {
+    background-color: #2c3e50; /* Dark Slate Blue */
+    border-color: #1a252f;
+}
+body.dark-mode .connect4-grid .grid-cell {
+    background-color: #7f8c8d; /* Grayish */
+    border-color: #2c3e50;
+}
+body.dark-mode .connect4-grid .grid-cell.player1 {
+    background-color: #1abc9c; /* Teal */
+    border-color: #16a085;
+}
+body.dark-mode .connect4-grid .grid-cell.player2 {
+    background-color: #e74c3c; /* Red */
+    border-color: #c0392b;
 }
 
 /*==============================
@@ -978,6 +1006,24 @@ body.banished select option {
 body.banished .pencil-active {
     background-color: #C22D2D !important;
     color: #FFFFFF !important;
+}
+
+/* Banished Theme for Connect 4 */
+body.banished .connect4-grid {
+    background-color: #4A4549; /* Banished Grey */
+    border-color: #262125;
+}
+body.banished .connect4-grid .grid-cell {
+    background-color: #6B686A;
+    border-color: #4A4549;
+}
+body.banished .connect4-grid .grid-cell.player1 {
+    background-color: #C22D2D; /* Banished Red */
+    border-color: #8C2F2F;
+}
+body.banished .connect4-grid .grid-cell.player2 {
+    background-color: #E0DEDF; /* Banished Silver/White */
+    border-color: #A3A0A2;
 }
 
 /*==============================
@@ -1144,6 +1190,24 @@ body.unsc .pencil-active {
     border-color: #EFB82A;
 }
 
+/* UNSC Theme for Connect 4 */
+body.unsc .connect4-grid {
+    background-color: #1D3A2F; /* UNSC Dark Green */
+    border-color: #1A1A1A;
+}
+body.unsc .connect4-grid .grid-cell {
+    background-color: #4C4A45; /* UNSC Grey */
+    border-color: #1D3A2F;
+}
+body.unsc .connect4-grid .grid-cell.player1 {
+    background-color: #EFB82A; /* UNSC Gold */
+    border-color: #b38600;
+}
+body.unsc .connect4-grid .grid-cell.player2 {
+    background-color: #00A0C0; /* Forerunner Cyan as accent */
+    border-color: #007a99;
+}
+
 /*==============================*/
 /* Forerunner Theme             */
 /*==============================*/
@@ -1285,6 +1349,24 @@ body.forerunner select option {
     color: var(--text-light);
 }
 
+/* Forerunner Theme for Connect 4 */
+body.forerunner .connect4-grid {
+    background-color: #3A5A7A; /* Forerunner Blue/Grey */
+    border-color: #1A2A3A;
+}
+body.forerunner .connect4-grid .grid-cell {
+    background-color: #C0D0E0; /* Light metal */
+    border-color: #3A5A7A;
+}
+body.forerunner .connect4-grid .grid-cell.player1 {
+    background-color: var(--primary-cyan);
+    border-color: #007a99;
+}
+body.forerunner .connect4-grid .grid-cell.player2 {
+    background-color: var(--secondary-orange);
+    border-color: #c88b00;
+}
+
 /* The Modal (background) */
 .modal {
     /* display: none; is replaced by .hidden class */
@@ -1355,4 +1437,96 @@ body.forerunner .modal-content {
 
 body.host .host-only {
     display: block; /* Show host-only elements only for the host */
+}
+
+/*==============================
+  Sudoku Game Styles
+==============================*/
+.sudoku-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    border: 3px solid black;
+}
+
+
+/*==============================
+  Connect 4 Game Styles
+==============================*/
+
+.connect4-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    background-color: #007bff; /* Classic blue board color */
+    border: 10px solid #0056b3;
+    border-radius: 10px;
+    padding: 10px;
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 7 / 6;
+}
+
+.connect4-grid .grid-cell {
+    border-radius: 50%;
+    background-color: #ffffff;
+    border: 4px solid #0056b3;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.connect4-grid .grid-cell:hover {
+    background-color: #e0e0e0;
+}
+
+.connect4-grid .grid-cell.player1 {
+    background-color: #ffc107; /* Yellow player */
+    border-color: #d39e00;
+}
+
+.connect4-grid .grid-cell.player2 {
+    background-color: #dc3545; /* Red player */
+    border-color: #b02a37;
+}
+
+.connect4-grid .grid-cell.winning-cell-blink {
+    animation: connect4-blink 1s steps(1) 3; /* Blink 3 times */
+}
+
+@keyframes connect4-blink {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+        box-shadow: 0 0 15px 5px #fff;
+    }
+}
+
+.connect4-grid .grid-cell.imminent-victory-cell {
+    animation: victory-pulse 1.5s infinite;
+}
+
+.connect4-grid .grid-cell.imminent-defeat-cell {
+    animation: defeat-pulse 1.5s infinite;
+}
+
+@keyframes victory-pulse {
+    0%, 100% {
+        box-shadow: 0 0 10px 2px rgba(255, 255, 0, 0.7); /* Yellow glow */
+    }
+    50% {
+        box-shadow: 0 0 20px 8px rgba(255, 255, 0, 0.3);
+    }
+}
+
+@keyframes defeat-pulse {
+    0%, 100% {
+        box-shadow: 0 0 10px 2px rgba(255, 0, 0, 0.7); /* Red glow */
+    }
+    50% {
+        box-shadow: 0 0 20px 8px rgba(255, 0, 0, 0.3);
+    }
+}
 }

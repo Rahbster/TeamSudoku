@@ -3,7 +3,7 @@
 //==============================
 
 import { appState, dom, dataChannels } from './scripts.js';
-import { loadPuzzle, checkGridState, updateGridForTeam } from './game.js';
+import { loadGame, updateGridForTeam, processMove } from './game_manager.js';
 import { hideSignalingUI, showTeamSelection, updateTeamList, showWinnerScreen, showToast } from './ui.js';
 import { playRemoteMoveSound } from './misc.js';
 
@@ -48,23 +48,15 @@ function setupDataChannel(channel) {
         dataChannels.push(channel); // Store the new channel
         if (appState.isInitiator) {
             showTeamSelection();
-            let currentPuzzleState = appState.initialSudokuState;
-            // If this is the first connection, the host should load the puzzle.
-            if (dataChannels.length === 1) {
-                currentPuzzleState = await loadPuzzle(appState.selectedDifficulty); // Await the puzzle generation
-            }
-
-            // When a new player connects, send them the initial puzzle state and the current list of teams.
-            const puzzleMessage = {
-                type: 'initial-state',
-                state: currentPuzzleState // Use the generated puzzle directly
-            };
-            channel.send(JSON.stringify(puzzleMessage));
 
             // Also send the current list of teams to the new player.
+            const teamList = Object.entries(appState.teams).map(([name, data]) => ({
+                name,
+                gameType: data.gameType
+            }));
             const teamListMessage = {
                 type: 'team-list-update',
-                teams: Object.keys(appState.teams)
+                teams: teamList
             };
             channel.send(JSON.stringify(teamListMessage));
         }
@@ -99,16 +91,15 @@ function broadcast(data) {
  * @param {object} moveData - The move data object.
  */
 export function processAndBroadcastMove(moveData) {
-    if (!appState.isInitiator) return;
-
-    const team = appState.teams[moveData.team];
-    if (team) {
-        // 1. Update the authoritative state
-        team.puzzle[moveData.row][moveData.col] = moveData.value === '' ? 0 : moveData.value;
-
-        // 2. Broadcast the update to all clients (including the host)
-        const moveUpdate = { type: 'move-update', team: moveData.team, row: moveData.row, col: moveData.col, value: moveData.value, playerId: moveData.playerId, sessionId: moveData.sessionId };
-        broadcast(moveUpdate);
+    if (!appState.isInitiator) {
+        // Joiners just send their move to the host
+        if (dataChannels.length > 0 && dataChannels[0].readyState === 'open') {
+            dataChannels[0].send(JSON.stringify(moveData));
+        }
+    } else {
+        // Host processes the move using the game manager
+        // The game-specific module will handle broadcasting.
+        processMove(moveData);
     }
 }
 
@@ -128,7 +119,7 @@ export function broadcastCellSelection(selectData) {
  * Handles incoming messages from Joiners. This function is only executed by the Host.
  * @param {MessageEvent} event - The message event from a data channel.
  */
-export function handleIncomingMessage(event) {
+export async function handleIncomingMessage(event) {
     const data = JSON.parse(event.data);
 
     // If this client is a joiner, it only needs to process UI updates.
@@ -139,11 +130,6 @@ export function handleIncomingMessage(event) {
 
     // The rest of this function is HOST-ONLY logic for processing requests.
     switch (data.type) {
-        case 'create-team':
-            if (!appState.teams[data.teamName]) {
-                broadcast({ type: 'team-list-update', teams: Object.keys(appState.teams) });
-            }
-            break;
         case 'join-team':
             // Add player to team and send them the current team puzzle state
             const joiningPlayerId = data.playerId;
@@ -165,9 +151,28 @@ export function handleIncomingMessage(event) {
                 broadcast({ type: 'player-left-team', teamName: oldTeamName, playerId: joiningPlayerId });
             }
 
+            const team = appState.teams[newTeamName];
             // Add player to the new team
-            if (appState.teams[newTeamName] && !appState.teams[newTeamName].members.includes(joiningPlayerId)) {
-                appState.teams[newTeamName].members.push(joiningPlayerId);
+            if (team && !team.members.includes(joiningPlayerId)) {
+                team.members.push(joiningPlayerId);
+
+                // If this is the first member, initialize the game state
+                if (team.members.length === 1 && !team.gameState) {
+                    const gameModule = await import(`./games/${team.gameType}.js`);
+                    team.gameState = gameModule.getInitialState(team.difficulty);
+                }
+
+                // For Connect 4, assign player numbers as teams join
+                if (team.gameType === 'connect4') {
+                    const connect4Teams = Object.keys(appState.teams).filter(t => appState.teams[t].gameType === 'connect4');
+                    if (!team.gameState.players[newTeamName]) {
+                        const playerNumber = connect4Teams.indexOf(newTeamName) + 1;
+                        team.gameState.players[newTeamName] = playerNumber;
+                        if (connect4Teams.length === 1) { // First team sets the turn
+                            team.gameState.turn = newTeamName;
+                        }
+                    }
+                }
             }
 
             // Send the puzzle state to the joining player
@@ -176,7 +181,7 @@ export function handleIncomingMessage(event) {
                 const teamStateMessage = {
                     type: 'team-state-update',
                     teamName: newTeamName,
-                    puzzle: appState.teams[newTeamName].puzzle
+                    teamState: appState.teams[newTeamName]
                 };
                 playerChannel.send(JSON.stringify(teamStateMessage));
             }
@@ -184,7 +189,7 @@ export function handleIncomingMessage(event) {
             break;
         case 'move':
             // The host processes the move received from a joiner.
-            processAndBroadcastMove(data);
+            processMove(data);
             break;
         case 'cell-select':
             // Host receives a cell selection and broadcasts it.
@@ -200,41 +205,38 @@ export function handleIncomingMessage(event) {
  */
 function processBroadcastForUI(data) {
     switch (data.type) {
-        case 'initial-state':
-            loadPuzzle(appState.selectedDifficulty, data.state);
-            if (!appState.isInitiator) {
-                appState.gameInProgress = true;
-            }
-            break;
         case 'team-list-update':
             updateTeamList(data.teams);
             break;
         case 'team-state-update':
             appState.playerTeam = data.teamName;
-            appState.teams[data.teamName] = { puzzle: data.puzzle };
-            updateGridForTeam(data.teamName);
-            document.getElementById('team-selection-area').classList.add('hidden');
-            document.getElementById('sudoku-grid-area').classList.remove('hidden');
+            appState.teams[data.teamName] = data.teamState;
+            loadGame(data.teamState.gameType).then(() => {
+                updateGridForTeam(data.teamName);
+            });
+            dom.teamSelectionArea.classList.add('hidden');
+            dom.sudokuGridArea.classList.remove('hidden');
             break;
         case 'move-update':
-            // All team members receive this message.
-            if (data.team === appState.playerTeam) {
-                const cell = document.getElementById(`cell-${data.row}-${data.col}`);
-                if (cell) {
-                    cell.querySelector('.cell-value').textContent = data.value;
+            // Dynamically call the correct UI processor
+            import(`./games/${data.game}.js`).then(module => {
+                if (module && typeof module.processUIUpdate === 'function') {
+                    module.processUIUpdate(data);
                 }
-                // If this is a move from another player, add visual/audio feedback.
-                if (data.sessionId !== appState.sessionId) {
-                    playRemoteMoveSound();
-                    if (cell) {
-                        cell.classList.add('blink');
-                        setTimeout(() => cell.classList.remove('blink'), 2000);
-                    }
-                }
-            }
+            });
             break;
         case 'game-over':
-            showWinnerScreen(data.winningTeam);
+            // If the game over message includes a winning line, blink it.
+            if (data.line) {
+                dom.sudokuGrid.style.pointerEvents = 'none';
+                data.line.forEach(cell => {
+                    const domCell = document.getElementById(`cell-${cell.r}-${cell.c}`);
+                    if (domCell) domCell.classList.add('winning-cell-blink');
+                });
+                // The timeout in handleGameOver on the host is the authority.
+                // The UI will just show the modal when the final message arrives.
+            }
+            showWinnerScreen(data.winningTeam, data.losingTeam);
             break;
         case 'player-joined-team':
             if (data.teamName === appState.playerTeam && data.sessionId !== appState.sessionId) {
@@ -272,7 +274,7 @@ export async function createOffer() {
 }
 
 export async function createAnswer(offerText) {
-    let connection = initializeWebRTC();
+    const connection = initializeWebRTC();
     await connection.setRemoteDescription(new RTCSessionDescription(offerText));
     const answer = await connection.createAnswer();
     await connection.setLocalDescription(answer);

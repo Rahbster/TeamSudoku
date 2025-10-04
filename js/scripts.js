@@ -6,15 +6,15 @@
 
 import {
     createGrid,
-    loadPuzzle
-} from './game.js';
+    loadGame
+} from './game_manager.js';
 
 import {
     toggleSignalingUI,
     initializeEventListeners,
     handleLongPress,
-    showScreen,
-    updateTeamList
+    showScreen,    
+    initializeSoloGame
 } from './ui.js';
 
 //==============================
@@ -50,7 +50,8 @@ export const appState = {
     sessionId: Math.random().toString(36).substring(2, 15), // A unique ID for this browser session
     teams: {}, // Object to hold the state for each team. e.g., { teamName: { puzzle: [...] } }
     gameInProgress: false, // Is a game currently being played?
-    winner: null // Which team won?
+    winner: null, // Which team won?
+    soloGameState: null // Holds the game state when the host is playing alone.
 };
 
 // Copies the offer or answer to the clipboard
@@ -85,7 +86,7 @@ export async function copyToClipboard(elementId) {
 // Initial Setup
 //==============================
 // This event listener fires when the initial HTML document has been completely loaded and parsed.
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Set initial application state. Default to the first option in the dropdown.
     appState.selectedDifficulty = 'very-easy';
     // DOM setup
@@ -127,6 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.themeSelector = document.getElementById('theme-select');
     dom.themeSelectorConfig = document.getElementById('theme-select-config');
     dom.difficultySelector = document.getElementById('difficulty-select');
+    dom.gameSelector = document.getElementById('game-select');
+    dom.connect4ModeContainer = document.getElementById('connect4-mode-container');
+    dom.connect4ModeSelect = document.getElementById('connect4-mode-select');
     dom.pencilButton = document.getElementById('pencil-btn');
     dom.body = document.body;
     //Manual signaling buttons
@@ -195,35 +199,37 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.playerRoleSelect.value = savedPlayerRole;
     }
 
+    // Load saved game type and mode
+    const savedGameType = localStorage.getItem('sudokuGameType');
+    if (savedGameType) {
+        dom.gameSelector.value = savedGameType;
+    }
+    const savedConnect4Mode = localStorage.getItem('sudokuConnect4Mode');
+    if (savedConnect4Mode) {
+        dom.connect4ModeSelect.value = savedConnect4Mode;
+    }
+
     // Load saved player name or generate a default one
     appState.playerId = localStorage.getItem('sudokuPlayerName') || `Player ${Math.floor(100 + Math.random() * 900)}`;
     dom.playerNameInput.value = appState.playerId;
 
-    // Initialize UI visibility and create the game grid.
-    createGrid();
+    // Initialize UI visibility and event listeners.
     initializeEventListeners();
-    loadPuzzle(appState.selectedDifficulty); // Load a puzzle for solo play
-
-    // Load saved teams from localStorage (for the host)
-    const savedTeams = JSON.parse(localStorage.getItem('sudokuTeams') || '[]');
-    if (savedTeams.length > 0) {
-        savedTeams.forEach(teamName => {
-            // Reconstruct the team object with the current puzzle state
-            appState.teams[teamName] = { puzzle: JSON.parse(JSON.stringify(appState.initialSudokuState)), members: [] };
-        });
-        updateTeamList(savedTeams); // Update the UI with the loaded teams
-    }
 
     showScreen('game'); // Start on the game screen
 
     // Manually trigger the UI update to reflect any loaded preferences.
     toggleSignalingUI();
+    dom.gameSelector.dispatchEvent(new Event('change'));
+
+    // Load the solo game based on saved preferences
+    await initializeSoloGame();
 });
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         // Register the service worker for Progressive Web App (PWA) capabilities like offline access.
-        navigator.serviceWorker.register('/TeamSudoku/sw.js')
+        navigator.serviceWorker.register('./sw.js')
             .then((registration) => {
                 console.log('Service Worker registered! Scope: ', registration.scope);
             })
