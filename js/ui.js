@@ -182,17 +182,28 @@ export function showWinnerScreen(winningTeam, losingTeam) {
  * @param {string} message - The message to display in the toast.
  * @param {'info' | 'error'} [type='info'] - The type of toast to display.
  */
-export function showToast(message, type = 'info') {
+export function showToast(message, type = 'info') {    
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
     const toast = document.createElement('div');
     toast.className = 'toast-notification';
     if (type === 'error') {
         toast.classList.add('error');
     }
     toast.textContent = message;
+    
+    // Add the new toast to the top of the container
+    container.prepend(toast);
 
-    document.body.appendChild(toast);
+    // Force a reflow to trigger the animation
+    void toast.offsetWidth;
+    toast.classList.add('show');
 
-    // The animation will handle the fade-in and fade-out, but we remove the element after.
     setTimeout(() => {
         toast.remove();
     }, 4000); // Matches the animation duration
@@ -578,12 +589,14 @@ export function initializeEventListeners() {
         // Show the Connect 4 mode selector only when Connect 4 is chosen
         const isConnect4 = selectedGame === 'connect4';
         const isWordSearch = selectedGame === 'wordsearch';
+        const isBlackjack = selectedGame === 'blackjack';
         const isMemoryMatch = selectedGame === 'memorymatch';
         const isSpellingBee = selectedGame === 'spellingbee';
         const isSudoku = selectedGame === 'sudoku';
         dom.connect4ModeContainer.style.display = isConnect4 ? '' : 'none';
         dom.wordsearchConfigContainer.style.display = isWordSearch ? '' : 'none';
         dom.spellingbeeConfigContainer.style.display = isSpellingBee ? '' : 'none';
+        dom.blackjackConfigContainer.style.display = isBlackjack ? '' : 'none';
         dom.memorymatchConfigContainer.style.display = isMemoryMatch ? '' : 'none';
         // Show difficulty for games that use it.
         dom.difficultySelector.parentElement.style.display = (isSudoku || isConnect4 || isMemoryMatch) ? '' : 'none';
@@ -596,6 +609,9 @@ export function initializeEventListeners() {
     });
     dom.memorymatchModeSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuMemoryMatchMode', event.target.value);
+    });
+    dom.deckCountSelect.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuDeckCount', event.target.value);
     });
     dom.voiceSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuVoice', event.target.value);
@@ -1039,6 +1055,9 @@ function showInstructions() {
             break;
         case 'memorymatch':
             instructionText = 'Click on cards to flip them over. Work with your team to find all the matching pairs!';
+            break;
+        case 'blackjack':
+            instructionText = 'Place your bet, then try to get a hand value closer to 21 than the dealer without going over. Good luck!';
             break;
         default:
             instructionText = 'Select a game and start playing!';

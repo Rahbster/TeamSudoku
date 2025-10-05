@@ -45,6 +45,23 @@
                 </div>
             </div>
 
+            <!-- Black Jack Game Area -->
+            <div id="blackjack-area" class="hidden">
+                <div class="blackjack-table">
+                    <div id="dealer-hand" class="hand-area">
+                        <h3>Dealer's Hand: <span id="dealer-score"></span></h3>
+                        <div class="cards"></div>
+                    </div>
+                    <div id="player-hand" class="hand-area">
+                        <h3>Player's Hand: <span id="player-score"></span></h3>
+                        <div class="cards"></div>
+                    </div>
+                    <div id="blackjack-actions" class="player-actions"></div>
+                    <div id="betting-controls"></div>
+                    <div id="player-balance"></div>
+                </div>
+            </div>
+
             <!-- Spelling Bee Game Area -->
             <div id="spelling-bee-area" class="hidden">
                 <div id="spelling-bee-controls">
@@ -158,6 +175,7 @@
                                 <option value="wordsearch">Word Search</option>
                                 <option value="spellingbee">Spelling Bee</option>
                                 <option value="memorymatch">Memory Match</option>
+                                <option value="blackjack">Black Jack</option>
                             </select>
                         </div>
                     </div>
@@ -197,6 +215,17 @@
                                 <option value="picture-picture">Picture to Picture</option>
                                 <option value="picture-word">Picture to Word</option>
                                 <option value="math-simple">Simple Math</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="selector-container host-only" id="blackjack-config-container" style="display: none;">
+                        <label for="deck-count-select">Number of Decks</label>
+                        <div class="select-wrapper">
+                            <select id="deck-count-select">
+                                <option value="1">Single Deck</option>
+                                <option value="2">2 Decks</option>
+                                <option value="4">4 Decks</option>
+                                <option value="6">6 Decks</option>
                             </select>
                         </div>
                     </div>

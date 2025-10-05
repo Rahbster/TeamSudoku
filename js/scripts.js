@@ -140,6 +140,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.spellingBeeAnswerArea = document.getElementById('spelling-bee-answer-area');
     dom.spellingbeeConfigContainer = document.getElementById('spellingbee-config-container');
     dom.spellingbeeModeSelect = document.getElementById('spellingbee-mode-select');
+    dom.blackjackArea = document.getElementById('blackjack-area');
+    dom.dealerHand = document.getElementById('dealer-hand');
+    dom.playerHand = document.getElementById('player-hand');
+    dom.blackjackActions = document.getElementById('blackjack-actions');
+    dom.bettingControls = document.getElementById('betting-controls');
+    dom.blackjackConfigContainer = document.getElementById('blackjack-config-container');
+    dom.deckCountSelect = document.getElementById('deck-count-select');
     dom.memorymatchConfigContainer = document.getElementById('memorymatch-config-container');
     dom.memorymatchModeSelect = document.getElementById('memorymatch-mode-select');
     dom.voiceSelect = document.getElementById('voice-select');
@@ -211,6 +218,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedPlayerRole = localStorage.getItem('sudokuPlayerRole');
     if (savedPlayerRole) {
         dom.playerRoleSelect.value = savedPlayerRole;
+    } else {
+        // Default to Host if no role is saved
+        dom.playerRoleSelect.value = 'host';
     }
 
     // Load saved game type and mode
@@ -247,6 +257,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         dom.memorymatchModeSelect.value = savedMemoryMatchMode;
     }
 
+    // Load saved deck count
+    const savedDeckCount = localStorage.getItem('sudokuDeckCount');
+    if (savedDeckCount) {
+        dom.deckCountSelect.value = savedDeckCount;
+    }
+
     // Saved voice preference will be loaded by the populateVoiceList function
     // once the voices are available from the browser.
     // const savedVoice = localStorage.getItem('sudokuVoice');
@@ -273,7 +289,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     toggleSignalingUI();
     dom.gameSelector.dispatchEvent(new Event('change'));
 
-    // Load the solo game based on saved preferences
+    // After all preferences are loaded and UI is toggled, initialize the solo game view.
     await initializeSoloGame();
 });
 

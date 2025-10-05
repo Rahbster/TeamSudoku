@@ -15,6 +15,13 @@ export function initialize() {
     dom.numberPad.classList.add('hidden');
     dom.pencilButton.classList.add('hidden');
     dom.sudokuGridArea.classList.remove('hidden');
+    document.querySelectorAll('.host-only').forEach(el => {
+        if (el.id === 'new-puzzle-btn') {
+            el.style.display = ''; // Show the button
+        }
+    });
+    const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
+    if (newGameBtnText) newGameBtnText.textContent = 'Game';
 }
 
 export function cleanup() {
@@ -127,15 +134,15 @@ export function getInitialState(difficulty, gameMode) {
         for (let i = 0; i < numPairs; i++) {
             pairs.push([emojis[i], emojis[i]]);
         }
-    } else if (gameMode === 'picture-word') {
-        const wordPairs = [['🍎', 'APPLE'], ['🍌', 'BANANA'], ['🍇', 'GRAPES'], ['🍉', 'WATERMELON'], ['🍓', 'STRAWBERRY'], ['🍑', 'PEACH'], ['🍍', 'PINEAPPLE'], ['🥥', 'COCONUT'], ['🥝', 'KIWI'], ['🥭', 'MANGO']];
-        pairs = wordPairs.slice(0, numPairs);
-    } else { // math-simple
+    } else if (gameMode === 'math-simple') {
         for (let i = 0; i < numPairs; i++) {
             const a = Math.floor(Math.random() * 10) + 1;
             const b = Math.floor(Math.random() * 10) + 1;
             pairs.push([`${a} + ${b}`, a + b]);
         }
+    } else { // picture-word is the fallback
+        const wordPairs = [['🍎', 'APPLE'], ['🍌', 'BANANA'], ['🍇', 'GRAPES'], ['🍉', 'WATERMELON'], ['🍓', 'STRAWBERRY'], ['🍑', 'PEACH'], ['🍍', 'PINEAPPLE'], ['🥥', 'COCONUT'], ['🥝', 'KIWI'], ['🥭', 'MANGO']];
+        pairs = wordPairs.slice(0, numPairs);
     }
 
     const board = pairs.flat().sort(() => 0.5 - Math.random());
