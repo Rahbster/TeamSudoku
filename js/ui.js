@@ -602,12 +602,14 @@ export function initializeEventListeners() {
         const isBlackjack = selectedGame === 'blackjack';
         const isMemoryMatch = selectedGame === 'memorymatch';
         const isSpellingBee = selectedGame === 'spellingbee';
+        const isCosmicBalance = selectedGame === 'cosmicbalance';
         const isSudoku = selectedGame === 'sudoku';
         dom.connect4ModeContainer.style.display = isConnect4 ? '' : 'none';
         dom.wordsearchConfigContainer.style.display = isWordSearch ? '' : 'none';
         dom.spellingbeeConfigContainer.style.display = isSpellingBee ? '' : 'none';
         dom.blackjackConfigContainer.style.display = isBlackjack ? '' : 'none';
         dom.memorymatchConfigContainer.style.display = isMemoryMatch ? '' : 'none';
+        // No config for Cosmic Balance yet
         // Show difficulty for games that use it.
         dom.difficultySelector.parentElement.parentElement.style.display = (isSudoku || isConnect4 || isMemoryMatch) ? '' : 'none';
 

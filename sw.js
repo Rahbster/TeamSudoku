@@ -12,6 +12,7 @@ const localUrlsToCache = [
     './js/games/spellingbee.js',
     './js/games/memorymatch.js',
     './js/games/blackjack.js',
+    './js/games/cosmicbalance.js',
     './js/generator.js',
     './js/timer.js',
     './js/misc.js',

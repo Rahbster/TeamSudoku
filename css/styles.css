@@ -1104,6 +1104,123 @@ body.blackjack-active #game-screen {
     width: 100%;
 }
 
+/*==============================
+  Cosmic Balance Game Styles
+==============================*/
+
+#cosmic-balance-area {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    gap: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+#starmap-view, #combat-map-view {
+    flex-grow: 1;
+    position: relative;
+    background-color: #000;
+    border: 2px solid var(--primary-cyan, #00A0C0);
+    border-radius: 8px;
+    overflow: hidden;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.star-system {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background-color: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.star-system:hover {
+    transform: scale(1.5);
+    box-shadow: 0 0 10px #fff, 0 0 20px var(--secondary-orange, #EFB82A);
+}
+
+.ship {
+    position: absolute;
+    width: 20px;
+    height: 25px;
+    /* A simple triangle shape */
+    background-color: var(--secondary-orange, #EFB82A);
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    transition: all 0.2s ease;
+    transform-origin: center center;
+}
+
+.ship.enemy {
+    background-color: var(--error-red, #CC3333);
+}
+
+.weapon-fire {
+    position: absolute;
+    background: linear-gradient(90deg, rgba(255,0,0,0) 0%, rgba(255,100,100,1) 50%, rgba(255,0,0,0) 100%);
+    height: 3px;
+    transform-origin: 0 50%;
+    opacity: 0;
+    animation: fadeOut 0.5s ease-out;
+    z-index: 20;
+    border-radius: 2px;
+    box-shadow: 0 0 8px #ff0000;
+}
+
+.impact-explosion {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 200, 100, 0.8);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    animation: impact-animation 0.4s ease-out;
+    z-index: 21;
+    pointer-events: none;
+}
+
+.order-line {
+    position: absolute;
+    background-color: var(--secondary-orange, #EFB82A);
+    height: 2px;
+    transform-origin: 0 50%;
+    z-index: 15;
+    pointer-events: none; /* Make sure it doesn't interfere with mouse events */
+    box-shadow: 0 0 5px var(--secondary-orange, #EFB82A);
+}
+
+.targeting-line {
+    position: absolute;
+    background-color: var(--error-red, #CC3333);
+    height: 2px;
+    transform-origin: 0 50%;
+    z-index: 16; /* Higher than order-line */
+    pointer-events: none;
+    box-shadow: 0 0 5px var(--error-red, #CC3333);
+    opacity: 0.8;
+}
+
+@keyframes impact-animation {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0;
+    }
+}
+
+#info-panel {
+    width: 250px;
+    background-color: var(--container-bg, rgba(26, 42, 58, 0.85));
+    border-radius: 8px;
+    padding: 15px;
+    color: var(--text-light, #E0E0E0); /* Ensure text is always light */
+}
 
 /*==============================
  Dark Mode Theme

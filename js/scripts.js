@@ -149,6 +149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.blackjackConfigContainer = document.getElementById('blackjack-config-container');
     dom.deckCountSelect = document.getElementById('deck-count-select');
     dom.memorymatchConfigContainer = document.getElementById('memorymatch-config-container');
+    dom.cosmicBalanceArea = document.getElementById('cosmic-balance-area');
     dom.memorymatchModeSelect = document.getElementById('memorymatch-mode-select');
     dom.voiceSelect = document.getElementById('voice-select');
     dom.spellingBeeWordListInput = document.getElementById('spelling-bee-word-list-input');
