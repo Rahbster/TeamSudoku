@@ -1036,16 +1036,10 @@ export async function initializeSoloGame() {
         const gameModule = await import(`./games/${selectedGame}.js`);
         const difficulty = dom.difficultySelector.value;
         const gameMode = dom.connect4ModeSelect.value;
-        debugLog(`Creating initial state. Current soloGameState:`, appState.soloGameState);
-        // The getInitialState function for each game will read its specific mode from the DOM
-        if (!appState.soloGameState) { // Only create if it doesn't exist
-            appState.soloGameState = gameModule.getInitialState(difficulty, gameMode);
-            debugLog(`New soloGameState created:`, appState.soloGameState);
-        } 
-        else 
-        {
-            debugLog(`Reusing existing soloGameState:`, appState.soloGameState);
-        }
+        debugLog(`Resetting solo game state for ${selectedGame}.`);
+        // Always create a fresh state when initializing the solo view to prevent state conflicts between games.
+        appState.soloGameState = gameModule.getInitialState(difficulty, gameMode);
+        debugLog(`New soloGameState created:`, appState.soloGameState);
 
         // Now that state is guaranteed to exist, load the game's UI.
         await loadGame(selectedGame);
