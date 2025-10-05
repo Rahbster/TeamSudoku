@@ -11,6 +11,8 @@ import {
     broadcastCellSelection
 } from './webrtc.js';
 
+import { debugLog } from './misc.js';
+
 let activeGameModule = null;
 
 /**
@@ -18,14 +20,17 @@ let activeGameModule = null;
  * @param {string} gameType - The type of game to load ('sudoku', 'connect4', etc.).
  */
 export async function loadGame(gameType) {
+    debugLog(`loadGame called for: ${gameType}`);
     // If there's an active game module, run its cleanup function first.
     if (activeGameModule && typeof activeGameModule.cleanup === 'function') {
+        debugLog(`Cleaning up previous game module.`);
         activeGameModule.cleanup();
     }
 
     try {
         const module = await import(`./games/${gameType}.js`);
         activeGameModule = module;
+        debugLog(`Module for ${gameType} loaded. Calling initialize().`);
         activeGameModule.initialize();
     } catch (error) {
         console.error(`Failed to load game module for: ${gameType}`, error);
@@ -42,6 +47,7 @@ export async function loadGame(gameType) {
  */
 export function createGrid() {
     // This function is now a proxy to the active game's createGrid function.
+    debugLog(`createGrid called. Proxying to active module.`);
     if (activeGameModule && typeof activeGameModule.createGrid === 'function') {
         activeGameModule.createGrid();
     } else {
@@ -58,11 +64,14 @@ export function createGrid() {
  * @param {boolean} [resetTeams=false] - Optional flag to reset the team state.
  */
 export async function loadPuzzle(difficulty, puzzleData, resetTeams = false) {
+    debugLog(`loadPuzzle called with difficulty: ${difficulty}`);
     if (!activeGameModule) {
         // If no game is active, default to loading a new Sudoku puzzle for solo play.
+        debugLog(`No active game module, defaulting to Sudoku.`);
         await loadGame('sudoku');
     }
     if (activeGameModule && typeof activeGameModule.loadPuzzle === 'function') {
+        debugLog(`Proxying loadPuzzle to active module.`);
         return activeGameModule.loadPuzzle(difficulty, puzzleData, resetTeams);
     }
 }

@@ -2,10 +2,11 @@
 //UI Logic
 //==============================
 // This module handles all user interface interactions, from button clicks to dynamic UI updates.
-import { appState, dom, dataChannels } from './scripts.js';
+import { appState, dom, dataChannels, copyToClipboard } from './scripts.js';
 import { loadGame, updateGridForTeam, loadPuzzle, createGrid } from './game_manager.js';
 import { stopTimer } from './timer.js';
-import { clearTextbox, createQrCodeChunks, playBeepSound, playRemoteMoveSound } from './misc.js';
+import { clearTextbox, createQrCodeChunks, playBeepSound, playRemoteMoveSound, debugLog } from './misc.js';
+import { speakWord } from './games/spellingbee.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
 import { createOffer, createAnswer, processAndBroadcastMove } from './webrtc.js';
 
@@ -15,6 +16,7 @@ import { createOffer, createAnswer, processAndBroadcastMove } from './webrtc.js'
  * @param {'config' | 'game'} screenName - The name of the screen to show.
  */
 export function showScreen(screenName) {
+    debugLog(`Showing screen: ${screenName}`);
     dom.gameScreen.classList.add('hidden');
     dom.configScreen.classList.add('hidden');
     document.body.classList.remove('connection-background');
@@ -580,12 +582,13 @@ async function createAnswerQr(connection) {
  * Initializes all primary event listeners for the application's UI elements.
  */
 export function initializeEventListeners() {
-    // Event listeners for drop-downs
+    // Event listeners for configuration drop-downs
     dom.signalingMethodSelect.addEventListener('change', toggleSignalingUI);
     dom.playerRoleSelect.addEventListener('change', toggleSignalingUI);
     dom.gameSelector.addEventListener('change', (event) => {
         const selectedGame = event.target.value;
         localStorage.setItem('sudokuGameType', selectedGame);
+        debugLog(`Game selection changed to: ${selectedGame}. Re-initializing solo game view.`);
         // Show the Connect 4 mode selector only when Connect 4 is chosen
         const isConnect4 = selectedGame === 'connect4';
         const isWordSearch = selectedGame === 'wordsearch';
@@ -600,6 +603,9 @@ export function initializeEventListeners() {
         dom.memorymatchConfigContainer.style.display = isMemoryMatch ? '' : 'none';
         // Show difficulty for games that use it.
         dom.difficultySelector.parentElement.style.display = (isSudoku || isConnect4 || isMemoryMatch) ? '' : 'none';
+
+        // Re-initialize the solo game view to reflect the new game choice immediately.
+        initializeSoloGame();
     });
     dom.connect4ModeSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuConnect4Mode', event.target.value);
@@ -615,6 +621,11 @@ export function initializeEventListeners() {
     });
     dom.voiceSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuVoice', event.target.value);
+        // Provide audio feedback for the selected voice
+        const selectedOption = event.target.options[event.target.selectedIndex];
+        if (selectedOption && selectedOption.text) {
+            speakWord(`${selectedOption.text} selected`);
+        }
     });
     dom.spellingBeeWordListInput.addEventListener('change', (event) => {
         localStorage.setItem('sudokuSpellingBeeWordList', event.target.value);
@@ -635,11 +646,8 @@ export function initializeEventListeners() {
     });
 
     // Event listeners for game-related buttons
-    dom.newPuzzleButton.addEventListener('click', () => {
-        loadPuzzle(dom.difficultySelector.value, null, false); // Do not reset teams
-        dom.winnerModal.classList.add('hidden'); // Hide winner modal on new puzzle
-    });
     dom.newPuzzleWinnerBtn.addEventListener('click', () => {
+        debugLog(`'New Puzzle' button clicked. Calling generic loadPuzzle.`);
         loadPuzzle(dom.difficultySelector.value, null, false); // Do not reset teams
         dom.winnerModal.classList.add('hidden'); // Hide winner modal
     });
@@ -663,6 +671,7 @@ export function initializeEventListeners() {
     // Event listeners for the "Toggle P2P Configuration" button
     dom.configBtn.addEventListener('click', () => {
         // Reset winner state when going back to config to allow starting a new game.
+        debugLog(`Config button clicked. Winner state reset. Showing 'config' screen.`);
         appState.winner = null;
         showScreen('config');
     });
@@ -670,6 +679,7 @@ export function initializeEventListeners() {
         // If the user is a host and hasn't joined a team,
         // load the selected game so they can see it on the game screen.
         await initializeSoloGame();
+        debugLog(`Back to Game button clicked. Solo game re-initialized. Showing 'game' screen.`);
         showScreen('game');
     });
 
@@ -1006,15 +1016,25 @@ export async function initializeSoloGame() {
         dom.wordSearchListArea.classList.add('hidden');
 
         const selectedGame = dom.gameSelector.value;
-        await loadGame(selectedGame);
+        debugLog(`Selected game for solo view: ${selectedGame}`);
 
         // Initialize a solo game state for the host.
         const gameModule = await import(`./games/${selectedGame}.js`);
         const difficulty = dom.difficultySelector.value;
         const gameMode = dom.connect4ModeSelect.value;
+        debugLog(`Creating initial state. Current soloGameState:`, appState.soloGameState);
         // The getInitialState function for each game will read its specific mode from the DOM
-        appState.soloGameState = gameModule.getInitialState(difficulty, gameMode);
+        if (!appState.soloGameState) { // Only create if it doesn't exist
+            appState.soloGameState = gameModule.getInitialState(difficulty, gameMode);
+            debugLog(`New soloGameState created:`, appState.soloGameState);
+        } 
+        else 
+        {
+            debugLog(`Reusing existing soloGameState:`, appState.soloGameState);
+        }
 
+        // Now that state is guaranteed to exist, load the game's UI.
+        await loadGame(selectedGame);
     }
 }
 
@@ -1033,7 +1053,7 @@ function showInstructions() {
         case 'connect4':
             const gameMode = dom.connect4ModeSelect.value;
             if (gameMode === 'standard') {
-                instructionText = 'You are Player 1 (Yellow/Theme Color 1). Play against the computer and try to get four of your pieces in a row.';
+                instructionText = 'You are Player 1 (Yellow/Theme Color 1). Play against the computer or a connected friend and try to get four of your pieces in a row.';
             } else {
                 instructionText = 'Work with your teammates to fill the entire board without anyone getting four-in-a-row. A single line of four by any team results in a loss for everyone!';
             }
@@ -1092,9 +1112,9 @@ function populateVoiceList() {
 
         voices
             .filter(voice => voice.lang.startsWith('en')) // Filter for English voices
-            .forEach(voice => {
+            .forEach((voice, index) => {
                 const option = document.createElement('option');
-                option.textContent = `${voice.name} (${voice.lang})`;
+                option.textContent = `Voice ${index + 1}`;
                 option.setAttribute('value', voice.name);
                 dom.voiceSelect.appendChild(option);
             });

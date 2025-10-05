@@ -22,6 +22,9 @@ export function initialize() {
     });
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Game';
+
+    // Ensure the main "New Game" button is correctly wired up for Memory Match.
+    dom.newPuzzleButton.onclick = loadPuzzle;
 }
 
 export function cleanup() {

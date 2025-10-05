@@ -72,3 +72,13 @@ export function removePrefix(str, prefix) {
   // If the prefix is not found, return the original string or handle the error
   return str;
 }
+
+/**
+ * Logs messages to the console only when running on localhost.
+ * @param  {...any} args - The messages or objects to log.
+ */
+export function debugLog(...args) {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('[DEBUG]', ...args);
+    }
+}

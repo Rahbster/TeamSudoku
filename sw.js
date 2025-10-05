@@ -8,6 +8,7 @@ const localUrlsToCache = [
     './js/games/sudoku.js',
     './js/games/connect4.js',
     './js/games/wordsearch.js',
+    './js/games/connect4-worker.js',
     './js/games/spellingbee.js',
     './js/games/memorymatch.js',
     './js/games/blackjack.js',
@@ -21,6 +22,7 @@ const localUrlsToCache = [
     './manifest.json',
     './assets/ActiveSudoku.png',
     './assets/StageConnection.png',
+    './assets/SudokuIcon.png',
     './icons/icon-192x192.png',
     './icons/icon-512x512.png'
 ];
@@ -28,7 +30,8 @@ const localUrlsToCache = [
 const externalUrlsToCache = [
     'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
-    'https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js'
+    'https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js',
+    'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap'
 ];
 
 self.addEventListener('install', (event) => {

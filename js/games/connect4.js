@@ -2,19 +2,23 @@
 // Connect 4 Game Logic
 //==============================
 
-import { startTimer } from '../timer.js';
+import { startTimer, stopTimer } from '../timer.js';
 import { dom, appState, dataChannels } from '../scripts.js';
 import { showWinnerScreen } from '../ui.js';
-import { playRemoteMoveSound } from '../misc.js';
+import { playRemoteMoveSound, debugLog } from '../misc.js';
 
 const ROWS = 6;
 const COLS = 7;
 
+// Initialize the AI Web Worker
+const aiWorker = new Worker('./js/games/connect4-worker.js');
+
 export function initialize() {
-    console.log("Connect 4 Initialized");
+    debugLog("Connect 4 Initialized");
     // Hide UI elements not used by Connect 4
     dom.numberPad.classList.add('hidden');
     dom.pencilButton.classList.add('hidden');
+    dom.sudokuGridArea.classList.remove('hidden'); // Ensure the grid container is visible
     document.querySelectorAll('.host-only').forEach(el => {
         if (el.id === 'difficulty-select') {
             el.style.display = 'none';
@@ -27,17 +31,27 @@ export function initialize() {
     // Set the button text for Connect 4
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Game';
+
+    // If we are initializing for a solo game, draw the grid.
+    debugLog('Connect4 initialize. Current soloGameState:', JSON.parse(JSON.stringify(appState.soloGameState || null)));
+    if (appState.isInitiator && !appState.playerTeam) {
+        createGrid();
+    }
+
+    // Ensure the main "New Game" button is correctly wired up for Connect 4.
+    dom.newPuzzleButton.onclick = loadPuzzle;
 }
 
 /**
  * Cleans up UI elements specific to Connect 4 when switching games.
  */
 export function cleanup() {
-    console.log("Connect 4 Cleanup");
+    debugLog("Connect 4 Cleanup: Hiding sudoku-grid-area.");
     dom.sudokuGridArea.classList.add('hidden');
 }
 
 export function createGrid() {
+    debugLog('Connect4 createGrid called.');
     dom.sudokuGrid.innerHTML = '';
     dom.sudokuGrid.className = 'connect4-grid'; // Set class for Connect 4 styling
 
@@ -66,17 +80,12 @@ async function handleCellClick(event) {
             // --- Standard Player vs. AI Logic ---
             const playerMoveSuccessful = makeSoloMove(col, 1); // Player is always 1
 
-            // If player's move was valid and the game isn't over, let the AI take a turn.
-            if (playerMoveSuccessful && !appState.winner) {
-                dom.sudokuGrid.style.pointerEvents = 'none';
-                setTimeout(() => {
-                    const aiColumn = findBestMove(appState.soloGameState.board);
-                    if (aiColumn !== null) {
-                        makeSoloMove(aiColumn, 2); // AI is always 2
-                    }
-                    dom.sudokuGrid.style.pointerEvents = 'auto';
-                    findAndHighlightImminentThreats(appState.soloGameState.board);
-                }, 500);
+            // If player's move was valid, the game isn't over, and no one is connected, let the AI take a turn.
+            if (playerMoveSuccessful && !appState.winner && dataChannels.length === 0) {
+                // Disable player input while AI is "thinking"
+                dom.sudokuGrid.style.pointerEvents = 'none'; 
+                // Offload the AI move calculation to the Web Worker
+                aiWorker.postMessage({ board: appState.soloGameState.board });
             }
         } else {
             // --- Cooperative Sabotage Logic (Solo) ---
@@ -104,6 +113,21 @@ async function handleCellClick(event) {
 
     // --- Team Play Logic ---
     if (!appState.playerTeam) return; // If not solo and not in a team, do nothing.
+
+aiWorker.onmessage = function(e) {
+    const { bestMove } = e.data;
+    if (bestMove !== null) {
+        // A short delay to simulate AI thinking
+        setTimeout(() => {
+            makeSoloMove(bestMove, 2); // AI is always player 2
+            // Re-enable player input
+            dom.sudokuGrid.style.pointerEvents = 'auto';
+            findAndHighlightImminentThreats(appState.soloGameState.board);
+        }, 500);
+    } else {
+        dom.sudokuGrid.style.pointerEvents = 'auto';
+    }
+};
 
     const team = appState.teams[appState.playerTeam];
     if (team.gameState.turn !== appState.playerTeam) {
@@ -171,6 +195,7 @@ export function getInitialState(difficulty, gameMode) {
  * This function is called by the game_manager's loadPuzzle.
  */
 export function loadPuzzle() {
+    debugLog('Connect4 loadPuzzle called.');
     appState.winner = null;
     startTimer();
     if (appState.playerTeam) {
@@ -441,56 +466,6 @@ function findNextOpenRow(board, col) {
         }
     }
     return -1; // Column is full
-}
-
-/**
- * Simple AI logic to determine the best move.
- * 1. Check for a winning move.
- * 2. Check to block the player's winning move.
- * 3. Pick a random valid column.
- * @param {number[][]} board - The current game board.
- * @returns {number|null} - The best column to play, or null if no moves are possible.
- */
-function findBestMove(board) {
-    // 1. Check if AI (Player 2) can win in the next move
-    for (let c = 0; c < COLS; c++) {
-        const r = findNextOpenRow(board, c);
-        if (r !== -1) {
-            board[r][c] = 2; // Temporarily make the move
-            if (checkWinner(board, r, c, 2)) {
-                board[r][c] = 0; // Backtrack
-                return c; // Winning move
-            }
-            board[r][c] = 0; // Backtrack
-        }
-    }
-
-    // 2. Check if Player 1 can win in the next move, and block them
-    for (let c = 0; c < COLS; c++) {
-        const r = findNextOpenRow(board, c);
-        if (r !== -1) {
-            board[r][c] = 1; // Temporarily make the move for the player
-            if (checkWinner(board, r, c, 1)) {
-                board[r][c] = 0; // Backtrack
-                return c; // Blocking move
-            }
-            board[r][c] = 0; // Backtrack
-        }
-    }
-
-    // 3. Fallback: pick a random valid column
-    const validMoves = [];
-    for (let c = 0; c < COLS; c++) {
-        if (board[0][c] === 0) { // Check if column is not full
-            validMoves.push(c);
-        }
-    }
-
-    if (validMoves.length > 0) {
-        return validMoves[Math.floor(Math.random() * validMoves.length)];
-    }
-
-    return null; // No possible moves
 }
 
 /**

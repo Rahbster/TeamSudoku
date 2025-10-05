@@ -5,17 +5,18 @@
 import { startTimer } from '../timer.js';
 import { dom, appState, dataChannels } from '../scripts.js';
 import { showWinnerScreen } from '../ui.js';
-import { playRemoteMoveSound } from '../misc.js';
+import { playRemoteMoveSound, debugLog } from '../misc.js';
 
 const GRID_SIZE = 15;
 let isSelecting = false;
 let selectionPath = [];
 
 export function initialize() {
-    console.log("Word Search Initialized");
+    debugLog("Word Search Initialized");
     dom.numberPad.classList.add('hidden');
     dom.pencilButton.classList.add('hidden');
     dom.wordSearchListArea.classList.remove('hidden');
+    dom.sudokuGridArea.classList.remove('hidden');
     document.querySelectorAll('.host-only').forEach(el => {
         if (el.id === 'difficulty-select') {
             el.style.display = 'none';
@@ -26,15 +27,24 @@ export function initialize() {
     });
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Game';
+
+    // Ensure the main "New Game" button is correctly wired up for Word Search.
+    dom.newPuzzleButton.onclick = loadPuzzle;
+
+    // If we are initializing for a solo game, draw the grid.
+    if (appState.isInitiator && !appState.playerTeam) {
+        createGrid();
+    }
 }
 
 export function cleanup() {
-    console.log("Word Search Cleanup");
+    debugLog("Word Search Cleanup: Hiding word-search-list-area and sudoku-grid-area.");
     dom.wordSearchListArea.classList.add('hidden');
     dom.sudokuGridArea.classList.add('hidden');
 }
 
 export function createGrid() {
+    debugLog('WordSearch createGrid called.');
     dom.sudokuGrid.innerHTML = '';
     dom.sudokuGrid.className = 'wordsearch-grid';
 
@@ -301,6 +311,7 @@ export function getInitialState() {
 }
 
 export function loadPuzzle() {
+    debugLog('WordSearch loadPuzzle called.');
     appState.winner = null;
     startTimer();
     const newState = getInitialState();

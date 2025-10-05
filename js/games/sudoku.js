@@ -14,6 +14,7 @@ export function initialize() {
     // Show/hide UI elements specific to Sudoku
     dom.numberPad.classList.remove('hidden');
     dom.pencilButton.classList.remove('hidden');
+    dom.sudokuGridArea.classList.remove('hidden'); // Ensure the grid container is visible
     document.querySelectorAll('.host-only').forEach(el => {
         if (el.id === 'difficulty-select' || el.id === 'new-puzzle-btn') {
             el.style.display = '';
@@ -22,6 +23,9 @@ export function initialize() {
     // Set the button text for Sudoku
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Puzzle';
+
+    // Ensure the main "New Game" button is correctly wired up for Sudoku.
+    dom.newPuzzleButton.onclick = () => loadPuzzle(dom.difficultySelector.value, null, false);
 
 }
 

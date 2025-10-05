@@ -17,6 +17,9 @@ export function initialize() {
     document.body.classList.add('blackjack-active');
     document.getElementById('player-balance').textContent = `Tokens: ${appState.soloGameState?.balance || 100}`;
     renderBettingControls();
+
+    // Ensure the main "New Game" button is correctly wired up for Black Jack.
+    dom.newPuzzleButton.onclick = loadPuzzle;
 }
 
 export function cleanup() {

@@ -238,7 +238,7 @@ function checkAnswer(answer) {
     }, 2000); // Wait 2 seconds before the next question
 }
 
-function speakWord(word) {
+export function speakWord(word) {
     if (!('speechSynthesis' in window) || !word) {
         alert("Sorry, your browser does not support text-to-speech, or there is no word to speak.");
         return;
