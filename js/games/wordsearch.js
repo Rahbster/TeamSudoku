@@ -2,6 +2,7 @@
 // Word Search Game Logic
 //==============================
 
+import { startTimer } from '../timer.js';
 import { dom, appState, dataChannels } from '../scripts.js';
 import { showWinnerScreen } from '../ui.js';
 import { playRemoteMoveSound } from '../misc.js';
@@ -300,6 +301,7 @@ export function getInitialState() {
 
 export function loadPuzzle() {
     appState.winner = null;
+    startTimer();
     const newState = getInitialState();
     if (appState.playerTeam) {
         const team = appState.teams[appState.playerTeam];

@@ -4,6 +4,7 @@
 // This module handles all user interface interactions, from button clicks to dynamic UI updates.
 import { appState, dom, dataChannels } from './scripts.js';
 import { loadGame, updateGridForTeam, loadPuzzle, createGrid } from './game_manager.js';
+import { stopTimer } from './timer.js';
 import { clearTextbox, createQrCodeChunks, playBeepSound, playRemoteMoveSound } from './misc.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
 import { createOffer, createAnswer, processAndBroadcastMove } from './webrtc.js';
@@ -145,6 +146,7 @@ export function showWinnerScreen(winningTeam, losingTeam) {
 
     appState.winner = winningTeam;
     appState.gameInProgress = false;
+    stopTimer(); // Stop the timer when the game ends.
 
     dom.winnerModal.classList.remove('hidden');
 
@@ -568,8 +570,8 @@ export function initializeEventListeners() {
         const isSudoku = selectedGame === 'sudoku';
         dom.connect4ModeContainer.style.display = isConnect4 ? '' : 'none';
         dom.wordsearchConfigContainer.style.display = isWordSearch ? '' : 'none';
-        // Show difficulty for Sudoku, hide for others
-        dom.difficultySelector.parentElement.style.display = isSudoku ? '' : 'none';
+        // Show difficulty for Sudoku and Connect 4, hide for Word Search
+        dom.difficultySelector.parentElement.style.display = (isSudoku || isConnect4) ? '' : 'none';
     });
     dom.connect4ModeSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuConnect4Mode', event.target.value);

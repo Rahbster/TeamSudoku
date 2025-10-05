@@ -2,6 +2,7 @@
 // Connect 4 Game Logic
 //==============================
 
+import { startTimer } from '../timer.js';
 import { dom, appState, dataChannels } from '../scripts.js';
 import { showWinnerScreen } from '../ui.js';
 import { playRemoteMoveSound } from '../misc.js';
@@ -79,21 +80,22 @@ async function handleCellClick(event) {
             }
         } else {
             // --- Cooperative Sabotage Logic (Solo) ---
-            const board = appState.soloGameState.board;
-            const row = findNextOpenRow(board, col);
-            if (row !== -1) {
-                board[row][col] = 1; // Player is always 1
-                appState.soloGameState.moves++;
-                const cell = document.getElementById(`cell-${row}-${col}`);
-                cell.classList.remove('empty');
-                cell.classList.add('player1');
+            const playerMoveSuccessful = makeSoloSabotageMove(col, 1);
 
-                const line = checkForAnyLine(board, row, col);
-                if (line) {
-                    handleGameOver(line, null, 'You'); // You lost
-                } else if (appState.soloGameState.moves === ROWS * COLS) {
-                    showWinnerScreen('all'); // You won
-                }
+            if (playerMoveSuccessful && !appState.winner) {
+                dom.sudokuGrid.style.pointerEvents = 'none';
+                setTimeout(() => {
+                    const aiColumn = findBestSabotageMove(appState.soloGameState.board);
+                    if (aiColumn !== null) {
+                        makeSoloSabotageMove(aiColumn, 2); // AI is player 2
+                    } else {
+                        // This means the AI is trapped and has no safe moves, so the player wins.
+                        // This is an advanced case, for now we assume a move is always possible.
+                        console.log("AI is trapped! Player wins.");
+                        showWinnerScreen('all');
+                    }
+                    dom.sudokuGrid.style.pointerEvents = 'auto';
+                }, 500);
             }
         }
 
@@ -157,6 +159,7 @@ export function getInitialState(difficulty, gameMode) {
     return {
         board: Array(ROWS).fill(null).map(() => Array(COLS).fill(0)),
         moves: 0,
+        difficulty: difficulty || 'medium',
         gameMode: gameMode || 'standard', // Default to standard
         turn: null, // Host will set this
         players: {} // Maps teamName to player number (1 or 2)
@@ -169,12 +172,13 @@ export function getInitialState(difficulty, gameMode) {
  */
 export function loadPuzzle() {
     appState.winner = null;
+    startTimer();
     if (appState.playerTeam) {
         const team = appState.teams[appState.playerTeam];
         team.gameState = getInitialState(team.difficulty, team.gameMode);
         updateGridForTeam(appState.playerTeam);
     } else if (appState.isInitiator) {
-        appState.soloGameState = getInitialState(null, dom.connect4ModeSelect.value);
+        appState.soloGameState = getInitialState(dom.difficultySelector.value, dom.connect4ModeSelect.value);
         createGrid();
     }
 }
@@ -395,6 +399,36 @@ function makeSoloMove(col, playerNumber) {
 }
 
 /**
+ * Executes a move for a player in solo Sabotage mode and updates the UI.
+ * @param {number} col - The column to play in.
+ * @param {number} playerNumber - The player making the move (1 for human, 2 for AI).
+ * @returns {boolean} - True if the move was successful, false otherwise.
+ */
+function makeSoloSabotageMove(col, playerNumber) {
+    const board = appState.soloGameState.board;
+    const row = findNextOpenRow(board, col);
+
+    if (row !== -1) {
+        board[row][col] = playerNumber;
+        appState.soloGameState.moves++;
+
+        const cell = document.getElementById(`cell-${row}-${col}`);
+        cell.classList.remove('empty');
+        cell.classList.add(`player${playerNumber}`);
+
+        const line = checkForAnyLine(board, row, col);
+        if (line) {
+            const loser = playerNumber === 1 ? 'You' : 'The Computer';
+            handleGameOver(line, null, loser);
+        } else if (appState.soloGameState.moves === ROWS * COLS) {
+            showWinnerScreen('all'); // You both won
+        }
+        return true;
+    }
+    return false;
+}
+
+/**
  * Finds the next available row in a given column.
  * @param {number[][]} board - The game board.
  * @param {number} col - The column to check.
@@ -457,6 +491,37 @@ function findBestMove(board) {
     }
 
     return null; // No possible moves
+}
+
+/**
+ * AI logic for Sabotage mode. Finds a valid move that doesn't lose the game.
+ * @param {number[][]} board - The current game board.
+ * @returns {number|null} - A safe column to play, or null if no safe moves exist.
+ */
+function findBestSabotageMove(board) {
+    const safeMoves = [];
+    for (let c = 0; c < COLS; c++) {
+        const r = findNextOpenRow(board, c);
+        if (r !== -1) {
+            // Check if placing a piece here for player 2 (AI) creates a line
+            board[r][c] = 2;
+            const aiLoses = checkForAnyLine(board, r, c);
+            board[r][c] = 0; // Backtrack
+
+            if (!aiLoses) {
+                safeMoves.push(c);
+            }
+        }
+    }
+
+    if (safeMoves.length > 0) {
+        // Pick a random move from the safe ones
+        return safeMoves[Math.floor(Math.random() * safeMoves.length)];
+    }
+
+    // If no safe moves, the AI is trapped and will lose. Return any valid move.
+    const anyValidMove = findNextOpenRow(board, 0) !== -1 ? 0 : findNextOpenRow(board, 1) !== -1 ? 1 : null; // etc.
+    return anyValidMove;
 }
 
 /**

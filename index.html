@@ -122,27 +122,6 @@
                 <button id="back-to-game-btn" class="theme-button hidden">Back to Game</button>
     
                 <div class="config-selectors">
-                    <div class="selector-container"> <!-- Re-using theme-selector class for consistent styling -->
-                        <label for="signaling-method">Choose Connection Method</label>
-                        <div class="select-wrapper">
-                            <select id="signaling-method">
-                                <option value="none">-- Select a method --</option>
-                                <option value="manual">Manual Copy/Paste</option>
-                                <option value="qr">QR Code Scan</option>
-                                <option value="peerJS">PeerJS</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="selector-container"> <!-- Re-using theme-selector class for consistent styling -->
-                        <label for="player-role">Choose Player Role</label>
-                        <div class="select-wrapper">
-                            <select id="player-role">
-                                <option value="none">-- Select a role --</option>
-                                <option value="host">Player 1 (Host)</option>
-                                <option value="joiner">Player 2 (Joiner)</option>
-                            </select>
-                        </div>
-                    </div>
                     <div class="selector-container">
                         <label for="player-name-input">Player Name</label>
                         <input type="text" id="player-name-input" maxlength="16" placeholder="Enter your name">
@@ -194,6 +173,27 @@
                                 <option value="easy">Easy</option>
                                 <option value="medium">Medium</option>
                                 <option value="hard">Hard</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="selector-container"> <!-- Re-using theme-selector class for consistent styling -->
+                        <label for="signaling-method">Choose Connection Method</label>
+                        <div class="select-wrapper">
+                            <select id="signaling-method">
+                                <option value="none">-- Select a method --</option>
+                                <option value="manual">Manual Copy/Paste</option>
+                                <option value="qr">QR Code Scan</option>
+                                <option value="peerJS">PeerJS</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="selector-container"> <!-- Re-using theme-selector class for consistent styling -->
+                        <label for="player-role">Choose Player Role</label>
+                        <div class="select-wrapper">
+                            <select id="player-role">
+                                <option value="none">-- Select a role --</option>
+                                <option value="host">Player 1 (Host)</option>
+                                <option value="joiner">Player 2 (Joiner)</option>
                             </select>
                         </div>
                     </div>
