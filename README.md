@@ -1,43 +1,71 @@
-### WebRTC Sudoku 🎮
+### TeamSudoku Game Platform 🎮
 
-This is a two-player, cooperative Sudoku game that uses WebRTC to establish a real-time, peer-to-peer connection. Unlike traditional online games, this application does not require a central server for gameplay; instead, it uses a unique QR code-based system for the initial connection setup, with a fallback option for manual signaling.
+This is a versatile, browser-based gaming platform that supports a variety of classic games for both **solo** and **real-time multiplayer** action. The entire application is a Progressive Web App (PWA) built to run without a central server, using WebRTC to establish direct peer-to-peer connections between players.
 
-Once connected, both players work on the same puzzle, with their moves instantly synchronized to their partner's screen. The game features real-time validation and a responsive UI that highlights conflicts and celebrates a solved puzzle.
+---
+
+### Core Features
+
+*   **Multiple Games:** Play Sudoku, Connect 4, Word Search, Spelling Bee, Memory Match, and Black Jack.
+*   **Real-time Multiplayer:** Connect with friends for cooperative or competitive gameplay.
+*   **Serverless Architecture:** Uses WebRTC for direct peer-to-peer data channels, eliminating the need for a game server.
+*   **Flexible Connection Methods:**
+    *   **PeerJS (Recommended):** Connect easily using a simple Host ID.
+    *   **QR Code:** A unique signaling method that chunks connection data into QR codes.
+    *   **Manual:** A fallback for copy-pasting connection data.
+*   **Solo & AI Play:** Play games by yourself, or challenge a simple AI opponent in Connect 4.
+*   **Team System:** In multiplayer, hosts can create multiple teams, and players can join them to compete.
+*   **PWA & Offline Support:** As a Progressive Web App, it can be "installed" on your device and works offline.
+*   **Customizable Themes:** Switch between multiple visual themes to customize your experience.
 
 ---
 
 ### How to Play
 
-1.  **Start the Game:** Open the `index.html` file in a browser on two separate devices. You will need a simple local web server for this to work correctly due to browser security restrictions.
-2.  **Player 1 (Host):**
-    * Select your "Connection Method" (QR Code Scan is recommended).
-    * Choose "Player 1 (Host)" as your role.
-    * Click **"Create Offer"** to generate the QR codes.
-    * Display the QR codes to Player 2. Use the "Next" and "Previous" buttons to navigate between the chunks.
-3.  **Player 2 (Joiner):**
-    * Select your "Connection Method" (QR Code Scan is recommended).
-    * Choose "Player 2 (Joiner)" as your role.
-    * Click **"Start QR Scanner"** and point your camera at Player 1's screen to scan all the QR codes.
-    * Once the scan is complete, an answer will be generated. Show the answer QR codes to Player 1.
-4.  **Complete the Connection:** Player 1 scans the answer QR codes from Player 2's screen. The connection will then be established.
-5.  **Enjoy:** Once connected, any move you make on the grid will be instantly reflected on your partner's screen!
+#### Solo Play
+
+Playing by yourself is simple:
+1.  Open the application.
+2.  Use the "Game" dropdown to select a game (e.g., Black Jack, Connect 4).
+3.  Configure any game-specific options (like difficulty or number of decks).
+4.  Click "New Game" (or "Deal" in Black Jack) to start playing!
+
+#### Multiplayer
+
+You will need a simple local web server to run `index.html` due to browser security restrictions for WebRTC.
+
+1.  **Player 1 (Host):**
+    *   Open the app and click the "P2P Config" button.
+    *   Ensure your role is "Player 1 (Host)".
+    *   Select a "Connection Method". **PeerJS** is the easiest.
+    *   Your unique **Host ID** will be displayed. Share this ID with other players.
+    *   Wait for players to connect.
+
+2.  **Player 2+ (Joiner):**
+    *   Open the app and click the "P2P Config" button.
+    *   Change your role to "Player 2 (Joiner)".
+    *   Select the same "Connection Method" as the host.
+    *   Enter the **Host ID** you received from Player 1 and click "Connect".
+
+3.  **Start Playing:**
+    *   Once connected, the host can create teams from the config screen.
+    *   All players can then join a team to start playing. Moves are synchronized in real-time!
 
 ---
 
 ### Technical Details
 
 #### Peer-to-Peer Communication
-The core of this application is a **WebRTC Data Channel**, which provides a low-latency, secure, and direct connection between the two browsers. This eliminates the need for a persistent central server, reducing hosting costs and potential points of failure.
+The application's multiplayer functionality is powered by **WebRTC Data Channels**. This provides a low-latency, secure, and direct connection between browsers, removing the need for a central game server.
 
-#### QR Code Signaling
-WebRTC requires a "signaling" phase to exchange session metadata (SDP) between peers. This project uses a novel approach to solve this without a server:
-* The large SDP data is split into smaller, manageable chunks.
-* Each chunk is encoded into a separate QR code, with an embedded index (e.g., `[1/5]:DATA`) to prevent re-scanning and ensure proper reassembly.
-* The `html5-qrcode` library handles camera access and scanning, while `qrcode.js` generates the QR codes.
+#### Signaling
+WebRTC requires a "signaling" phase to exchange session metadata (SDP) between peers to establish a connection. This project supports three methods:
+*   **PeerJS:** A service that simplifies the initial WebRTC handshake. The host gets a unique ID, and joiners use it to connect.
+*   **QR Code:** A novel, serverless approach where the large SDP data is split into smaller chunks. Each chunk is encoded into a QR code with an index (`[1/5]:DATA`) for reassembly.
+*   **Manual:** A fallback method where SDP data is manually copied and pasted between players.
 
 #### Game Logic
-The game logic is handled entirely on the client side. The `scripts.js` file manages the following:
-* **Real-Time Sync:** Moves are sent as JSON objects through the WebRTC data channel and processed in real-time.
-* **Input Handling:** Cells can be filled by clicking to cycle through numbers 1-9.
-* **Validation:** The grid is validated with every move to check for conflicts in rows, columns, and 3x3 subgrids. Conflicting cells are highlighted in red.
-* **UI/UX:** The interface includes visual cues for solved puzzles, active cells, and highlights for all cells containing the same number.
+All game logic is handled on the client side within modular JavaScript files.
+*   **`game_manager.js`:** Dynamically loads and manages the active game module.
+*   **`games/*.js`:** Each game (Sudoku, Connect 4, etc.) has its own file containing its unique rules, state management, and UI rendering logic.
+*   **Real-Time Sync:** In multiplayer, moves are sent as JSON objects through the WebRTC data channel. The host acts as the authority, processing moves and broadcasting the updated game state to all connected peers.
