@@ -42,11 +42,6 @@ export function createGrid() {
     infoPanel.innerHTML = '<h3>Sector Status</h3><p>Select a system to view details.</p>';
 
     const gameState = appState.soloGameState;
-    if (!gameState || gameState.systems.length === 0) {
-        console.log("No game state found, loading new puzzle.");
-        loadPuzzle();
-        return;
-    }
 
     gameState.systems.forEach(system => {
         const starDiv = document.createElement('div');
@@ -56,7 +51,10 @@ export function createGrid() {
         starDiv.title = system.name;
 
         starDiv.addEventListener('click', () => {
-            // For now, clicking any star will trigger a combat encounter
+            renderInfoPanelForStarmap(system);
+        });
+
+        starDiv.addEventListener('dblclick', () => {
             startCombat(system);
         });
 
