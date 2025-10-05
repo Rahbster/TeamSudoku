@@ -9,6 +9,7 @@ import { clearTextbox, createQrCodeChunks, playBeepSound, playRemoteMoveSound, d
 import { speakWord } from './games/spellingbee.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
 import { createOffer, createAnswer, processAndBroadcastMove } from './webrtc.js';
+import { checkGridState, clearAllHighlights, highlightConflictingCells, highlightMatchingCells, isMoveValid, validatePuzzle } from './games/sudoku.js';
 
 
 /**
