@@ -9,6 +9,7 @@ const localUrlsToCache = [
     './js/games/connect4.js',
     './js/games/wordsearch.js',
     './js/games/spellingbee.js',
+    './js/games/memorymatch.js',
     './js/generator.js',
     './js/timer.js',
     './js/misc.js',

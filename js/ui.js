@@ -578,19 +578,24 @@ export function initializeEventListeners() {
         // Show the Connect 4 mode selector only when Connect 4 is chosen
         const isConnect4 = selectedGame === 'connect4';
         const isWordSearch = selectedGame === 'wordsearch';
+        const isMemoryMatch = selectedGame === 'memorymatch';
         const isSpellingBee = selectedGame === 'spellingbee';
         const isSudoku = selectedGame === 'sudoku';
         dom.connect4ModeContainer.style.display = isConnect4 ? '' : 'none';
         dom.wordsearchConfigContainer.style.display = isWordSearch ? '' : 'none';
         dom.spellingbeeConfigContainer.style.display = isSpellingBee ? '' : 'none';
-        // Show difficulty for Sudoku and Connect 4, hide for others
-        dom.difficultySelector.parentElement.style.display = (isSudoku || isConnect4) ? '' : 'none';
+        dom.memorymatchConfigContainer.style.display = isMemoryMatch ? '' : 'none';
+        // Show difficulty for games that use it.
+        dom.difficultySelector.parentElement.style.display = (isSudoku || isConnect4 || isMemoryMatch) ? '' : 'none';
     });
     dom.connect4ModeSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuConnect4Mode', event.target.value);
     });
     dom.spellingbeeModeSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuSpellingBeeMode', event.target.value);
+    });
+    dom.memorymatchModeSelect.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuMemoryMatchMode', event.target.value);
     });
     dom.voiceSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuVoice', event.target.value);
@@ -994,6 +999,8 @@ export async function initializeSoloGame() {
         // The getInitialState function for each game will read its specific mode from the DOM
         appState.soloGameState = gameModule.getInitialState(difficulty, gameMode);
 
+        // After loading the game module, explicitly create its grid.
+        createGrid();
     }
 }
 
@@ -1031,6 +1038,9 @@ function showInstructions() {
             } else {
                 instructionText = 'Listen to the word, then drag the correct letters into the correct order. There are extra letters!';
             }
+            break;
+        case 'memorymatch':
+            instructionText = 'Click on cards to flip them over. Work with your team to find all the matching pairs!';
             break;
         default:
             instructionText = 'Select a game and start playing!';

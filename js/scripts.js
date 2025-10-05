@@ -140,6 +140,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.spellingBeeAnswerArea = document.getElementById('spelling-bee-answer-area');
     dom.spellingbeeConfigContainer = document.getElementById('spellingbee-config-container');
     dom.spellingbeeModeSelect = document.getElementById('spellingbee-mode-select');
+    dom.memorymatchConfigContainer = document.getElementById('memorymatch-config-container');
+    dom.memorymatchModeSelect = document.getElementById('memorymatch-mode-select');
     dom.voiceSelect = document.getElementById('voice-select');
     dom.spellingBeeWordListInput = document.getElementById('spelling-bee-word-list-input');
     dom.wordCountInput = document.getElementById('word-count-input');
@@ -237,6 +239,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedSpellingBeeMode = localStorage.getItem('sudokuSpellingBeeMode');
     if (savedSpellingBeeMode) {
         dom.spellingbeeModeSelect.value = savedSpellingBeeMode;
+    }
+
+    // Load saved memory match mode
+    const savedMemoryMatchMode = localStorage.getItem('sudokuMemoryMatchMode');
+    if (savedMemoryMatchMode) {
+        dom.memorymatchModeSelect.value = savedMemoryMatchMode;
     }
 
     // Saved voice preference will be loaded by the populateVoiceList function
