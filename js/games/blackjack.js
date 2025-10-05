@@ -4,12 +4,13 @@
 
 import { dom, appState } from '../scripts.js';
 import { showToast } from '../ui.js';
+import { startTimer, stopTimer } from '../timer.js';
 
 const SUITS = ['♥', '♦', '♣', '♠'];
 const VALUES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
 export function initialize() {
-    console.log("Black Jack Initialized");
+    startTimer(); // Start the session timer
     dom.numberPad.classList.add('hidden');
     dom.sudokuGridArea.classList.add('hidden');
     dom.pencilButton.classList.add('hidden');
@@ -23,7 +24,7 @@ export function initialize() {
 }
 
 export function cleanup() {
-    console.log("Black Jack Cleanup");
+    stopTimer(); // Stop the session timer
     dom.blackjackArea.classList.add('hidden');
     document.body.classList.remove('blackjack-active');
 }
@@ -272,7 +273,8 @@ function renderActionButtons() {
     const activeHand = gameState.playerHands[gameState.activeHandIndex];
     const canSplit = activeHand.cards.length === 2 && // Must be the first two cards
                      activeHand.cards[0].value === activeHand.cards[1].value && // Cards must have the same rank (e.g., two 'K's)
-                     gameState.balance >= activeHand.bet;
+                     gameState.balance >= activeHand.bet &&
+                     Number.isInteger(activeHand.bet); // Prevent splitting on fractional bets (e.g., after a Blackjack payout)
 
     dom.bettingControls.innerHTML = ''; // Clear betting buttons
     dom.blackjackActions.innerHTML = `
@@ -297,10 +299,14 @@ function hit() {
     activeHand.cards.push(gameState.deck.pop());
     renderHands();
 
-    if (calculateHandValue(activeHand.cards) > 21) {
+    const newScore = calculateHandValue(activeHand.cards);
+    if (newScore > 21) {
         activeHand.isBusted = true;
         showToast("Bust!", "error");
         moveToNextHandOrEnd();
+    } else if (newScore === 21) {
+        // Automatically stand if the player hits to 21.
+        stand();
     }
 }
 
@@ -332,6 +338,11 @@ function split() {
 
     renderHands();
     renderActionButtons();
+
+    // After a split, if the first new hand is 21, automatically stand.
+    if (calculateHandValue(gameState.playerHands[gameState.activeHandIndex].cards) === 21) {
+        stand();
+    }
 }
 
 function moveToNextHandOrEnd() {
