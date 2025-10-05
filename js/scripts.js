@@ -135,6 +135,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.wordSearchListArea = document.getElementById('word-search-list-area');
     dom.wordsearchConfigContainer = document.getElementById('wordsearch-config-container');
     dom.customWordListInput = document.getElementById('custom-word-list-input');
+    dom.spellingBeeArea = document.getElementById('spelling-bee-area');
+    dom.spellingBeeControls = document.getElementById('spelling-bee-controls');
+    dom.spellingBeeAnswerArea = document.getElementById('spelling-bee-answer-area');
+    dom.spellingbeeConfigContainer = document.getElementById('spellingbee-config-container');
+    dom.spellingbeeModeSelect = document.getElementById('spellingbee-mode-select');
+    dom.voiceSelect = document.getElementById('voice-select');
+    dom.spellingBeeWordListInput = document.getElementById('spelling-bee-word-list-input');
     dom.wordCountInput = document.getElementById('word-count-input');
     dom.wordList = document.getElementById('word-list');
     dom.body = document.body;
@@ -224,6 +231,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedWordCount = localStorage.getItem('sudokuWordSearchCount');
     if (savedWordCount) {
         dom.wordCountInput.value = savedWordCount;
+    }
+
+    // Load saved spelling bee mode
+    const savedSpellingBeeMode = localStorage.getItem('sudokuSpellingBeeMode');
+    if (savedSpellingBeeMode) {
+        dom.spellingbeeModeSelect.value = savedSpellingBeeMode;
+    }
+
+    // Saved voice preference will be loaded by the populateVoiceList function
+    // once the voices are available from the browser.
+    // const savedVoice = localStorage.getItem('sudokuVoice');
+    // if (savedVoice) {
+    //     dom.voiceSelect.value = savedVoice;
+    // }
+
+    // Load saved spelling bee word list
+    const savedSpellingBeeWordList = localStorage.getItem('sudokuSpellingBeeWordList');
+    if (savedSpellingBeeWordList) {
+        dom.spellingBeeWordListInput.value = savedSpellingBeeWordList;
     }
 
     // Load saved player name or generate a default one

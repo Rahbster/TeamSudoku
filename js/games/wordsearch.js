@@ -31,6 +31,7 @@ export function initialize() {
 export function cleanup() {
     console.log("Word Search Cleanup");
     dom.wordSearchListArea.classList.add('hidden');
+    dom.sudokuGridArea.classList.add('hidden');
 }
 
 export function createGrid() {

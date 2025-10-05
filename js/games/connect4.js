@@ -34,7 +34,7 @@ export function initialize() {
  */
 export function cleanup() {
     console.log("Connect 4 Cleanup");
-    // Nothing to clean up for Connect 4 at the moment.
+    dom.sudokuGridArea.classList.add('hidden');
 }
 
 export function createGrid() {

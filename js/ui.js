@@ -156,6 +156,13 @@ export function showWinnerScreen(winningTeam, losingTeam) {
         dom.winnerText.textContent = "It's a tie!";
     } else if (losingTeam) {
         dom.winnerText.textContent = `Game Over! Team "${losingTeam}" made a move that created a line.`;
+    } else if (winningTeam === 'You' && appState.soloGameState?.gameMode) {
+        // Check if it's a spelling bee game to show the score
+        if (dom.gameSelector.value === 'spellingbee') {
+            dom.winnerText.textContent = `You got ${appState.soloGameState.score} of ${appState.soloGameState.words.length} words correct!`;
+        } else {
+            dom.winnerText.textContent = 'You have won the game!';
+        }
     } else if (winningTeam === 'You') {
         dom.winnerText.textContent = 'You have won the game!';
     } else if (winningTeam) {
@@ -173,10 +180,14 @@ export function showWinnerScreen(winningTeam, losingTeam) {
 /**
  * Displays a short-lived toast notification at the bottom of the screen.
  * @param {string} message - The message to display in the toast.
+ * @param {'info' | 'error'} [type='info'] - The type of toast to display.
  */
-export function showToast(message) {
+export function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = 'toast-notification';
+    if (type === 'error') {
+        toast.classList.add('error');
+    }
     toast.textContent = message;
 
     document.body.appendChild(toast);
@@ -567,14 +578,25 @@ export function initializeEventListeners() {
         // Show the Connect 4 mode selector only when Connect 4 is chosen
         const isConnect4 = selectedGame === 'connect4';
         const isWordSearch = selectedGame === 'wordsearch';
+        const isSpellingBee = selectedGame === 'spellingbee';
         const isSudoku = selectedGame === 'sudoku';
         dom.connect4ModeContainer.style.display = isConnect4 ? '' : 'none';
         dom.wordsearchConfigContainer.style.display = isWordSearch ? '' : 'none';
-        // Show difficulty for Sudoku and Connect 4, hide for Word Search
+        dom.spellingbeeConfigContainer.style.display = isSpellingBee ? '' : 'none';
+        // Show difficulty for Sudoku and Connect 4, hide for others
         dom.difficultySelector.parentElement.style.display = (isSudoku || isConnect4) ? '' : 'none';
     });
     dom.connect4ModeSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuConnect4Mode', event.target.value);
+    });
+    dom.spellingbeeModeSelect.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuSpellingBeeMode', event.target.value);
+    });
+    dom.voiceSelect.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuVoice', event.target.value);
+    });
+    dom.spellingBeeWordListInput.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuSpellingBeeWordList', event.target.value);
     });
     // Save the custom word list when the user is done editing it
     dom.customWordListInput.addEventListener('change', (event) => {
@@ -600,6 +622,8 @@ export function initializeEventListeners() {
         loadPuzzle(dom.difficultySelector.value, null, false); // Do not reset teams
         dom.winnerModal.classList.add('hidden'); // Hide winner modal
     });
+
+    populateVoiceList();
 
     // Event listener for the theme selector
     dom.themeSelector.addEventListener('change', handleThemeChange);
@@ -957,6 +981,9 @@ async function processLocalTeamJoin(joinData) {
  */
 export async function initializeSoloGame() {
     if (appState.isInitiator && !appState.playerTeam) {
+        // Hide all game-specific areas first
+        dom.wordSearchListArea.classList.add('hidden');
+
         const selectedGame = dom.gameSelector.value;
         await loadGame(selectedGame);
 
@@ -964,10 +991,9 @@ export async function initializeSoloGame() {
         const gameModule = await import(`./games/${selectedGame}.js`);
         const difficulty = dom.difficultySelector.value;
         const gameMode = dom.connect4ModeSelect.value;
+        // The getInitialState function for each game will read its specific mode from the DOM
         appState.soloGameState = gameModule.getInitialState(difficulty, gameMode);
 
-        // After loading the game module, explicitly create its grid.
-        createGrid();
     }
 }
 
@@ -994,6 +1020,18 @@ function showInstructions() {
         case 'wordsearch':
             instructionText = 'Click and drag to highlight words in the grid. Find all the words in the list to win. This is a cooperative game!';
             break;
+        case 'spellingbee':
+            const spellingBeeMode = dom.spellingbeeModeSelect.value;
+            if (spellingBeeMode === 'multiple-choice') {
+                instructionText = 'Listen to the word, then select the correct spelling from the options provided.';
+            } else if (spellingBeeMode === 'type-it-out') {
+                instructionText = 'Listen to the word, then type the correct spelling and press Enter or click Submit.';
+            } else if (spellingBeeMode === 'anagram') {
+                instructionText = 'Listen to the word, then drag the letters into the correct order to spell it.';
+            } else {
+                instructionText = 'Listen to the word, then drag the correct letters into the correct order. There are extra letters!';
+            }
+            break;
         default:
             instructionText = 'Select a game and start playing!';
     }
@@ -1005,6 +1043,45 @@ function showInstructions() {
     setTimeout(() => {
         dom.instructionsModal.classList.add('hidden');
     }, 4000);
+}
+
+/**
+ * Populates the voice selection dropdown with available speech synthesis voices.
+ */
+function populateVoiceList() {
+    if (typeof speechSynthesis === 'undefined') {
+        dom.voiceSelect.innerHTML = '<option value="">Speech Synthesis not supported</option>';
+        return;
+    }
+
+    const loadVoices = () => {
+        const voices = speechSynthesis.getVoices();
+        dom.voiceSelect.innerHTML = ''; // Clear existing options
+
+        if (voices.length === 0) {
+            dom.voiceSelect.innerHTML = '<option value="">No voices found</option>';
+            return;
+        }
+
+        voices
+            .filter(voice => voice.lang.startsWith('en')) // Filter for English voices
+            .forEach(voice => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.setAttribute('value', voice.name);
+                dom.voiceSelect.appendChild(option);
+            });
+        
+        // Set the dropdown to the saved voice, if any
+        const savedVoice = localStorage.getItem('sudokuVoice');
+        if (savedVoice) dom.voiceSelect.value = savedVoice;
+    };
+
+    // The list of voices is loaded asynchronously.
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    loadVoices(); // Also call it immediately in case they are already loaded.
 }
 /**
  * Toggles the visibility of the data channel list and updates the button text.
