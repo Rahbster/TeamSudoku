@@ -999,8 +999,6 @@ export async function initializeSoloGame() {
         // The getInitialState function for each game will read its specific mode from the DOM
         appState.soloGameState = gameModule.getInitialState(difficulty, gameMode);
 
-        // After loading the game module, explicitly create its grid.
-        createGrid();
     }
 }
 
