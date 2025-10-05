@@ -289,11 +289,20 @@ button:disabled, select:disabled, .number-btn:disabled {
     gap: 8px; /* Add a gap between the buttons */
 }
 
+/* Position the back to game button at the top of the config screen */
+#config-screen {
+    position: relative; /* Needed for absolute positioning of children */
+    padding-top: 60px; /* Add padding to prevent content from overlapping the button */
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+}
+
 /* Halo Waypoint-inspired style for the "Back to Game" button */
 #back-to-game-btn {
     background: linear-gradient(180deg, #10283B 0%, #0A1822 100%);
     border: 1px solid #2495B4;
-    border-radius: 9999px; /* Creates the pill shape */
+    border-radius: 0 0 25px 25px; /* Sharp top corners, rounded bottom corners */
     box-shadow: 0px 0px 10px rgba(36, 149, 180, 0.5);
     color: #FFFFFF;
     font-family: sans-serif; /* A clean sans-serif font matches the style well */
@@ -303,13 +312,17 @@ button:disabled, select:disabled, .number-btn:disabled {
     font-size: 1rem;
     clip-path: none; /* Remove any clip-path from theme styles */
     justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10; /* Ensure it's above other config content */
 }
 
 #back-to-game-btn:hover {
     background: linear-gradient(180deg, #163852 0%, #0F2433 100%);
     box-shadow: 0px 0px 15px rgba(36, 149, 180, 0.7);
     border-color: #3ccde8;
-    transform: translateY(-1px); /* A more subtle hover effect */
 }
 
 /* Ensure host-only buttons are hidden by default with higher specificity */

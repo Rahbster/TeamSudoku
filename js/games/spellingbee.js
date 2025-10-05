@@ -2,14 +2,16 @@
 // Spelling Bee Game Logic
 //==============================
 
-import { startTimer } from '../timer.js';
+import { startTimer, stopTimer } from '../timer.js';
 import { dom, appState } from '../scripts.js';
 import { showWinnerScreen, showToast } from '../ui.js';
 
 const WORD_LIST = ["COOPERATIVE", "ASSISTANT", "ENGINEERING", "JAVASCRIPT", "SYNTHESIS", "BROWSER", "OFFLINE", "CHALLENGE"];
 
 export function initialize() {
-    console.log("Spelling Bee Initialized");
+    // Ensure the main "New Game" button is correctly wired up for Spelling Bee.
+    dom.newPuzzleButton.onclick = loadPuzzle;
+
     dom.numberPad.classList.add('hidden');
     dom.pencilButton.classList.add('hidden');
     dom.sudokuGridArea.classList.add('hidden'); // Hide the main grid
@@ -19,7 +21,7 @@ export function initialize() {
 }
 
 export function cleanup() {
-    console.log("Spelling Bee Cleanup");
+    stopTimer();
     dom.spellingBeeArea.classList.add('hidden');
 }
 
@@ -140,7 +142,12 @@ function setupAnagramMode() {
             letters.push(alphabet[Math.floor(Math.random() * alphabet.length)]);
         }
     }
-    letters.sort(() => 0.5 - Math.random()); // Shuffle the letters
+
+    // Shuffle the letters, and re-shuffle if it accidentally spells the correct word.
+    // This is only relevant for the standard anagram mode, as hard mode has extra letters.
+    do {
+        letters.sort(() => 0.5 - Math.random());
+    } while (!isHardMode && letters.join('') === correctWord);
 
     answerArea.innerHTML = `
         <div class="anagram-container">
@@ -153,6 +160,10 @@ function setupAnagramMode() {
     const letterPool = document.getElementById('anagram-letter-pool');
     const dropZone = document.getElementById('anagram-drop-zone');
 
+    // --- Touch-based Drag and Drop Implementation ---
+    let draggedTile = null;
+    let startX, startY, offsetX, offsetY;
+
     letters.forEach((letter, index) => {
         const tile = document.createElement('div');
         tile.textContent = letter;
@@ -164,6 +175,52 @@ function setupAnagramMode() {
             tile.classList.add('dragging');
         });
         tile.addEventListener('dragend', () => tile.classList.remove('dragging'));
+
+        // Touch events for mobile
+        tile.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            draggedTile = tile;
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            const rect = tile.getBoundingClientRect();
+            offsetX = startX - rect.left;
+            offsetY = startY - rect.top;
+
+            tile.style.position = 'fixed';
+            tile.style.zIndex = '1000';
+            tile.style.left = `${startX - offsetX}px`;
+            tile.style.top = `${startY - offsetY}px`;
+            tile.classList.add('dragging');
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!draggedTile) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            draggedTile.style.left = `${touch.clientX - offsetX}px`;
+            draggedTile.style.top = `${touch.clientY - offsetY}px`;
+        }, { passive: false });
+
+        document.addEventListener('touchend', (e) => {
+            if (!draggedTile) return;
+
+            // Temporarily hide the dragged tile to find what's underneath
+            draggedTile.style.visibility = 'hidden';
+
+            const touch = e.changedTouches[0];
+            const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+
+            // Reset styles
+            draggedTile.style.position = '';
+            draggedTile.style.zIndex = '';
+            draggedTile.style.visibility = 'visible'; // Make it visible again
+            draggedTile.classList.remove('dragging');
+
+            handleDrop(draggedTile, dropTarget);
+            draggedTile = null;
+        });
+
         letterPool.appendChild(tile);
     });
 
@@ -171,25 +228,32 @@ function setupAnagramMode() {
     dropZone.addEventListener('dragover', allowDrop);
     letterPool.addEventListener('dragover', allowDrop);
 
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        const tileId = e.dataTransfer.getData('text');
-        const draggedTile = document.getElementById(tileId);
-        if (!draggedTile) return;
+    const handleDrop = (tile, dropTarget) => {
+        if (!tile) return;
 
-        const afterElement = getDragAfterElement(dropZone, e.clientX);
-        if (afterElement == null) {
-            dropZone.appendChild(draggedTile);
+        if (dropTarget && dropTarget.closest('#anagram-drop-zone')) {
+            const afterElement = getDragAfterElement(dropZone, parseFloat(tile.style.left) + offsetX);
+            if (afterElement == null) {
+                dropZone.appendChild(tile);
+            } else {
+                dropZone.insertBefore(tile, afterElement);
+            }
         } else {
-            dropZone.insertBefore(draggedTile, afterElement);
+            // If dropped anywhere else, return to the letter pool
+            letterPool.appendChild(tile);
         }
         dropZone.classList.remove('drag-over');
-    });
-    letterPool.addEventListener('drop', (e) => {
+    };
+
+    dropZone.addEventListener('drop', (e) => { // Mouse drop
         e.preventDefault();
         const tileId = e.dataTransfer.getData('text');
-        const tile = document.getElementById(tileId);
-        if (tile) letterPool.appendChild(tile);
+        handleDrop(document.getElementById(tileId), e.target);
+    });
+    letterPool.addEventListener('drop', (e) => { // Mouse drop
+        e.preventDefault();
+        const tileId = e.dataTransfer.getData('text');
+        handleDrop(document.getElementById(tileId), e.target);
     });
 
     // Visual feedback for dragging over the drop zone

@@ -121,6 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.signalingMethodSelect = document.getElementById('signaling-method');
     dom.newPuzzleButton = document.getElementById('new-puzzle-btn');
     dom.hostButton = document.getElementById('host-btn');
+    dom.undoBtn = document.getElementById('undo-btn');
     dom.configBtn = document.getElementById('config-btn');
     dom.instructionsModal = document.getElementById('instructions-modal');
     dom.backToGameBtn = document.getElementById('back-to-game-btn');
@@ -231,6 +232,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedConnect4Mode = localStorage.getItem('sudokuConnect4Mode');
     if (savedConnect4Mode) {
         dom.connect4ModeSelect.value = savedConnect4Mode;
+    }
+
+    // Load saved difficulty
+    const savedDifficulty = localStorage.getItem('sudokuDifficulty');
+    if (savedDifficulty) {
+        dom.difficultySelector.value = savedDifficulty;
     }
 
     // Load saved custom word list

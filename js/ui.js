@@ -583,11 +583,18 @@ async function createAnswerQr(connection) {
  */
 export function initializeEventListeners() {
     // Event listeners for configuration drop-downs
-    dom.signalingMethodSelect.addEventListener('change', toggleSignalingUI);
-    dom.playerRoleSelect.addEventListener('change', toggleSignalingUI);
+    dom.signalingMethodSelect.addEventListener('change', (event) => {
+        toggleSignalingUI();
+        showToast(`Connection Method: ${event.target.options[event.target.selectedIndex].text}`);
+    });
+    dom.playerRoleSelect.addEventListener('change', (event) => {
+        toggleSignalingUI();
+        showToast(`Player Role: ${event.target.options[event.target.selectedIndex].text}`);
+    });
     dom.gameSelector.addEventListener('change', (event) => {
         const selectedGame = event.target.value;
         localStorage.setItem('sudokuGameType', selectedGame);
+        showToast(`Game changed to: ${event.target.options[event.target.selectedIndex].text}`);
         debugLog(`Game selection changed to: ${selectedGame}. Re-initializing solo game view.`);
         // Show the Connect 4 mode selector only when Connect 4 is chosen
         const isConnect4 = selectedGame === 'connect4';
@@ -602,22 +609,30 @@ export function initializeEventListeners() {
         dom.blackjackConfigContainer.style.display = isBlackjack ? '' : 'none';
         dom.memorymatchConfigContainer.style.display = isMemoryMatch ? '' : 'none';
         // Show difficulty for games that use it.
-        dom.difficultySelector.parentElement.style.display = (isSudoku || isConnect4 || isMemoryMatch) ? '' : 'none';
+        dom.difficultySelector.parentElement.parentElement.style.display = (isSudoku || isConnect4 || isMemoryMatch) ? '' : 'none';
 
         // Re-initialize the solo game view to reflect the new game choice immediately.
         initializeSoloGame();
     });
     dom.connect4ModeSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuConnect4Mode', event.target.value);
+        showToast(`Connect 4 Mode: ${event.target.options[event.target.selectedIndex].text}`);
+    });
+    dom.difficultySelector.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuDifficulty', event.target.value);
+        showToast(`Difficulty set to: ${event.target.options[event.target.selectedIndex].text}`);
     });
     dom.spellingbeeModeSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuSpellingBeeMode', event.target.value);
+        showToast(`Spelling Bee Mode: ${event.target.options[event.target.selectedIndex].text}`);
     });
     dom.memorymatchModeSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuMemoryMatchMode', event.target.value);
+        showToast(`Memory Match Mode: ${event.target.options[event.target.selectedIndex].text}`);
     });
     dom.deckCountSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuDeckCount', event.target.value);
+        showToast(`Deck Count set to: ${event.target.options[event.target.selectedIndex].text}`);
     });
     dom.voiceSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuVoice', event.target.value);
@@ -629,6 +644,7 @@ export function initializeEventListeners() {
     });
     dom.spellingBeeWordListInput.addEventListener('change', (event) => {
         localStorage.setItem('sudokuSpellingBeeWordList', event.target.value);
+        showToast(`Spelling Bee word list updated.`);
     });
     // Save the custom word list when the user is done editing it
     dom.customWordListInput.addEventListener('change', (event) => {
@@ -640,16 +656,11 @@ export function initializeEventListeners() {
         words.sort();
         input.value = words.join('\n');
         localStorage.setItem('sudokuWordSearchList', input.value);
+        showToast(`Word Search list updated.`);
     });
     dom.wordCountInput.addEventListener('change', (event) => {
         localStorage.setItem('sudokuWordSearchCount', event.target.value);
-    });
-
-    // Event listeners for game-related buttons
-    dom.newPuzzleWinnerBtn.addEventListener('click', () => {
-        debugLog(`'New Puzzle' button clicked. Calling generic loadPuzzle.`);
-        loadPuzzle(dom.difficultySelector.value, null, false); // Do not reset teams
-        dom.winnerModal.classList.add('hidden'); // Hide winner modal
+        showToast(`Word count set to: ${event.target.value}`);
     });
 
     populateVoiceList();

@@ -13,12 +13,39 @@ const COLS = 7;
 // Initialize the AI Web Worker
 const aiWorker = new Worker('./js/games/connect4-worker.js');
 
+aiWorker.onmessage = function(e) {
+    debugLog('Received message from AI worker:', e.data);
+    const { bestMove } = e.data;
+    if (bestMove !== null) {
+        // A short delay to simulate AI thinking
+        setTimeout(() => {
+            debugLog(`AI is making a move in column: ${bestMove}`);
+            makeSoloMove(bestMove, 2); // AI is always player 2
+            // Re-enable player input
+            dom.sudokuGrid.style.pointerEvents = 'auto';
+            findAndHighlightImminentThreats(appState.soloGameState.board);
+        }, 500);
+    } else {
+        dom.sudokuGrid.style.pointerEvents = 'auto';
+        debugLog('AI worker returned no valid moves.');
+    }
+};
+
 export function initialize() {
     debugLog("Connect 4 Initialized");
     // Hide UI elements not used by Connect 4
     dom.numberPad.classList.add('hidden');
     dom.pencilButton.classList.add('hidden');
     dom.sudokuGridArea.classList.remove('hidden'); // Ensure the grid container is visible
+
+    // Show undo button only for solo standard mode
+    if (appState.isInitiator && !appState.playerTeam && dom.connect4ModeSelect.value === 'standard') {
+        dom.undoBtn.style.display = '';
+        dom.undoBtn.onclick = undoLastMoves;
+    } else {
+        dom.undoBtn.style.display = 'none';
+    }
+
     document.querySelectorAll('.host-only').forEach(el => {
         if (el.id === 'difficulty-select') {
             el.style.display = 'none';
@@ -48,6 +75,7 @@ export function initialize() {
 export function cleanup() {
     debugLog("Connect 4 Cleanup: Hiding sudoku-grid-area.");
     dom.sudokuGridArea.classList.add('hidden');
+    dom.undoBtn.style.display = 'none'; // Hide undo button on cleanup
 }
 
 export function createGrid() {
@@ -85,7 +113,11 @@ async function handleCellClick(event) {
                 // Disable player input while AI is "thinking"
                 dom.sudokuGrid.style.pointerEvents = 'none'; 
                 // Offload the AI move calculation to the Web Worker
-                aiWorker.postMessage({ board: appState.soloGameState.board });
+                debugLog(`Posting board to AI worker. Difficulty: ${appState.soloGameState.difficulty}`);
+                aiWorker.postMessage({
+                    board: appState.soloGameState.board,
+                    difficulty: appState.soloGameState.difficulty
+                });
             }
         } else {
             // --- Cooperative Sabotage Logic (Solo) ---
@@ -94,7 +126,8 @@ async function handleCellClick(event) {
             if (playerMoveSuccessful && !appState.winner) {
                 dom.sudokuGrid.style.pointerEvents = 'none';
                 setTimeout(() => {
-                    const aiColumn = findBestSabotageMove(appState.soloGameState.board);
+                    // Pass a deep copy of the board to the AI to prevent state mutation.
+                    const aiColumn = findBestSabotageMove(JSON.parse(JSON.stringify(appState.soloGameState.board)));
                     if (aiColumn !== null) {
                         makeSoloSabotageMove(aiColumn, 2); // AI is player 2
                     } else {
@@ -113,21 +146,6 @@ async function handleCellClick(event) {
 
     // --- Team Play Logic ---
     if (!appState.playerTeam) return; // If not solo and not in a team, do nothing.
-
-aiWorker.onmessage = function(e) {
-    const { bestMove } = e.data;
-    if (bestMove !== null) {
-        // A short delay to simulate AI thinking
-        setTimeout(() => {
-            makeSoloMove(bestMove, 2); // AI is always player 2
-            // Re-enable player input
-            dom.sudokuGrid.style.pointerEvents = 'auto';
-            findAndHighlightImminentThreats(appState.soloGameState.board);
-        }, 500);
-    } else {
-        dom.sudokuGrid.style.pointerEvents = 'auto';
-    }
-};
 
     const team = appState.teams[appState.playerTeam];
     if (team.gameState.turn !== appState.playerTeam) {
@@ -182,6 +200,7 @@ export function updateGridForTeam(teamName) {
 export function getInitialState(difficulty, gameMode) {
     return {
         board: Array(ROWS).fill(null).map(() => Array(COLS).fill(0)),
+        moveHistory: [], // To store {r, c} of moves for undo
         moves: 0,
         difficulty: difficulty || 'medium',
         gameMode: gameMode || 'standard', // Default to standard
@@ -359,14 +378,12 @@ function checkWinner(board, r, c, player) {
     // Check horizontal, vertical, and both diagonals
     const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
     for (const [dr, dc] of dirs) {
-        let count = 1;
         const line = [{ r, c }];
         // Check in one direction
         for (let i = 1; i < 4; i++) {
             const nr = r + dr * i;
             const nc = c + dc * i;
             if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr][nc] === player) {
-                count++;
                 line.push({ r: nr, c: nc });
             } else {
                 break;
@@ -377,13 +394,12 @@ function checkWinner(board, r, c, player) {
             const nr = r - dr * i;
             const nc = c - dc * i;
             if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr][nc] === player) {
-                count++;
                 line.push({ r: nr, c: nc });
             } else {
                 break;
             }
         }
-        if (count >= 4) return line;
+        if (line.length >= 4) return line;
     }
     return null;
 }
@@ -400,6 +416,7 @@ function makeSoloMove(col, playerNumber) {
 
     if (row !== -1) {
         board[row][col] = playerNumber;
+        appState.soloGameState.moveHistory.push({ r: row, c: col });
         appState.soloGameState.moves++;
 
         const cell = document.getElementById(`cell-${row}-${col}`);
@@ -435,6 +452,7 @@ function makeSoloSabotageMove(col, playerNumber) {
 
     if (row !== -1) {
         board[row][col] = playerNumber;
+        appState.soloGameState.moveHistory.push({ r: row, c: col });
         appState.soloGameState.moves++;
 
         const cell = document.getElementById(`cell-${row}-${col}`);
@@ -451,6 +469,41 @@ function makeSoloSabotageMove(col, playerNumber) {
         return true;
     }
     return false;
+}
+
+/**
+ * Reverts the last two moves (player and AI) in a solo game.
+ */
+function undoLastMoves() {
+    const gameState = appState.soloGameState;
+    if (!gameState || gameState.moveHistory.length < 2) {
+        showToast("Not enough moves to undo.", "info");
+        return;
+    }
+
+    // Stop any AI move that might be in progress
+    dom.sudokuGrid.style.pointerEvents = 'auto';
+
+    // Revert the last two moves
+    for (let i = 0; i < 2; i++) {
+        const lastMove = gameState.moveHistory.pop();
+        if (lastMove) {
+            const { r, c } = lastMove;
+            // Update the board state
+            gameState.board[r][c] = 0;
+            gameState.moves--;
+
+            // Update the UI
+            const cell = document.getElementById(`cell-${r}-${c}`);
+            if (cell) {
+                cell.className = 'grid-cell empty';
+            }
+        }
+    }
+
+    // Clear any win/loss state and threat highlights
+    appState.winner = null;
+    clearThreatHighlights();
 }
 
 /**
