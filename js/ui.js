@@ -765,6 +765,14 @@ export function initializeEventListeners() {
         }
     });
 
+    // Event listener for the "New Game" button on the winner modal
+    dom.newPuzzleWinnerBtn.addEventListener('click', () => {
+        dom.winnerModal.classList.add('hidden');
+        // Programmatically click the main "New Game" button to start a new puzzle
+        // This reuses the logic already set up for the current game.
+        dom.newPuzzleButton.click();
+    });
+
     // Event listener for the pencil mode button
     dom.pencilButton.addEventListener('click', () => {
         appState.isPencilMode = !appState.isPencilMode;
@@ -1062,6 +1070,8 @@ function showInstructions() {
             const gameMode = dom.connect4ModeSelect.value;
             if (gameMode === 'standard') {
                 instructionText = 'You are Player 1 (Yellow/Theme Color 1). Play against the computer or a connected friend and try to get four of your pieces in a row.';
+            } else if (gameMode === 'five-in-a-row') {
+                instructionText = 'You are Player 1 (Yellow/Theme Color 1). Play against the computer or a friend to get five of your pieces in a row on a larger 9x6 board.';
             } else {
                 instructionText = 'Work with your teammates to fill the entire board without anyone getting four-in-a-row. A single line of four by any team results in a loss for everyone!';
             }

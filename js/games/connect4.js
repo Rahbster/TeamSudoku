@@ -4,29 +4,27 @@
 
 import { startTimer, stopTimer } from '../timer.js';
 import { dom, appState, dataChannels } from '../scripts.js';
-import { showWinnerScreen } from '../ui.js';
+import { showWinnerScreen, showToast } from '../ui.js';
 import { playRemoteMoveSound, debugLog } from '../misc.js';
-
-const ROWS = 6;
-const COLS = 7;
 
 // Initialize the AI Web Worker
 const aiWorker = new Worker('./js/games/connect4-worker.js');
 
 aiWorker.onmessage = function(e) {
     debugLog('Received message from AI worker:', e.data);
-    const { bestMove } = e.data;
+    const { bestMove, moveScores } = e.data;
     if (bestMove !== null) {
         // A short delay to simulate AI thinking
         setTimeout(() => {
             debugLog(`AI is making a move in column: ${bestMove}`);
             makeSoloMove(bestMove, 2); // AI is always player 2
+            displayAiScores(moveScores); // Display the new scores after the AI move
             // Re-enable player input
-            dom.sudokuGrid.style.pointerEvents = 'auto';
+            dom.gameGrid.style.pointerEvents = 'auto';
             findAndHighlightImminentThreats(appState.soloGameState.board);
-        }, 500);
+        }, 1000);
     } else {
-        dom.sudokuGrid.style.pointerEvents = 'auto';
+        dom.gameGrid.style.pointerEvents = 'auto';
         debugLog('AI worker returned no valid moves.');
     }
 };
@@ -80,17 +78,35 @@ export function cleanup() {
 
 export function createGrid() {
     debugLog('Connect4 createGrid called.');
-    dom.sudokuGrid.innerHTML = '';
-    dom.sudokuGrid.className = 'connect4-grid'; // Set class for Connect 4 styling
+    dom.gameGrid.innerHTML = '';
+    dom.gameGrid.className = 'connect4-grid'; // Set class for Connect 4 styling
+    
+    const { rows, cols } = getBoardDimensions();
+    dom.gameGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    dom.gameGrid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
 
-    for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
             const cell = document.createElement('div');
             cell.className = 'grid-cell empty';
             cell.id = `cell-${r}-${c}`;
             cell.dataset.col = c;
             cell.addEventListener('click', handleCellClick);
-            dom.sudokuGrid.appendChild(cell);
+            dom.gameGrid.appendChild(cell);
+        }
+    }
+
+    // For Five-in-a-Row, pre-fill the side columns
+    if (appState.soloGameState?.gameMode === 'five-in-a-row') {
+        const board = appState.soloGameState.board;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (board[r][c] !== 0) {
+                    const cell = document.getElementById(`cell-${r}-${c}`);
+                    cell.classList.remove('empty');
+                    cell.classList.add(board[r][c] === 1 ? 'player1' : 'player2');
+                }
+            }
         }
     }
 }
@@ -106,17 +122,24 @@ async function handleCellClick(event) {
 
         if (appState.soloGameState.gameMode === 'standard') {
             // --- Standard Player vs. AI Logic ---
+            debugLog(`Player is making a move in column: ${col}`);
             const playerMoveSuccessful = makeSoloMove(col, 1); // Player is always 1
 
             // If player's move was valid, the game isn't over, and no one is connected, let the AI take a turn.
             if (playerMoveSuccessful && !appState.winner && dataChannels.length === 0) {
+                clearAiScores(); // Clear old scores before AI thinks
+                // Check for threats immediately after the player's move.
+                findAndHighlightImminentThreats(appState.soloGameState.board);
+
                 // Disable player input while AI is "thinking"
-                dom.sudokuGrid.style.pointerEvents = 'none'; 
+                dom.gameGrid.style.pointerEvents = 'none';
                 // Offload the AI move calculation to the Web Worker
                 debugLog(`Posting board to AI worker. Difficulty: ${appState.soloGameState.difficulty}`);
                 aiWorker.postMessage({
                     board: appState.soloGameState.board,
-                    difficulty: appState.soloGameState.difficulty
+                    difficulty: appState.soloGameState.difficulty,
+                    gameMode: appState.soloGameState.gameMode,
+                    ...getGameRules(appState.soloGameState.gameMode)
                 });
             }
         } else {
@@ -124,7 +147,7 @@ async function handleCellClick(event) {
             const playerMoveSuccessful = makeSoloSabotageMove(col, 1);
 
             if (playerMoveSuccessful && !appState.winner) {
-                dom.sudokuGrid.style.pointerEvents = 'none';
+                dom.gameGrid.style.pointerEvents = 'none';
                 setTimeout(() => {
                     // Pass a deep copy of the board to the AI to prevent state mutation.
                     const aiColumn = findBestSabotageMove(JSON.parse(JSON.stringify(appState.soloGameState.board)));
@@ -136,7 +159,7 @@ async function handleCellClick(event) {
                         console.log("AI is trapped! Player wins.");
                         showWinnerScreen('all');
                     }
-                    dom.sudokuGrid.style.pointerEvents = 'auto';
+                    dom.gameGrid.style.pointerEvents = 'auto';
                 }, 500);
             }
         }
@@ -198,10 +221,26 @@ export function updateGridForTeam(teamName) {
 }
 
 export function getInitialState(difficulty, gameMode) {
+    const rules = getGameRules(gameMode);
+    const board = Array(rules.rows).fill(null).map(() => Array(rules.cols).fill(0));
+
+    // Pre-fill board for Five-in-a-Row
+    if (gameMode === 'five-in-a-row') {
+        for (let r = 0; r < rules.rows; r++) {
+            // Left-most column
+            board[r][0] = (r % 2 === 0) ? 2 : 1; // Player 2 (Red/AI), Player 1 (Yellow/Human)
+            // Right-most column
+            board[r][rules.cols - 1] = (r % 2 === 0) ? 1 : 2;
+        }
+    }
+
+    // Calculate initial moves for Five-in-a-Row
+    const initialMoves = (gameMode === 'five-in-a-row') ? rules.rows * 2 : 0;
+
     return {
-        board: Array(ROWS).fill(null).map(() => Array(COLS).fill(0)),
+        board: board,
         moveHistory: [], // To store {r, c} of moves for undo
-        moves: 0,
+        moves: initialMoves,
         difficulty: difficulty || 'medium',
         gameMode: gameMode || 'standard', // Default to standard
         turn: null, // Host will set this
@@ -210,11 +249,25 @@ export function getInitialState(difficulty, gameMode) {
 }
 
 /**
+ * Gets the rules for a specific game mode.
+ * @param {string} gameMode - The selected game mode.
+ * @returns {{rows: number, cols: number, connectLength: number}}
+ */
+function getGameRules(gameMode) {
+    if (gameMode === 'five-in-a-row') {
+        return { rows: 6, cols: 9, connectLength: 5 };
+    }
+    // Default to standard rules
+    return { rows: 6, cols: 7, connectLength: 4 };
+}
+
+/**
  * Resets the Connect 4 game board.
  * This function is called by the game_manager's loadPuzzle.
  */
 export function loadPuzzle() {
     debugLog('Connect4 loadPuzzle called.');
+
     appState.winner = null;
     startTimer();
     if (appState.playerTeam) {
@@ -224,6 +277,7 @@ export function loadPuzzle() {
     } else if (appState.isInitiator) {
         appState.soloGameState = getInitialState(dom.difficultySelector.value, dom.connect4ModeSelect.value);
         createGrid();
+        clearAiScores();
     }
 }
 
@@ -257,7 +311,7 @@ function processSabotageMove(moveData) {
         team.gameState.moves++;
 
         const line = checkForAnyLine(board, row, col);
-        let winner = null;
+        let winner = null; // Sabotage mode doesn't have a "winner", only a loser or co-op win
         let loser = null;
         let nextTurn = null;
 
@@ -265,7 +319,7 @@ function processSabotageMove(moveData) {
             loser = teamName;
             appState.winner = 'lost';
         } else if (team.gameState.moves === ROWS * COLS) {
-            winner = 'all';
+            winner = 'all'; // Co-op win
             appState.winner = 'all';
         } else {
             const allTeams = Object.keys(appState.teams).filter(t => appState.teams[t].gameType === 'connect4');
@@ -312,12 +366,13 @@ function processStandardMove(moveData) {
         const playerNumber = team.gameState.players[teamName];
         board[row][col] = playerNumber;
         team.gameState.moves++;
+        const rules = getGameRules(team.gameState.gameMode);
 
-        const line = checkWinner(board, row, col, playerNumber);
+        const line = checkWinner(board, row, col, playerNumber, rules);
         let winner = null;
         let nextTurn = null;
 
-        if (line) {
+        if (line) { // A winning line was found
             winner = teamName;
             appState.winner = teamName;
         } else if (team.gameState.moves === ROWS * COLS) {
@@ -374,26 +429,27 @@ export function processUIUpdate(data) {
     }
 }
 
-function checkWinner(board, r, c, player) {
+function checkWinner(board, r, c, player, rules) {
+    const { rows, cols, connectLength } = rules;
     // Check horizontal, vertical, and both diagonals
     const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
     for (const [dr, dc] of dirs) {
         const line = [{ r, c }];
         // Check in one direction
-        for (let i = 1; i < 4; i++) {
+        for (let i = 1; i < connectLength; i++) {
             const nr = r + dr * i;
             const nc = c + dc * i;
-            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr][nc] === player) {
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc] === player) {
                 line.push({ r: nr, c: nc });
             } else {
                 break;
             }
         }
         // Check in the opposite direction
-        for (let i = 1; i < 4; i++) {
+        for (let i = 1; i < connectLength; i++) {
             const nr = r - dr * i;
             const nc = c - dc * i;
-            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr][nc] === player) {
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc] === player) {
                 line.push({ r: nr, c: nc });
             } else {
                 break;
@@ -412,6 +468,7 @@ function checkWinner(board, r, c, player) {
  */
 function makeSoloMove(col, playerNumber) {
     const board = appState.soloGameState.board;
+    const rules = getGameRules(appState.soloGameState.gameMode);
     const row = findNextOpenRow(board, col);
 
     if (row !== -1) {
@@ -424,14 +481,14 @@ function makeSoloMove(col, playerNumber) {
         cell.classList.add(`player${playerNumber}`);
 
         // Check for win/loss in solo mode
-        const line = checkWinner(board, row, col, playerNumber);
+        const line = checkWinner(board, row, col, playerNumber, rules);
         if (line) {
             if (playerNumber === 1) {
                 handleGameOver(line, 'You', null); // Human wins
             } else {
                 handleGameOver(line, null, 'The Computer'); // AI wins
             }
-        } else if (appState.soloGameState.moves === ROWS * COLS) {
+        } else if (appState.soloGameState.moves === rules.rows * rules.cols) {
             clearThreatHighlights(); // Clear any highlights on a tie
             showWinnerScreen('tie'); // It's a tie
         }
@@ -448,6 +505,7 @@ function makeSoloMove(col, playerNumber) {
  */
 function makeSoloSabotageMove(col, playerNumber) {
     const board = appState.soloGameState.board;
+    const rules = getGameRules(appState.soloGameState.gameMode);
     const row = findNextOpenRow(board, col);
 
     if (row !== -1) {
@@ -463,7 +521,7 @@ function makeSoloSabotageMove(col, playerNumber) {
         if (line) {
             const loser = playerNumber === 1 ? 'You' : 'The Computer';
             handleGameOver(line, null, loser);
-        } else if (appState.soloGameState.moves === ROWS * COLS) {
+        } else if (appState.soloGameState.moves === rules.rows * rules.cols) {
             showWinnerScreen('all'); // You both won
         }
         return true;
@@ -475,6 +533,12 @@ function makeSoloSabotageMove(col, playerNumber) {
  * Reverts the last two moves (player and AI) in a solo game.
  */
 function undoLastMoves() {
+    // Prevent undoing if the game is already over.
+    if (appState.winner) {
+        showToast("Cannot undo after the game is over.", "error");
+        return;
+    }
+
     const gameState = appState.soloGameState;
     if (!gameState || gameState.moveHistory.length < 2) {
         showToast("Not enough moves to undo.", "info");
@@ -482,7 +546,7 @@ function undoLastMoves() {
     }
 
     // Stop any AI move that might be in progress
-    dom.sudokuGrid.style.pointerEvents = 'auto';
+    dom.gameGrid.style.pointerEvents = 'auto';
 
     // Revert the last two moves
     for (let i = 0; i < 2; i++) {
@@ -503,6 +567,7 @@ function undoLastMoves() {
 
     // Clear any win/loss state and threat highlights
     appState.winner = null;
+    clearAiScores();
     clearThreatHighlights();
 }
 
@@ -513,7 +578,8 @@ function undoLastMoves() {
  * @returns {number} - The row index, or -1 if the column is full.
  */
 function findNextOpenRow(board, col) {
-    for (let r = ROWS - 1; r >= 0; r--) {
+    const rows = board.length;
+    for (let r = rows - 1; r >= 0; r--) {
         if (board[r][col] === 0) {
             return r;
         }
@@ -527,6 +593,7 @@ function findNextOpenRow(board, col) {
  * @returns {number|null} - A safe column to play, or null if no safe moves exist.
  */
 function findBestSabotageMove(board) {
+    const cols = board[0].length;
     const safeMoves = [];
     for (let c = 0; c < COLS; c++) {
         const r = findNextOpenRow(board, c);
@@ -562,11 +629,12 @@ function findBestSabotageMove(board) {
 function checkForAnyLine(board, r, c) {
     // This function is only used for Sabotage mode now.
     // Standard mode uses checkWinner which returns the line.
+    const rules = getGameRules('standard'); // Sabotage always uses standard 4-in-a-row rules
     const player = board[r][c];
     if (player === 0) return false;
 
     // We can just reuse checkWinner, as it checks for a line for the specified player.
-    return checkWinner(board, r, c, player);
+    return checkWinner(board, r, c, player, rules);
 }
 
 /**
@@ -576,15 +644,34 @@ function checkForAnyLine(board, r, c) {
  * @param {string|null} loser - The losing team/player.
  */
 function handleGameOver(line, winner, loser) {
-    // Disable further moves immediately
     // Set the winner state immediately to prevent any further moves (like the AI's turn).
-    if (winner) {
-        appState.winner = winner;
-    } else if (loser) {
-        appState.winner = 'lost'; // A generic state to indicate the game is over.
+    if (winner) appState.winner = winner;
+    if (loser) appState.winner = 'lost'; // A generic state to indicate the game is over.
+
+    // For solo Connect 4, instead of showing the modal which can cause a lock-up,
+    // show a toast and immediately reset the game.
+    if (appState.isInitiator && !appState.playerTeam) {
+        let message = "Game Over!";
+        if (winner === 'You') message = "You won!";
+        if (loser === 'The Computer') message = "The Computer won.";
+        showToast(message, winner === 'You' ? 'info' : 'error');
+
+        // Apply the winning glow effect to the line of pieces.
+        if (line) {
+            line.forEach(cell => {
+                const domCell = document.getElementById(`cell-${cell.r}-${cell.c}`);
+                if (domCell) domCell.classList.add('winning-cell-blink');
+            });
+        }
+
+        // Reset the game after a short delay to allow the player to see the final move.
+        setTimeout(loadPuzzle, 2000);
+        return;
     }
 
-    dom.sudokuGrid.style.pointerEvents = 'none';
+    // Disable further moves immediately
+    // This is now handled at the top of the function.
+    dom.gameGrid.style.pointerEvents = 'none';
 
     if (line) {
         line.forEach(cell => {
@@ -618,7 +705,7 @@ function handleGameOver(line, winner, loser) {
         // Re-enable clicks for a new game, but only if the modal isn't up.
         // The 'New Game' button will handle pointer events from here.
         if (!document.querySelector('.modal:not(.hidden)')) {
-            dom.sudokuGrid.style.pointerEvents = 'auto';
+            dom.gameGrid.style.pointerEvents = 'auto';
         }
     }, 3000); // 3 seconds, matching the animation duration
 }
@@ -628,6 +715,7 @@ function handleGameOver(line, winner, loser) {
  * @param {number[][]} board - The current game board.
  */
 function findAndHighlightImminentThreats(board) {
+    if (appState.soloGameState.gameMode !== 'standard') return; // Only for standard mode
     clearThreatHighlights();
 
     // Check for player's imminent victory
@@ -656,12 +744,14 @@ function findAndHighlightImminentThreats(board) {
  * @returns {Array<{r: number, c: number}>} - An array of cells that are part of winning threats.
  */
 function findWinningThreats(board, playerNum) {
+    const rules = getGameRules('standard');
+    const cols = board[0].length;
     const winningMoves = [];
-    for (let c = 0; c < COLS; c++) {
+    for (let c = 0; c < cols; c++) {
         const r = findNextOpenRow(board, c);
         if (r !== -1) {
             board[r][c] = playerNum; // Temporarily make the move
-            const line = checkWinner(board, r, c, playerNum);
+            const line = checkWinner(board, r, c, playerNum, rules);
             if (line) {
                 winningMoves.push({ col: c, line: line });
             }
@@ -686,4 +776,50 @@ function clearThreatHighlights() {
     document.querySelectorAll('.connect4-grid .grid-cell').forEach(cell => {
         cell.classList.remove('imminent-victory-cell', 'imminent-defeat-cell');
     });
+}
+
+/**
+ * Gets the board dimensions from the current game state.
+ * @returns {{rows: number, cols: number}}
+ */
+function getBoardDimensions() {
+    const board = appState.soloGameState?.board || appState.teams[appState.playerTeam]?.gameState?.board;
+    if (board) return { rows: board.length, cols: board[0].length };
+    return { rows: 6, cols: 7 }; // Fallback
+}
+
+/**
+ * Displays the AI's calculated scores for each valid move on the board.
+ * @param {Array<{move: number, score: number}>} moveScores - An array of moves and their scores.
+ */
+function displayAiScores(moveScores) {
+    clearAiScores(); // Clear any previous scores
+    if (!moveScores || moveScores.length === 0) return;
+
+    const board = appState.soloGameState.board;
+    const grid = dom.gameGrid;
+
+    moveScores.forEach(({ move, score }) => {
+        const col = move;
+        const row = findNextOpenRow(board, col);
+
+        if (row !== -1) {
+            const scoreDiv = document.createElement('div');
+            scoreDiv.className = 'ai-score-display';
+            scoreDiv.textContent = score.toLocaleString(); // Format large numbers
+            
+            // Position the score in the top-most empty cell of the column
+            scoreDiv.style.gridRowStart = row + 1;
+            scoreDiv.style.gridColumnStart = col + 1;
+
+            grid.appendChild(scoreDiv);
+        }
+    });
+}
+
+/**
+ * Removes all AI score displays from the board.
+ */
+function clearAiScores() {
+    document.querySelectorAll('.ai-score-display').forEach(el => el.remove());
 }

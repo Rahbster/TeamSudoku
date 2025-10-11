@@ -1111,7 +1111,7 @@ body.blackjack-active #game-screen {
     display: flex;
     order: 2; /* Position in the center, like sudoku-grid-area */
     flex-direction: column;
-    align-items: center;
+    align-items: stretch; /* Stretch children to fill width, which left-aligns the info panel */
     gap: 1dvh;
     flex-grow: 1; /* Allow the area to take up the available space */
     height: 95dvh; /* Match the height of other game areas */
@@ -1135,7 +1135,9 @@ body.blackjack-active #game-screen {
     position: absolute;
     width: 12px;
     height: 12px;
-    background-color: #fff;
+    /* Use a radial gradient to create a spherical look. --star-color is set by JS. */
+    background: radial-gradient(circle at 30% 30%, #fff, var(--star-color, '#fff') 80%);
+    box-shadow: 0 0 5px var(--star-color, '#fff');
     border-radius: 50%;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -1147,19 +1149,84 @@ body.blackjack-active #game-screen {
     box-shadow: 0 0 10px #fff, 0 0 20px var(--secondary-orange, #EFB82A);
 }
 
+.star-system.active-star {
+    transform: scale(1.5); /* Make it larger like the hover state */
+    animation: pulse-active-star 2s infinite;
+}
+
+@keyframes pulse-active-star {
+    0% {
+        box-shadow: 0 0 10px #fff, 0 0 20px var(--primary-cyan, #00A0C0);
+    }
+    50% {
+        box-shadow: 0 0 20px #fff, 0 0 40px var(--primary-cyan, #00A0C0);
+    }
+    100% {
+        box-shadow: 0 0 10px #fff, 0 0 20px var(--primary-cyan, #00A0C0);
+    }
+}
+
 .ship {
     position: absolute;
-    width: 20px;
-    height: 25px;
+    width: 40px; /* Increased size to accommodate shield octagon */
+    /* The container is now slightly taller to accommodate the bars */
+    height: 55px;
+    transition: all 0.2s ease;
+    transform-origin: center 20px; /* Adjust rotation origin */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Center the ship visual and status bars inside the larger container */
+    justify-content: center;
+}
+
+.ship-shield-octagon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 40px; /* Match the width for a square aspect ratio */
+    z-index: 1; /* Behind the ship visual */
+    fill: #2196F3; /* Shield blue color */
+    transition: fill-opacity 0.3s ease;
+}
+
+.ship-visual {
+    width: 20px; /* Original ship width */
+    height: 25px; /* Original ship height */
     /* A simple triangle shape */
     background-color: var(--secondary-orange, #EFB82A);
     clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-    transition: all 0.2s ease;
-    transform-origin: center center;
+    position: relative; /* Ensure it can be layered with z-index */
+    z-index: 2; /* In front of the shield octagon */
 }
 
 .ship.enemy {
-    background-color: var(--error-red, #CC3333);
+    /* Target the visual part of the enemy ship */
+}
+.ship.enemy .ship-visual {
+     background-color: var(--error-red, #CC3333);
+}
+
+.ship-status-bars {
+    width: 30px; /* Make bars wider than the ship for visibility */
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 3px;
+}
+
+.status-bar-container {
+    width: 100%;
+    height: 4px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 1px solid #555;
+    border-radius: 2px;
+}
+
+.status-bar {
+    height: 100%;
+    transition: width 0.3s ease;
 }
 
 .weapon-fire {
@@ -1186,6 +1253,23 @@ body.blackjack-active #game-screen {
     pointer-events: none;
 }
 
+.projectile {
+    position: absolute;
+    z-index: 18; /* Above ships, below explosions */
+    pointer-events: none;
+    transition: all 0.1s linear; /* Smooth movement between turns */
+}
+
+.projectile.missile {
+    width: 3px;
+    height: 10px;
+    background-color: var(--secondary-orange, #EFB82A);
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--secondary-orange, #EFB82A),
+                0 0 12px #fff; /* Bright core */
+    transform-origin: center center;
+}
+
 .order-line {
     position: absolute;
     background-color: var(--secondary-orange, #EFB82A);
@@ -1198,12 +1282,10 @@ body.blackjack-active #game-screen {
 
 .targeting-line {
     position: absolute;
-    background-color: var(--error-red, #CC3333);
     height: 2px;
     transform-origin: 0 50%;
     z-index: 16; /* Higher than order-line */
     pointer-events: none;
-    box-shadow: 0 0 5px var(--error-red, #CC3333);
     opacity: 0.8;
 }
 
@@ -1226,6 +1308,23 @@ body.blackjack-active #game-screen {
     padding: 10px 20px;
     color: var(--text-light, #E0E0E0); /* Ensure text is always light */
     box-sizing: border-box;
+    max-height: 35%; /* Limit the panel's height to 35% of the container */
+    overflow-y: auto; /* Add a scrollbar if content overflows */
+}
+
+.shields-display {
+    display: flex;
+    justify-content: space-around;
+    background-color: rgba(0,0,0,0.3);
+    border-radius: 4px;
+    padding: 5px;
+    margin: 5px 0;
+}
+
+.shield-arc {
+    padding: 2px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
 }
 
 /*==============================

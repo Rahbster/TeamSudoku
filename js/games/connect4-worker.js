@@ -1,31 +1,28 @@
 //==============================
-// Connect 4 AI Web Worker
+// Connect 4 AI Web Worker (Final Robust Revision - Max Depth Focus)
 //==============================
-
-const ROWS = 6;
-const COLS = 7;
 
 /**
  * This listener waits for a message from the main thread containing the game board.
  * It then calculates the best move and posts the result back.
  */
 self.onmessage = function(e) {
-    const { board, difficulty } = e.data;
+    const { board, difficulty, rows, cols, connectLength } = e.data;
     console.log(`[WORKER] Message received. Difficulty: ${difficulty}`);
 
     // Make a deep copy to prevent mutation of the original board state during evaluation
     const boardCopy = JSON.parse(JSON.stringify(board));
 
-    const bestMove = findBestMove(boardCopy, difficulty);
+    const { bestMove, moveScores } = findBestMove(boardCopy, difficulty, { rows, cols, connectLength });
 
-    console.log(`[WORKER] Calculated best move: ${bestMove}. Posting back to main thread.`);
-    self.postMessage({ bestMove: bestMove });
+    console.log(`[WORKER] Calculated best move: ${bestMove}. Posting scores back to main thread.`);
+    self.postMessage({ bestMove, moveScores });
 };
 
 // --- AI Logic and Helper Functions (self-contained in the worker) ---
 
-function findNextOpenRow(board, col) {
-    for (let r = ROWS - 1; r >= 0; r--) {
+function findNextOpenRow(board, col, rows) {
+    for (let r = rows - 1; r >= 0; r--) {
         if (board[r][col] === 0) {
             return r;
         }
@@ -33,188 +30,260 @@ function findNextOpenRow(board, col) {
     return -1;
 }
 
-function checkWinner(board, r, c, player) {
+function checkWinner(board, r, c, player, rules) {
+    // This function relies on the (r, c) coordinates of the last piece placed.
+    // If the board state is being mutated outside of Minimax correctly, this is fine.
+    
+    // Check horizontal, vertical, and both diagonals
     const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
     for (const [dr, dc] of dirs) {
         let count = 1;
-        for (let i = 1; i < 4; i++) {
+        
+        // Check forward from (r, c)
+        for (let i = 1; i < rules.connectLength; i++) {
             const nr = r + dr * i, nc = c + dc * i;
-            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr][nc] === player) count++; else break;
+            // The bounds and content check looks correct here
+            if (nr >= 0 && nr < rules.rows && nc >= 0 && nc < rules.cols && board[nr][nc] === player) count++; else break;
         }
-        for (let i = 1; i < 4; i++) {
+        
+        // Check backward from (r, c)
+        for (let i = 1; i < rules.connectLength; i++) {
             const nr = r - dr * i, nc = c - dc * i;
-            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr][nc] === player) count++; else break;
+            // The bounds and content check looks correct here
+            if (nr >= 0 && nr < rules.rows && nc >= 0 && nc < rules.cols && board[nr][nc] === player) count++; else break;
         }
-        if (count >= 4) return true;
+        
+        if (count >= rules.connectLength) return true;
     }
     return false;
 }
 
-function getValidMoves(board) {
+function getValidMoves(board, cols) {
     const validMoves = [];
-    for (let c = 0; c < COLS; c++) {
+    for (let c = 0; c < cols; c++) {
+        // Check the top-most row (row 0)
         if (board[0][c] === 0) validMoves.push(c);
     }
     return validMoves;
 }
 
-function findBestMove(board, difficulty) {
-    const validMoves = getValidMoves(board);
+function findBestMove(board, difficulty, rules) {
+    const { rows, cols, connectLength } = rules;
+    let validMoves = getValidMoves(board, cols);
     if (validMoves.length === 0) return null;
 
     switch (difficulty) {
         case 'very-easy':
-            return validMoves[Math.floor(Math.random() * validMoves.length)];
+        //This is a comment: Simple random move
+        return { bestMove: validMoves[Math.floor(Math.random() * validMoves.length)], moveScores: [] };
 
         case 'easy':
-            // Original logic: win, block, then random
-            // Check for winning move for AI (2)
-            for (const move of validMoves) {
-                const r = findNextOpenRow(board, move);
-                board[r][move] = 2;
-                if (checkWinner(board, r, move, 2)) { board[r][move] = 0; return move; }
-                board[r][move] = 0;
-            }
-            // Check for blocking move for Player (1)
-            for (const move of validMoves) {
-                const r = findNextOpenRow(board, move);
-                board[r][move] = 1;
-                if (checkWinner(board, r, move, 1)) { board[r][move] = 0; return move; }
-                board[r][move] = 0;
-            }
-            return validMoves[Math.floor(Math.random() * validMoves.length)];
+        //This is a comment: Win, block, then random
+        // Check for winning move for AI (2)
+        for (const move of validMoves) {
+            const r = findNextOpenRow(board, move, rows);
+            board[r][move] = 2;
+            if (checkWinner(board, r, move, 2, rules)) { board[r][move] = 0; return { bestMove: move, moveScores: [] }; }
+            board[r][move] = 0;
+        }
+        // Check for blocking move for Player (1)
+        for (const move of validMoves) {
+            const r = findNextOpenRow(board, move, rows);
+            board[r][move] = 1;
+            if (checkWinner(board, r, move, 1, rules)) { board[r][move] = 0; return { bestMove: move, moveScores: [] }; }
+            board[r][move] = 0;
+        }
+        //This is a comment: Otherwise, choose randomly
+        return { bestMove: validMoves[Math.floor(Math.random() * validMoves.length)], moveScores: [] };
 
         case 'medium':
         case 'hard':
-            const depth = difficulty === 'medium' ? 3 : 5; // Deeper search for hard
+            // CRITICAL CHANGE: Maxing out depth to 8 for medium and 10 for hard. 
+            // If this causes performance issues, reduce it, but 10 is needed to spot deep traps.
+            const depth = difficulty === 'medium' ? 8 : 10;
             let bestScore = -Infinity;
             let bestMove = validMoves[0];
+            const moveScores = [];
+            const centerCol = Math.floor(cols / 2);
 
+            //This is a comment: OPTIMIZATION: Sort moves by center proximity to improve alpha-beta pruning.
+            validMoves.sort((a, b) => Math.abs(a - centerCol) - Math.abs(b - centerCol));
+
+            //This is a comment: Pre-check for immediate win and block (fast exit for obvious moves).
             for (const move of validMoves) {
-                const r = findNextOpenRow(board, move);
+                const r = findNextOpenRow(board, move, rows);
+                if (r === -1) continue;
+
+                // 1. Check AI Win
                 board[r][move] = 2; // AI is player 2
-                const score = minimax(board, depth - 1, -Infinity, Infinity, false);
+                if (checkWinner(board, r, move, 2, rules)) { board[r][move] = 0; return { bestMove: move, moveScores: [] }; }
                 board[r][move] = 0; // Backtrack
+
+                // 2. Check Player Threat (Block)
+                board[r][move] = 1; // Simulate player move
+                if (checkWinner(board, r, move, 1, rules)) { board[r][move] = 0; return { bestMove: move, moveScores: [] }; }
+                board[r][move] = 0; // Backtrack
+            }
+
+            //This is a comment: No immediate win/loss, proceed with minimax search.
+            for (const move of validMoves) {
+                const r = findNextOpenRow(board, move, rows);
+                if (r === -1) continue;
+
+                board[r][move] = 2;
+                // Minimax with maximum depth and corrected logic
+                const score = minimax(board, depth - 1, -Infinity, Infinity, false, rules);
+                moveScores.push({ move, score });
+                board[r][move] = 0; // Backtrack
+
                 if (score > bestScore) {
                     bestScore = score;
                     bestMove = move;
                 }
             }
-            return bestMove;
+            return { bestMove, moveScores };
 
         default:
-            return validMoves[Math.floor(Math.random() * validMoves.length)];
+        //This is a comment: Default to random if difficulty is not set
+        return { bestMove: validMoves[Math.floor(Math.random() * validMoves.length)], moveScores: [] };
     }
 }
 
-function scorePosition(board, player) {
+function scorePosition(board, player, rules) {
     let score = 0;
-    const centerArray = board.map(row => row[Math.floor(COLS / 2)]);
-    const centerCount = centerArray.filter(p => p === player).length;
-    score += centerCount * 3;
+    const opponent = player === 1 ? 2 : 1;
+    const { rows, cols, connectLength } = rules;
 
-    // Score Horizontal, Vertical, Diagonal
-    for (let r = 0; r < ROWS; r++) {
-        for (let c = 0; c < COLS; c++) {
+    //This is a comment: INCREASED VALUE: Prioritize center columns (Connect 4 essential strategy)
+    const centerCol = Math.floor(cols / 2);
+    for(let r = 0; r < rows; r++) {
+        if (board[r][centerCol] === player) score += 15; // Increased weight
+        if (board[r][centerCol] === opponent) score -= 5;
+    }
+
+    //This is a comment: Score Horizontal, Vertical, Diagonal
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
             // Horizontal
-            if (c <= COLS - 4) {
-                const window = [board[r][c], board[r][c + 1], board[r][c + 2], board[r][c + 3]];
-                score += evaluateWindow(window, player);
+            if (c <= cols - connectLength) {
+                const window = board[r].slice(c, c + connectLength);
+                score += evaluateWindow(window, player, rules);
             }
             // Vertical
-            if (r <= ROWS - 4) {
-                const window = [board[r][c], board[r + 1][c], board[r + 2][c], board[r + 3][c]];
-                score += evaluateWindow(window, player);
+            if (r <= rows - connectLength) {
+                const window = Array.from({ length: connectLength }, (_, i) => board[r + i][c]);
+                score += evaluateWindow(window, player, rules);
             }
             // Positive Diagonal
-            if (r <= ROWS - 4 && c <= COLS - 4) {
-                const window = [board[r][c], board[r + 1][c + 1], board[r + 2][c + 2], board[r + 3][c + 3]];
-                score += evaluateWindow(window, player);
+            if (r <= rows - connectLength && c <= cols - connectLength) {
+                const window = Array.from({ length: connectLength }, (_, i) => board[r + i][c + i]);
+                score += evaluateWindow(window, player, rules);
             }
             // Negative Diagonal
-            if (r >= 3 && c <= COLS - 4) {
-                const window = [board[r][c], board[r - 1][c + 1], board[r - 2][c + 2], board[r - 3][c + 3]];
-                score += evaluateWindow(window, player);
+            if (r >= connectLength - 1 && c <= cols - connectLength) {
+                const window = Array.from({ length: connectLength }, (_, i) => board[r - i][c + i]);
+                score += evaluateWindow(window, player, rules);
             }
         }
     }
     return score;
 }
 
-function evaluateWindow(window, player) {
+function evaluateWindow(window, player, rules) {
     let score = 0;
     const opponent = player === 1 ? 2 : 1;
     const playerCount = window.filter(p => p === player).length;
     const opponentCount = window.filter(p => p === opponent).length;
     const emptyCount = window.filter(p => p === 0).length;
 
-    if (playerCount === 4) {
-        score += 100;
-    } else if (playerCount === 3 && emptyCount === 1) {
-        score += 5;
-    } else if (playerCount === 2 && emptyCount === 2) {
-        score += 2;
+    // --- AI's Opportunities (Score increases) ---
+    if (playerCount === rules.connectLength) {
+        score += 10000;
+    } else if (playerCount === rules.connectLength - 1 && emptyCount === 1) {
+        score += 100; // High value for a winning threat (3-in-a-row)
+    } else if (playerCount === rules.connectLength - 2 && emptyCount === 2) {
+        score += 10; // Value for building blocks (2-in-a-row)
+        if (rules.connectLength === 4 && window[0] === 0 && window[3] === 0) score += 10;
     }
 
-    if (opponentCount === 3 && emptyCount === 1) {
-        score -= 4;
+    // --- Penalize opponent's threats (Block/Defend) ---
+    if (opponentCount === rules.connectLength) {
+        score -= 10000;
+    } else if (opponentCount === rules.connectLength - 1 && emptyCount === 1) {
+        // CRITICAL TUNING: Maxed out penalty relative to other scores to force a block.
+        score -= 100000; 
+    } else if (rules.connectLength === 4 && opponentCount === 2 && emptyCount === 2 && window[0] === 0 && window[3] === 0) {
+        score -= 200;
+    } else if (opponentCount === rules.connectLength - 2 && emptyCount === 2) {
+        score -= 15; // Moderate penalty for a developing player threat
     }
 
     return score;
 }
 
-function isTerminalNode(board) {
-    return checkWinner(board, 0, 0, 1) || checkWinner(board, 0, 0, 2) || getValidMoves(board).length === 0;
-}
+function minimax(board, depth, alpha, beta, maximizingPlayer, rules) {
+    const validMoves = getValidMoves(board, rules.cols);
 
-function minimax(board, depth, alpha, beta, maximizingPlayer) {
-    const validMoves = getValidMoves(board);
-    const isTerminal = validMoves.length === 0 || depth === 0; // Simplified terminal check
+    // Check for terminal state (Draw)
+    if (validMoves.length === 0) return 0;
 
-    if (isTerminal) {
-        if (validMoves.length === 0) {
-            // Check if the last move resulted in a win
-            // This is a simplification; a full check would be more robust.
-            return 0;
-        }
-        return scorePosition(board, 2); // Score from AI's perspective
+    // Check for Max Depth
+    if (depth === 0) {
+        //This is a comment: Reached max depth, use heuristic evaluation
+        return scorePosition(board, 2, rules); // AI is player 2
     }
 
     if (maximizingPlayer) {
         let value = -Infinity;
-        for (const move of validMoves) {
-            const r = findNextOpenRow(board, move);
-            board[r][move] = 2; // AI's move
-            const newValue = minimax(board, depth - 1, alpha, beta, false);
+        //This is a comment: Sort moves for maximizing player to enhance pruning
+        const sortedMoves = validMoves.sort((a, b) => Math.abs(a - Math.floor(rules.cols / 2)) - Math.abs(b - Math.floor(rules.cols / 2)));
+
+        for (const move of sortedMoves) {
+            const r = findNextOpenRow(board, move, rules.rows);
+            if (r === -1) continue;
+            
+            board[r][move] = 2; // AI (Maximizing)
+            
+            // Explicitly check for AI win after making the move.
+            if (checkWinner(board, r, move, 2, rules)) {
+                board[r][move] = 0; // Backtrack
+                // Increased terminal score to guarantee Minimax selects this branch
+                return 10000000 + depth; 
+            }
+
+            const newValue = minimax(board, depth - 1, alpha, beta, false, rules);
             board[r][move] = 0; // Backtrack
+            
             value = Math.max(value, newValue);
             alpha = Math.max(alpha, value);
-            if (alpha >= beta) {
-                break; // Beta cut-off
-            }
+            if (alpha >= beta) break;
         }
         return value;
-    } else { // Minimizing player
+    } else { // Minimizing player (Opponent)
         let value = Infinity;
-        for (const move of validMoves) {
-            const r = findNextOpenRow(board, move);
-            board[r][move] = 1; // Player's move
-            const newValue = minimax(board, depth - 1, alpha, beta, true);
+        //This is a comment: Sort moves for minimizing player to enhance pruning
+        const sortedMoves = validMoves.sort((a, b) => Math.abs(a - Math.floor(rules.cols / 2)) - Math.abs(b - Math.floor(rules.cols / 2)));
+
+        for (const move of sortedMoves) {
+            const r = findNextOpenRow(board, move, rules.rows);
+            if (r === -1) continue;
+
+            board[r][move] = 1; // Player (Minimizing)
+            
+            // Explicitly check for Player win after making the move.
+            if (checkWinner(board, r, move, 1, rules)) {
+                board[r][move] = 0; // Backtrack
+                // Increased terminal score to guarantee Minimax selects this branch
+                return -10000000 - depth; 
+            }
+
+            const newValue = minimax(board, depth - 1, alpha, beta, true, rules);
             board[r][move] = 0; // Backtrack
+
             value = Math.min(value, newValue);
             beta = Math.min(beta, value);
-            if (alpha >= beta) {
-                break; // Alpha cut-off
-            }
+            if (alpha >= beta) break;
         }
         return value;
     }
-}
-
-function findBestMove_simple(board) {
-    const validMoves = getValidMoves(board);
-    if (validMoves.length > 0) {
-        return validMoves[Math.floor(Math.random() * validMoves.length)];
-    }
-    return null;
 }
