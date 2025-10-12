@@ -14,14 +14,9 @@ const MIN_STAR_DISTANCE = 80;
 export function initialize() {
     startTimer();
     // Hide all other game areas
-    dom.numberPad.classList.add('hidden');
-    dom.pencilButton.classList.add('hidden');
 
     // Show the Cosmic Balance area
     dom.cosmicBalanceArea.classList.remove('hidden');
-
-    // Wire up the "New Game" button
-    dom.newPuzzleButton.onclick = loadPuzzle;
 
     // If we are initializing for a solo game, draw the grid.
     if (appState.isInitiator && !appState.playerTeam) {

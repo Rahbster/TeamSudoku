@@ -2,7 +2,7 @@
 // Memory Match Game Logic
 //==============================
 
-import { startTimer } from '../timer.js';
+import { startTimer, stopTimer } from '../timer.js';
 import { dom, appState, dataChannels } from '../scripts.js';
 import { showWinnerScreen } from '../ui.js';
 import { playRemoteMoveSound } from '../misc.js';
@@ -11,10 +11,6 @@ let flippedCards = [];
 let canFlip = true;
 
 export function initialize() {
-    console.log("Memory Match Initialized");
-    dom.numberPad.classList.add('hidden');
-    dom.pencilButton.classList.add('hidden');
-    dom.sudokuGridArea.classList.remove('hidden');
     document.querySelectorAll('.host-only').forEach(el => {
         if (el.id === 'new-puzzle-btn') {
             el.style.display = ''; // Show the button
@@ -23,23 +19,30 @@ export function initialize() {
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Game';
 
-    // Ensure the main "New Game" button is correctly wired up for Memory Match.
-    dom.newPuzzleButton.onclick = loadPuzzle;
+    // If we are initializing for a solo game, draw the grid.
+    if (appState.isInitiator && !appState.playerTeam) {
+        createGrid();
+    }
 }
 
 export function cleanup() {
-    console.log("Memory Match Cleanup");
-    dom.sudokuGridArea.classList.add('hidden');
+    // No specific cleanup needed for memory match yet.
 }
 
 export function createGrid() {
     const gameState = appState.playerTeam ? appState.teams[appState.playerTeam]?.gameState : appState.soloGameState;
-    if (!gameState) return;
+    if (!gameState || !gameState.board || gameState.board.length === 0) {
+        return;
+    }
 
-    dom.sudokuGrid.innerHTML = '';
-    dom.sudokuGrid.className = 'memory-grid';
-    dom.sudokuGrid.style.gridTemplateColumns = `repeat(${gameState.cols}, 1fr)`;
-    dom.sudokuGrid.style.gridTemplateRows = `repeat(${gameState.rows}, 1fr)`;
+    dom.gameBoardArea.innerHTML = '<div id="memory-grid"></div>';
+    const grid = document.getElementById('memory-grid');
+    grid.className = 'memory-grid';
+    grid.style.gridTemplateColumns = `repeat(${gameState.cols}, 1fr)`;
+    grid.style.gridTemplateRows = `repeat(${gameState.rows}, 1fr)`;
+    // Explicitly set the aspect ratio to give the grid a defined shape and prevent collapse.
+    // This makes the grid's height proportional to its width.
+    grid.style.aspectRatio = `${gameState.cols} / ${gameState.rows}`;
 
     gameState.board.forEach((cardValue, index) => {
         const card = document.createElement('div');
@@ -54,7 +57,7 @@ export function createGrid() {
         `;
 
         card.addEventListener('click', () => handleCardClick(index));
-        dom.sudokuGrid.appendChild(card);
+        grid.appendChild(card);
     });
 }
 
@@ -122,7 +125,11 @@ function checkForMatch() {
     }
 }
 
-export function getInitialState(difficulty, gameMode) {
+export function getInitialState() {
+    const difficulty = dom.difficultySelector.value;
+    // Prioritize localStorage to handle initial load when the dropdown might be hidden.
+    const savedMode = localStorage.getItem('sudokuMemoryMatchMode');
+    const gameMode = dom.memorymatchModeSelect.value || savedMode || 'picture-picture';
     const settings = {
         'very-easy': { rows: 2, cols: 4, pairs: 4 },
         'easy': { rows: 3, cols: 4, pairs: 6 },
@@ -132,7 +139,7 @@ export function getInitialState(difficulty, gameMode) {
     const { rows, cols, pairs: numPairs } = settings[difficulty] || settings['medium'];
 
     let pairs = [];
-    if (gameMode === 'picture-picture') {
+    if (gameMode === 'picture-picture' || !gameMode) { // Default to picture-picture if mode is undefined
         const emojis = ['🍎', '🍌', '🍇', '🍉', '🍓', '🍑', '🍍', '🥥', '🥝', '🥭'];
         for (let i = 0; i < numPairs; i++) {
             pairs.push([emojis[i], emojis[i]]);
@@ -166,9 +173,7 @@ export function loadPuzzle() {
     appState.winner = null;
     canFlip = true;
     startTimer();
-    const difficulty = dom.difficultySelector.value;
-    const gameMode = dom.memorymatchModeSelect.value;
-    appState.soloGameState = getInitialState(difficulty, gameMode);
+    appState.soloGameState = getInitialState();
     createGrid();
 }
 

@@ -6,7 +6,6 @@ import { appState, dom, dataChannels, copyToClipboard } from './scripts.js';
 import { loadGame, updateGridForTeam, loadPuzzle, createGrid } from './game_manager.js';
 import { stopTimer } from './timer.js';
 import { clearTextbox, createQrCodeChunks, playBeepSound, playRemoteMoveSound, debugLog } from './misc.js';
-import { speakWord } from './games/spellingbee.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
 import { createOffer, createAnswer, processAndBroadcastMove } from './webrtc.js';
 import { checkGridState, clearAllHighlights, highlightConflictingCells, highlightMatchingCells, isMoveValid, validatePuzzle } from './games/sudoku.js';
@@ -186,30 +185,69 @@ export function showWinnerScreen(winningTeam, losingTeam) {
  * @param {'info' | 'error'} [type='info'] - The type of toast to display.
  */
 export function showToast(message, type = 'info') {    
-    let container = document.getElementById('toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'toast-container';
-        document.body.appendChild(container);
+    const container = document.getElementById('toast-container') || createToastContainer();
+
+    // Check if an identical toast already exists
+    const existingToast = findExistingToast(container, message);
+
+    if (existingToast) {
+        // If it exists, update the badge and reset its timer
+        updateToastBadge(existingToast);
+        resetToastTimer(existingToast);
+    } else {
+        // Otherwise, create a new toast
+        createNewToast(container, message, type);
     }
+}
 
-    const toast = document.createElement('div');
-    toast.className = 'toast-notification';
-    if (type === 'error') {
-        toast.classList.add('error');
+/** Helper Functions for Toast Management **/
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+    return container;
+}
+
+function findExistingToast(container, message) {
+    return Array.from(container.children).find(toast => toast.querySelector('.toast-message')?.textContent === message);
+}
+
+function updateToastBadge(toast) {
+    let badge = toast.querySelector('.toast-badge');
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'toast-badge';
+        badge.dataset.count = 1; // First duplicate
+        toast.appendChild(badge);
     }
-    toast.textContent = message;
-    
-    // Add the new toast to the top of the container
-    container.prepend(toast);
+    const newCount = parseInt(badge.dataset.count, 10) + 1;
+    badge.dataset.count = newCount;
+    badge.textContent = newCount;
+    badge.classList.remove('hidden');
+}
 
-    // Force a reflow to trigger the animation
-    void toast.offsetWidth;
-    toast.classList.add('show');
-
-    setTimeout(() => {
+function resetToastTimer(toast) {
+    // Clear the old timer and set a new one
+    clearTimeout(toast.dataset.timerId);
+    toast.dataset.timerId = setTimeout(() => {
         toast.remove();
-    }, 4000); // Matches the animation duration
+    }, 4000);
+}
+
+function createNewToast(container, message, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+
+    const messageSpan = document.createElement('span');
+    messageSpan.className = 'toast-message';
+    messageSpan.textContent = message;
+    toast.appendChild(messageSpan);
+
+    container.prepend(toast);
+    void toast.offsetWidth; // Force reflow for animation
+    toast.classList.add('show');
+    resetToastTimer(toast); // Set its initial removal timer
 }
 
 /**
@@ -617,60 +655,9 @@ export function initializeEventListeners() {
         // Re-initialize the solo game view to reflect the new game choice immediately.
         initializeSoloGame();
     });
-    dom.connect4ModeSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuConnect4Mode', event.target.value);
-        showToast(`Connect 4 Mode: ${event.target.options[event.target.selectedIndex].text}`);
-    });
-    dom.difficultySelector.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuDifficulty', event.target.value);
-        showToast(`Difficulty set to: ${event.target.options[event.target.selectedIndex].text}`);
-    });
-    dom.spellingbeeModeSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuSpellingBeeMode', event.target.value);
-        showToast(`Spelling Bee Mode: ${event.target.options[event.target.selectedIndex].text}`);
-    });
-    dom.memorymatchModeSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuMemoryMatchMode', event.target.value);
-        showToast(`Memory Match Mode: ${event.target.options[event.target.selectedIndex].text}`);
-    });
-    dom.deckCountSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuDeckCount', event.target.value);
-        showToast(`Deck Count set to: ${event.target.options[event.target.selectedIndex].text}`);
-    });
-    dom.voiceSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuVoice', event.target.value);
-        // Provide audio feedback for the selected voice
-        const selectedOption = event.target.options[event.target.selectedIndex];
-        if (selectedOption && selectedOption.text) {
-            speakWord(`${selectedOption.text} selected`);
-        }
-    });
-    dom.spellingBeeWordListInput.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuSpellingBeeWordList', event.target.value);
-        showToast(`Spelling Bee word list updated.`);
-    });
-    // Save the custom word list when the user is done editing it
-    dom.customWordListInput.addEventListener('change', (event) => {
-        const input = event.target;
-        const words = input.value.split(/[\n, ]+/)
-            .map(word => word.trim().toUpperCase())
-            .filter(word => word.length > 0);
-        
-        words.sort();
-        input.value = words.join('\n');
-        localStorage.setItem('sudokuWordSearchList', input.value);
-        showToast(`Word Search list updated.`);
-    });
-    dom.wordCountInput.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuWordSearchCount', event.target.value);
-        showToast(`Word count set to: ${event.target.value}`);
-    });
-
-    populateVoiceList();
 
     // Event listener for the theme selector
     dom.themeSelector.addEventListener('change', handleThemeChange);
-    dom.themeSelectorConfig.addEventListener('change', handleThemeChange);
 
     // Event listener for the player name input
     dom.playerNameInput.addEventListener('change', (event) => {
@@ -765,136 +752,21 @@ export function initializeEventListeners() {
         }
     });
 
+
     // Event listener for the "New Game" button on the winner modal
     dom.newPuzzleWinnerBtn.addEventListener('click', () => {
         dom.winnerModal.classList.add('hidden');
         // Programmatically click the main "New Game" button to start a new puzzle
-        // This reuses the logic already set up for the current game.
-        dom.newPuzzleButton.click();
-    });
-
-    // Event listener for the pencil mode button
-    dom.pencilButton.addEventListener('click', () => {
-        appState.isPencilMode = !appState.isPencilMode;
-        document.getElementById('pencil-status').textContent = appState.isPencilMode ? 'ON' : 'OFF';
-        dom.pencilButton.classList.toggle('pencil-active', appState.isPencilMode);
-    });
-
-    // Event listener to the number pad
-    dom.numberPad.addEventListener('click', (event) => {
-        // Check if a number button or the empty button was clicked and if a cell is active
-        if (event.target.classList.contains('number-btn') && appState.activeCell) {
-            // Check if the cell is a preloaded cell (you should not be able to change it)
-            if (appState.activeCell.classList.contains('preloaded-cell')) {
-                return;
-            }
-
-            if (appState.isPencilMode) {
-                // PENCIL MODE LOGIC
-                if (event.target.id !== 'empty-btn') {
-                    const digit = parseInt(event.target.textContent, 10);
-                    const [_, row, col] = appState.activeCell.id.split('-');
-
-                    // Create a board representation from the DOM
-                    const board = [];
-                    for (let r = 0; r < 9; r++) {
-                        board[r] = [];
-                        for (let c = 0; c < 9; c++) {
-                            const cell = document.getElementById(`cell-${r}-${c}`);
-                            const value = cell.querySelector('.cell-value').textContent.trim();
-                            board[r][c] = value === '' ? 0 : parseInt(value, 10);
-                        }
-                    }
-
-                    // Check if the move is valid before adding the scratch mark
-                    if (isMoveValid(board, parseInt(row, 10), parseInt(col, 10), digit)) {
-                        const scratchDigit = appState.activeCell.querySelector(`.scratch-pad-digit[data-digit="${digit}"]`);
-                        if (scratchDigit) {
-                            scratchDigit.style.visibility = scratchDigit.style.visibility === 'visible' ? 'hidden' : 'visible';
-                        }
-                    } else {
-                        // Optionally, provide feedback that the number is invalid
-                        highlightConflictingCells(parseInt(row, 10), parseInt(col, 10), digit.toString());
-                        playBeepSound();
-                        // Clear the highlights after a short delay
-                        setTimeout(() => {
-                            document.querySelectorAll('.invalid-cell').forEach(c => c.classList.remove('invalid-cell'));
-                            validatePuzzle(); // Re-validate to restore any legitimate invalid cells
-                        }, 1000);
-                    }
-                } else {
-                    // Clear all scratch marks in the cell
-                    appState.activeCell.querySelectorAll('.scratch-pad-digit').forEach(d => d.style.visibility = 'hidden');
-                }
-            } else {
-                // NORMAL MODE LOGIC
-                let value;
-                if (event.target.id === 'empty-btn') {
-                    value = ''; // Allow clearing the cell
-                } else {
-                    value = parseInt(event.target.textContent, 10);
-                }
-
-                const [_, row, col] = appState.activeCell.id.split('-');
-                const board = [];
-                for (let r = 0; r < 9; r++) {
-                    board[r] = [];
-                    for (let c = 0; c < 9; c++) {
-                        const cell = document.getElementById(`cell-${r}-${c}`);
-                        const cellVal = cell.querySelector('.cell-value').textContent.trim();
-                        board[r][c] = cellVal === '' ? 0 : parseInt(cellVal, 10);
-                    }
-                }
-
-                // Only proceed if the move is valid or if clearing the cell
-                if (value === '' || isMoveValid(board, parseInt(row, 10), parseInt(col, 10), value)) {
-                    // Clear scratchpad when a final number is entered
-                    appState.activeCell.querySelectorAll('.scratch-pad-digit').forEach(d => d.style.visibility = 'hidden');
-                    appState.activeCell.querySelector('.cell-value').textContent = value;
-
-                    const move = {
-                        type: 'move',
-                        team: appState.playerTeam,
-                        row: parseInt(row, 10),
-                        col: parseInt(col, 10),
-                        value: value,
-                        playerId: appState.playerId, // The user-configurable name
-                        sessionId: appState.sessionId // The unique session ID
-                    };
-
-                    if (appState.isInitiator) {
-                        // Host processes its own move directly.
-                        processAndBroadcastMove(move);
-                    } else {
-                        // Joiner sends the move to the host for processing.
-                        if (dataChannels.length > 0 && dataChannels[0].readyState === 'open') {
-                            dataChannels[0].send(JSON.stringify(move));
-                        }
-                    }
-
-                    // The move is valid, so update highlights for the new value.
-                    clearAllHighlights();
-                    if (value !== '') {
-                        highlightMatchingCells(value);
-                    }
-                    checkGridState();
-                } else {
-                    highlightConflictingCells(parseInt(row, 10), parseInt(col, 10), value.toString());
-                    playBeepSound(); // Play sound for invalid move
-                    // Clear the highlights after a short delay
-                    setTimeout(() => {
-                        document.querySelectorAll('.invalid-cell').forEach(c => c.classList.remove('invalid-cell'));
-                        validatePuzzle(); // Re-validate to restore any legitimate invalid cells
-                    }, 1000);
-                }
-            }
-        }
+        loadPuzzle(); // Call the game_manager's loadPuzzle function
     });
 
     dom.showChannelsBtn.addEventListener('click', toggleChannelList);
     dom.channelList.addEventListener('click', disconnectChannel);
     dom.hardResetBtn.addEventListener('click', performHardReset);
 
+
+    // Wire the main "New Game" button to the game manager's loadPuzzle function.
+    dom.newPuzzleButton.addEventListener('click', loadPuzzle);
 
     // Event listeners for team selection
     dom.createTeamBtn.addEventListener('click', () => {
@@ -1034,20 +906,7 @@ async function processLocalTeamJoin(joinData) {
  */
 export async function initializeSoloGame() {
     if (appState.isInitiator && !appState.playerTeam) {
-        // Hide all game-specific areas first
-        dom.wordSearchListArea.classList.add('hidden');
-
         const selectedGame = dom.gameSelector.value;
-        debugLog(`Selected game for solo view: ${selectedGame}`);
-
-        // Initialize a solo game state for the host.
-        const gameModule = await import(`./games/${selectedGame}.js`);
-        const difficulty = dom.difficultySelector.value;
-        const gameMode = dom.connect4ModeSelect.value;
-        debugLog(`Resetting solo game state for ${selectedGame}.`);
-        // Always create a fresh state when initializing the solo view to prevent state conflicts between games.
-        appState.soloGameState = gameModule.getInitialState(difficulty, gameMode);
-        debugLog(`New soloGameState created:`, appState.soloGameState);
 
         // Now that state is guaranteed to exist, load the game's UI.
         await loadGame(selectedGame);
@@ -1110,44 +969,6 @@ function showInstructions() {
     }, 4000);
 }
 
-/**
- * Populates the voice selection dropdown with available speech synthesis voices.
- */
-function populateVoiceList() {
-    if (typeof speechSynthesis === 'undefined') {
-        dom.voiceSelect.innerHTML = '<option value="">Speech Synthesis not supported</option>';
-        return;
-    }
-
-    const loadVoices = () => {
-        const voices = speechSynthesis.getVoices();
-        dom.voiceSelect.innerHTML = ''; // Clear existing options
-
-        if (voices.length === 0) {
-            dom.voiceSelect.innerHTML = '<option value="">No voices found</option>';
-            return;
-        }
-
-        voices
-            .filter(voice => voice.lang.startsWith('en')) // Filter for English voices
-            .forEach((voice, index) => {
-                const option = document.createElement('option');
-                option.textContent = `Voice ${index + 1}`;
-                option.setAttribute('value', voice.name);
-                dom.voiceSelect.appendChild(option);
-            });
-        
-        // Set the dropdown to the saved voice, if any
-        const savedVoice = localStorage.getItem('sudokuVoice');
-        if (savedVoice) dom.voiceSelect.value = savedVoice;
-    };
-
-    // The list of voices is loaded asynchronously.
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = loadVoices;
-    }
-    loadVoices(); // Also call it immediately in case they are already loaded.
-}
 /**
  * Toggles the visibility of the data channel list and updates the button text.
  */
@@ -1217,7 +1038,6 @@ function handleThemeChange(event) {
     localStorage.setItem('sudokuTheme', selectedTheme); // Save the theme choice
     // Sync both dropdowns
     dom.themeSelector.value = selectedTheme;
-    dom.themeSelectorConfig.value = selectedTheme;
 }
 
 /**

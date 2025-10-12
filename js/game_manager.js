@@ -20,20 +20,35 @@ let activeGameModule = null;
  * @param {string} gameType - The type of game to load ('sudoku', 'connect4', etc.).
  */
 export async function loadGame(gameType) {
-    debugLog(`loadGame called for: ${gameType}`);
+    // debugLog(`[GM] loadGame: Called for game type '${gameType}'.`);
     // If there's an active game module, run its cleanup function first.
     if (activeGameModule && typeof activeGameModule.cleanup === 'function') {
-        debugLog(`Cleaning up previous game module.`);
+        // debugLog(`Cleaning up previous game module.`);
         activeGameModule.cleanup();
     }
 
+    // Clear the main game board area before loading the new game
+    dom.gameBoardArea.innerHTML = '';
+
     try {
         const module = await import(`./games/${gameType}.js`);
+
+        // If this is a solo game, create its initial state now that the module is initialized.
+        if (appState.isInitiator && !appState.playerTeam) {
+            if (typeof module.getInitialState === 'function') {
+                // debugLog(`[GM] loadGame: Found getInitialState for '${gameType}'. Calling it.`);
+                appState.soloGameState = module.getInitialState();
+                // debugLog(`[GM] loadGame: Received initial state from module:`, JSON.parse(JSON.stringify(appState.soloGameState)));
+            } else {
+                // debugLog(`[GM] loadGame: No getInitialState function found for '${gameType}'.`);
+            }
+        }
+
         activeGameModule = module;
-        debugLog(`Module for ${gameType} loaded. Calling initialize().`);
+        // debugLog(`[GM] loadGame: Module for '${gameType}' loaded. Calling initialize().`);
         activeGameModule.initialize();
     } catch (error) {
-        console.error(`Failed to load game module for: ${gameType}`, error);
+        console.error(`[GM] Failed to load game module for: ${gameType}`, error);
     }
 }
 
@@ -47,7 +62,7 @@ export async function loadGame(gameType) {
  */
 export function createGrid() {
     // This function is now a proxy to the active game's createGrid function.
-    debugLog(`createGrid called. Proxying to active module.`);
+    // debugLog(`createGrid called. Proxying to active module.`);
     if (activeGameModule && typeof activeGameModule.createGrid === 'function') {
         activeGameModule.createGrid();
     } else {
@@ -64,15 +79,11 @@ export function createGrid() {
  * @param {boolean} [resetTeams=false] - Optional flag to reset the team state.
  */
 export async function loadPuzzle(difficulty, puzzleData, resetTeams = false) {
-    debugLog(`loadPuzzle called with difficulty: ${difficulty}`);
-    if (!activeGameModule) {
-        // If no game is active, default to loading a new Sudoku puzzle for solo play.
-        debugLog(`No active game module, defaulting to Sudoku.`);
-        await loadGame('sudoku');
-    }
+    // debugLog(`[GM] loadPuzzle called. Proxying to active module.`);
     if (activeGameModule && typeof activeGameModule.loadPuzzle === 'function') {
-        debugLog(`Proxying loadPuzzle to active module.`);
-        return activeGameModule.loadPuzzle(difficulty, puzzleData, resetTeams);
+        // The game-specific loadPuzzle function will handle its own arguments.
+        // We don't need to pass anything from here.
+        activeGameModule.loadPuzzle();
     }
 }
 

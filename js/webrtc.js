@@ -214,8 +214,7 @@ function processBroadcastForUI(data) {
             loadGame(data.teamState.gameType).then(() => {
                 updateGridForTeam(data.teamName);
             });
-            dom.teamSelectionArea.classList.add('hidden');
-            dom.sudokuGridArea.classList.remove('hidden');
+            hideSignalingUI(); // This correctly shows the game screen
             break;
         case 'move-update':
             // Dynamically call the correct UI processor

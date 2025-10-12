@@ -600,13 +600,14 @@ textarea {
         gap: 2dvh;
     }
 
-    /* This section now contains the grid and number pad */
-    #sudoku-grid-area {
+    /* This section now contains the game board */
+    #game-board-area {
         display: flex;
         order: 2; /* Place after number pad */
         flex-direction: column;
         align-items: center;
         gap: 2dvh;
+        flex-grow: 1; /* Allow the game area to fill available vertical space */
     }
 
     /* Controls are now a direct child of game-container */
@@ -684,11 +685,12 @@ textarea {
         align-self: flex-start; /* Align them to the left of the column */    
     }
 
-    #sudoku-grid-area {
+    #game-board-area {
         display: flex; order: 2; /* Center */
         flex-direction: row;
-        align-items: flex-start;
+        align-items: stretch; /* Make items fill the container's height */
         gap: 1dvw;
+        flex-grow: 1; /* Allow the main game area to take up available space */
         justify-content: center;
     }
 
@@ -914,11 +916,13 @@ body.default .spelling-bee-option-btn {
     gap: 10px;
     width: 100%;
     height: 100%;
+    flex-grow: 1; /* Allow the grid to fill the available space */
 }
 
 .memory-card {
     perspective: 1000px;
     cursor: pointer;
+    height: 100%; /* Add this to make cards visible */
 }
 
 .memory-card-inner {
@@ -1964,6 +1968,7 @@ body.host .host-only {
     width: 100%;
     height: 100%;
     aspect-ratio: 7 / 6;
+    flex-grow: 1;
 }
 
 .connect4-grid .grid-cell {

@@ -45,71 +45,9 @@
                 </div>
             </div>
 
-            <!-- Black Jack Game Area -->
-            <div id="blackjack-area" class="hidden">
-                <div class="blackjack-table">
-                    <div id="dealer-hand" class="hand-area">
-                        <h3>Dealer's Hand: <span id="dealer-score"></span></h3>
-                        <div class="cards"></div>
-                    </div>
-                    <div id="player-hand" class="hand-area">
-                        <h3>Player's Hand: <span id="player-score"></span></h3>
-                        <div class="cards"></div>
-                    </div>
-                    <div id="blackjack-actions" class="player-actions"></div>
-                    <div id="betting-controls"></div>
-                    <div id="player-balance"></div>
-                </div>
-            </div>
-
-            <!-- Cosmic Balance Game Area -->
-            <section id="cosmic-balance-area" class="hidden">
-                <div id="info-panel"></div>
-                <div id="starmap-view">
-                    <!-- The star map will be rendered here by JS -->
-                </div>
-                <div id="combat-map-view" class="hidden">
-                    <!-- The tactical combat map will be rendered here -->
-                </div>
-            </section>
-
-            <!-- Spelling Bee Game Area -->
-            <div id="spelling-bee-area" class="hidden">
-                <div id="spelling-bee-controls">
-                    <button id="speak-word-btn" class="theme-button">Speak Word</button>
-                    <p id="spelling-bee-feedback"></p>
-                </div>
-                <div id="spelling-bee-answer-area">
-                    <!-- This will be populated by JS with buttons or an input field -->
-                </div>
-            </div>
-
-            <!-- Word Search Word List -->
-            <div id="word-search-list-area" class="hidden">
-                <h3>Words to Find:</h3>
-                <ul id="word-list"></ul>
-            </div>
-
-            <div id="number-pad">
-                <button class="number-btn" id="number-btn-1">1</button>
-                <button class="number-btn" id="number-btn-2">2</button>
-                <button class="number-btn" id="number-btn-3">3</button>
-                <button class="number-btn" id="number-btn-4">4</button>
-                <button class="number-btn" id="number-btn-5">5</button>
-                <button class="number-btn" id="number-btn-6">6</button>
-                <button class="number-btn" id="number-btn-7">7</button>
-                <button class="number-btn" id="number-btn-8">8</button>
-                <button class="number-btn" id="number-btn-9">9</button>
-                <button class="number-btn" id="empty-btn">X</button>
-            </div>
-
             <!-- Main game area, containing the number pad and the Sudoku grid -->
-            <section id="sudoku-grid-area">
-                <div id="puzzle-area">
-                    <div id="sudoku-grid">
-
-                    </div>
-                </div>
+            <section id="game-board-area">
+                <!-- This area will be dynamically populated by the active game module -->
             </section>
 
             <!-- Section for game controls like timer, theme, difficulty, and connection toggle -->
@@ -134,12 +72,8 @@
                             </select>
                     </div>
                 </div>
-    
+
                 <div class="button-row">
-                    <button class="theme-button" id="pencil-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                        <span id="pencil-status">OFF</span>
-                    </button>
                     <button class="theme-button host-only" id="new-puzzle-btn">
                         <div class="button-content">
                             <span class="text">Puzzle</span>

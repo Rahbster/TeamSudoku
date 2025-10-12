@@ -13,13 +13,9 @@ let selectionPath = [];
 
 export function initialize() {
     debugLog("Word Search Initialized");
-    dom.wordSearchListArea.classList.remove('hidden');
-    dom.sudokuGridArea.classList.remove('hidden');
+
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Game';
-
-    // Ensure the main "New Game" button is correctly wired up for Word Search.
-    dom.newPuzzleButton.onclick = loadPuzzle;
 
     // If we are initializing for a solo game, draw the grid.
     if (appState.isInitiator && !appState.playerTeam) {
@@ -28,13 +24,25 @@ export function initialize() {
 }
 
 export function cleanup() {
-    dom.wordSearchListArea.classList.add('hidden');
+    // The game_manager now clears the gameBoardArea, so we just need to nullify the DOM cache.
+    dom.wordSearchListArea = null;
 }
 
 export function createGrid() {
     debugLog('WordSearch createGrid called.');
-    dom.sudokuGrid.innerHTML = '';
-    dom.sudokuGrid.className = 'wordsearch-grid';
+    // Create the necessary structure within the generic game board area
+    dom.gameBoardArea.innerHTML = `
+        <div id="wordsearch-grid"></div>
+        <div id="word-search-list-area">
+            <h3>Word List</h3>
+            <ul id="word-list"></ul>
+        </div>
+    `;
+    // Now that the elements are created, cache them.
+    const wordsearchGrid = document.getElementById('wordsearch-grid');
+    wordsearchGrid.className = 'wordsearch-grid';
+    dom.wordSearchListArea = document.getElementById('word-search-list-area');
+    dom.wordList = document.getElementById('word-list');
 
     const gameState = appState.playerTeam ? appState.teams[appState.playerTeam]?.gameState : appState.soloGameState;
     if (!gameState) return;
@@ -56,7 +64,7 @@ export function createGrid() {
             cell.addEventListener('touchmove', (e) => { e.preventDefault(); handleMouseOver(e); });
             cell.addEventListener('touchend', (e) => { e.preventDefault(); handleMouseUp(e); });
 
-            dom.sudokuGrid.appendChild(cell);
+            wordsearchGrid.appendChild(cell);
         }
     }
     updateWordListUI();

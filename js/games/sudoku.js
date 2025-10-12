@@ -5,16 +5,12 @@
 import { dom, appState, dataChannels } from '../scripts.js';
 import { startTimer } from '../timer.js';
 import { generatePuzzle } from '../generator.js';
-import { broadcastCellSelection, processAndBroadcastMove } from '../webrtc.js';
+import { broadcastCellSelection, processAndBroadcastMove } from '../webrtc.js'; // processAndBroadcastMove is now used here
 import { showWinnerScreen } from '../ui.js';
-import { playBeepSound } from '../misc.js';
+import { playBeepSound } from '../misc.js'; // playBeepSound is now used here
 
 export function initialize() {
     console.log("Sudoku Initialized");
-    // Show/hide UI elements specific to Sudoku
-    dom.numberPad.classList.remove('hidden');
-    dom.pencilButton.classList.remove('hidden');
-    dom.sudokuGridArea.classList.remove('hidden'); // Ensure the grid container is visible
     document.querySelectorAll('.host-only').forEach(el => {
         if (el.id === 'difficulty-select' || el.id === 'new-puzzle-btn') {
             el.style.display = '';
@@ -24,8 +20,10 @@ export function initialize() {
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Puzzle';
 
-    // Ensure the main "New Game" button is correctly wired up for Sudoku.
-    dom.newPuzzleButton.onclick = () => loadPuzzle(dom.difficultySelector.value, null, false);
+    // If we are initializing for a solo game, draw the grid and load the puzzle.
+    if (appState.isInitiator && !appState.playerTeam) {
+        loadPuzzle(dom.difficultySelector.value, appState.soloGameState, false);
+    }
 
 }
 
@@ -34,8 +32,6 @@ export function initialize() {
  */
 export function cleanup() {
     console.log("Sudoku Cleanup");
-    dom.numberPad.classList.add('hidden');
-    dom.pencilButton.classList.add('hidden');
     // Also hide the host-only controls that Sudoku shows
     document.querySelectorAll('.host-only').forEach(el => {
         if (el.id === 'difficulty-select' || el.id === 'new-puzzle-btn') {
@@ -45,8 +41,37 @@ export function cleanup() {
 }
 
 export function createGrid() {
-    dom.sudokuGrid.innerHTML = '';
-    dom.sudokuGrid.className = 'sudoku-grid'; // Set class for Sudoku styling
+    // Create the necessary structure within the generic game board area
+    dom.gameBoardArea.innerHTML = `
+        <div id="puzzle-area">
+            <div id="sudoku-grid"></div>
+        </div>
+        <div id="sudoku-controls">
+            <div id="number-pad">
+                <button class="number-btn" id="number-btn-1">1</button>
+                <button class="number-btn" id="number-btn-2">2</button>
+                <button class="number-btn" id="number-btn-3">3</button>
+                <button class="number-btn" id="number-btn-4">4</button>
+                <button class="number-btn" id="number-btn-5">5</button>
+                <button class="number-btn" id="number-btn-6">6</button>
+                <button class="number-btn" id="number-btn-7">7</button>
+                <button class="number-btn" id="number-btn-8">8</button>
+                <button class="number-btn" id="number-btn-9">9</button>
+                <button class="number-btn" id="empty-btn">X</button>
+            </div>
+            <div class="button-row">
+                 <button class="theme-button" id="pencil-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                    <span id="pencil-status">OFF</span>
+                </button>
+            </div>
+        </div>
+    `;
+    const sudokuGrid = document.getElementById('sudoku-grid');
+    sudokuGrid.innerHTML = '';
+    sudokuGrid.className = 'sudoku-grid'; // Set class for Sudoku styling
+
+    attachSudokuControlListeners(); // Attach listeners to the newly created controls
 
     for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
@@ -78,8 +103,119 @@ export function createGrid() {
             cell.addEventListener('touchend', (e) => handleInteractionEnd(e, cell));
             cell.addEventListener('mouseleave', () => clearTimeout(appState.pressTimer));
 
-            dom.sudokuGrid.appendChild(cell);
+            sudokuGrid.appendChild(cell);
         }
+    }
+}
+
+/**
+ * Attaches event listeners to the dynamically created Sudoku controls.
+ */
+function attachSudokuControlListeners() {
+    const pencilButton = document.getElementById('pencil-btn');
+    const numberPad = document.getElementById('number-pad');
+
+    if (pencilButton) {
+        pencilButton.addEventListener('click', () => {
+            appState.isPencilMode = !appState.isPencilMode;
+            document.getElementById('pencil-status').textContent = appState.isPencilMode ? 'ON' : 'OFF';
+            pencilButton.classList.toggle('pencil-active', appState.isPencilMode);
+        });
+    }
+
+    if (numberPad) {
+        numberPad.addEventListener('click', (event) => {
+            // Check if a number button or the empty button was clicked and if a cell is active
+            if (event.target.classList.contains('number-btn') && appState.activeCell) {
+                // Check if the cell is a preloaded cell (you should not be able to change it)
+                if (appState.activeCell.classList.contains('preloaded-cell')) {
+                    return;
+                }
+
+                if (appState.isPencilMode) {
+                    // PENCIL MODE LOGIC
+                    if (event.target.id !== 'empty-btn') {
+                        const digit = parseInt(event.target.textContent, 10);
+                        const [_, row, col] = appState.activeCell.id.split('-');
+
+                        // Create a board representation from the DOM
+                        const board = [];
+                        for (let r = 0; r < 9; r++) {
+                            board[r] = [];
+                            for (let c = 0; c < 9; c++) {
+                                const cell = document.getElementById(`cell-${r}-${c}`);
+                                const value = cell.querySelector('.cell-value').textContent.trim();
+                                board[r][c] = value === '' ? 0 : parseInt(value, 10);
+                            }
+                        }
+
+                        // Check if the move is valid before adding the scratch mark
+                        if (isMoveValid(board, parseInt(row, 10), parseInt(col, 10), digit)) {
+                            const scratchDigit = appState.activeCell.querySelector(`.scratch-pad-digit[data-digit="${digit}"]`);
+                            if (scratchDigit) {
+                                scratchDigit.style.visibility = scratchDigit.style.visibility === 'visible' ? 'hidden' : 'visible';
+                            }
+                        } else {
+                            // Optionally, provide feedback that the number is invalid
+                            highlightConflictingCells(parseInt(row, 10), parseInt(col, 10), digit.toString());
+                            playBeepSound();
+                            // Clear the highlights after a short delay
+                            setTimeout(() => {
+                                document.querySelectorAll('.invalid-cell').forEach(c => c.classList.remove('invalid-cell'));
+                                validatePuzzle(); // Re-validate to restore any legitimate invalid cells
+                            }, 1000);
+                        }
+                    } else {
+                        // Clear all scratch marks in the cell
+                        appState.activeCell.querySelectorAll('.scratch-pad-digit').forEach(d => d.style.visibility = 'hidden');
+                    }
+                } else {
+                    // NORMAL MODE LOGIC
+                    let value;
+                    if (event.target.id === 'empty-btn') {
+                        value = ''; // Allow clearing the cell
+                    } else {
+                        value = parseInt(event.target.textContent, 10);
+                    }
+
+                    const [_, row, col] = appState.activeCell.id.split('-');
+                    const board = [];
+                    for (let r = 0; r < 9; r++) {
+                        board[r] = [];
+                        for (let c = 0; c < 9; c++) {
+                            const cell = document.getElementById(`cell-${r}-${c}`);
+                            const cellVal = cell.querySelector('.cell-value').textContent.trim();
+                            board[r][c] = cellVal === '' ? 0 : parseInt(cellVal, 10);
+                        }
+                    }
+
+                    // Only proceed if the move is valid or if clearing the cell
+                    if (value === '' || isMoveValid(board, parseInt(row, 10), parseInt(col, 10), value)) {
+                        // Clear scratchpad when a final number is entered
+                        appState.activeCell.querySelectorAll('.scratch-pad-digit').forEach(d => d.style.visibility = 'hidden');
+                        appState.activeCell.querySelector('.cell-value').textContent = value;
+
+                        const move = { type: 'move', game: 'sudoku', team: appState.playerTeam, row: parseInt(row, 10), col: parseInt(col, 10), value: value, playerId: appState.playerId, sessionId: appState.sessionId };
+                        processAndBroadcastMove(move);
+
+                        // The move is valid, so update highlights for the new value.
+                        clearAllHighlights();
+                        if (value !== '') {
+                            highlightMatchingCells(value);
+                        }
+                        checkGridState();
+                    } else {
+                        highlightConflictingCells(parseInt(row, 10), parseInt(col, 10), value.toString());
+                        playBeepSound(); // Play sound for invalid move
+                        // Clear the highlights after a short delay
+                        setTimeout(() => {
+                            document.querySelectorAll('.invalid-cell').forEach(c => c.classList.remove('invalid-cell'));
+                            validatePuzzle(); // Re-validate to restore any legitimate invalid cells
+                        }, 1000);
+                    }
+                }
+            }
+        });
     }
 }
 

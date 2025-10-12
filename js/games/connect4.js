@@ -16,23 +16,21 @@ aiWorker.onmessage = function(e) {
     if (bestMove !== null) {
         // A short delay to simulate AI thinking
         setTimeout(() => {            
-            debugLog(`AI is making a move in column: ${bestMove}`);
+            debugLog(`AI is making a move in column: ${bestMove}`); //This is a comment
             makeSoloMove(bestMove, 2); // AI is always player 2
             displayAiScores(moveScores); // Display the new scores after the AI move
             // Re-enable player input
-            dom.gameGrid.style.pointerEvents = 'auto';
+            document.getElementById('connect4-grid').style.pointerEvents = 'auto';
             findAndHighlightImminentThreats(appState.soloGameState.board);
         }, 1000);
     } else {        
-        dom.gameGrid.style.pointerEvents = 'auto';
+        document.getElementById('connect4-grid').style.pointerEvents = 'auto';
         debugLog('AI worker returned no valid moves.');
     }
 };
 
 export function initialize() {
     debugLog("Connect 4 Initialized");
-    // Hide UI elements not used by Connect 4
-    dom.sudokuGridArea.classList.remove('hidden'); // Ensure the grid container is visible
 
     // Show undo button only for solo standard mode
     if (appState.isInitiator && !appState.playerTeam && dom.connect4ModeSelect.value === 'standard') {
@@ -52,8 +50,6 @@ export function initialize() {
         createGrid();
     }
 
-    // Ensure the main "New Game" button is correctly wired up for Connect 4.
-    dom.newPuzzleButton.onclick = loadPuzzle;
 }
 
 /**
@@ -65,12 +61,14 @@ export function cleanup() {
 
 export function createGrid() {
     debugLog('Connect4 createGrid called.');
-    dom.sudokuGrid.innerHTML = '';
-    dom.sudokuGrid.className = 'connect4-grid'; // Set class for Connect 4 styling
+    dom.gameBoardArea.innerHTML = '<div id="connect4-grid"></div>';
+    const grid = document.getElementById('connect4-grid');
+    grid.innerHTML = '';
+    grid.className = 'connect4-grid'; // Set class for Connect 4 styling
     
     const { rows, cols } = getBoardDimensions();
-    dom.sudokuGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    dom.sudokuGrid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
 
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
@@ -79,7 +77,7 @@ export function createGrid() {
             cell.id = `cell-${r}-${c}`;
             cell.dataset.col = c;
             cell.addEventListener('click', handleCellClick);
-            dom.sudokuGrid.appendChild(cell);
+            grid.appendChild(cell);
         }
     }
 
@@ -119,7 +117,7 @@ async function handleCellClick(event) {
                 findAndHighlightImminentThreats(appState.soloGameState.board);
 
                 // Disable player input while AI is "thinking"
-                dom.sudokuGrid.style.pointerEvents = 'none';
+                document.getElementById('connect4-grid').style.pointerEvents = 'none';
                 // Offload the AI move calculation to the Web Worker
                 debugLog(`Posting board to AI worker. Difficulty: ${appState.soloGameState.difficulty}`);
                 aiWorker.postMessage({
@@ -134,7 +132,7 @@ async function handleCellClick(event) {
             const playerMoveSuccessful = makeSoloSabotageMove(col, 1);
 
             if (playerMoveSuccessful && !appState.winner) {
-                dom.sudokuGrid.style.pointerEvents = 'none';
+                document.getElementById('connect4-grid').style.pointerEvents = 'none';
                 setTimeout(() => {
                     // Pass a deep copy of the board to the AI to prevent state mutation.
                     const aiColumn = findBestSabotageMove(JSON.parse(JSON.stringify(appState.soloGameState.board)));
@@ -146,7 +144,7 @@ async function handleCellClick(event) {
                         console.log("AI is trapped! Player wins.");
                         showWinnerScreen('all');
                     }
-                    dom.sudokuGrid.style.pointerEvents = 'auto';
+                    document.getElementById('connect4-grid').style.pointerEvents = 'auto';
                 }, 500);
             }
         }
@@ -207,7 +205,8 @@ export function updateGridForTeam(teamName) {
     }
 }
 
-export function getInitialState(difficulty, gameMode) {
+export function getInitialState(difficulty) {
+    const gameMode = dom.connect4ModeSelect.value;
     const rules = getGameRules(gameMode);
     const board = Array(rules.rows).fill(null).map(() => Array(rules.cols).fill(0));
 
@@ -635,30 +634,9 @@ function handleGameOver(line, winner, loser) {
     if (winner) appState.winner = winner;
     if (loser) appState.winner = 'lost'; // A generic state to indicate the game is over.
 
-    // For solo Connect 4, instead of showing the modal which can cause a lock-up,
-    // show a toast and immediately reset the game.
-    if (appState.isInitiator && !appState.playerTeam) {
-        let message = "Game Over!";
-        if (winner === 'You') message = "You won!";
-        if (loser === 'The Computer') message = "The Computer won.";
-        showToast(message, winner === 'You' ? 'info' : 'error');
-
-        // Apply the winning glow effect to the line of pieces.
-        if (line) {
-            line.forEach(cell => {
-                const domCell = document.getElementById(`cell-${cell.r}-${cell.c}`);
-                if (domCell) domCell.classList.add('winning-cell-blink');
-            });
-        }
-
-        // Reset the game after a short delay to allow the player to see the final move.
-        setTimeout(loadPuzzle, 2000);
-        return;
-    }
-
     // Disable further moves immediately
-    // This is now handled at the top of the function.
-    dom.sudokuGrid.style.pointerEvents = 'none';
+    const grid = document.getElementById('connect4-grid');
+    if (grid) grid.style.pointerEvents = 'none';
 
     if (line) {
         line.forEach(cell => {
@@ -688,11 +666,8 @@ function handleGameOver(line, winner, loser) {
         showWinnerScreen(winner, loser);
 
         // Clean up the blinking class
-        if (line) line.forEach(cell => document.getElementById(`cell-${cell.r}-${cell.c}`)?.classList.remove('winning-cell-blink'));
-        // Re-enable clicks for a new game, but only if the modal isn't up.
-        // The 'New Game' button will handle pointer events from here.
-        if (!document.querySelector('.modal:not(.hidden)')) {            
-            dom.gameGrid.style.pointerEvents = 'auto';
+        if (line) {
+            line.forEach(cell => document.getElementById(`cell-${cell.r}-${cell.c}`)?.classList.remove('winning-cell-blink'));
         }
     }, 3000); // 3 seconds, matching the animation duration
 }

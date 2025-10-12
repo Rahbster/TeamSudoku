@@ -11,27 +11,44 @@ const VALUES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'
 
 export function initialize() {
     startTimer(); // Start the session timer
-    dom.numberPad.classList.add('hidden');
-    dom.sudokuGridArea.classList.add('hidden');
-    dom.pencilButton.classList.add('hidden');
-    dom.blackjackArea.classList.remove('hidden');
     document.body.classList.add('blackjack-active');
-    document.getElementById('player-balance').textContent = `Tokens: ${appState.soloGameState?.balance || 100}`;
-    renderBettingControls();
 
-    // Ensure the main "New Game" button is correctly wired up for Black Jack.
-    dom.newPuzzleButton.onclick = loadPuzzle;
+    // If we are initializing for a solo game, draw the grid.
+    if (appState.isInitiator && !appState.playerTeam) {
+        createGrid();
+    }
 }
 
 export function cleanup() {
     stopTimer(); // Stop the session timer
-    dom.blackjackArea.classList.add('hidden');
     document.body.classList.remove('blackjack-active');
 }
 
 export function createGrid() {
-    // This game doesn't use the main grid, it uses its own UI area.
-    // The UI is built by the render functions.
+    // Create the necessary HTML structure within the generic game board area.
+    dom.gameBoardArea.innerHTML = `
+        <div id="blackjack-area" class="blackjack-table">
+            <div id="dealer-hand" class="hand-area">
+                <h3>Dealer: <span id="dealer-score"></span></h3>
+                <div class="cards"></div>
+            </div>
+            <div id="player-balance">Tokens: 100</div>
+            <div id="player-hand" class="hand-area">
+                <!-- Player hands will be rendered here -->
+            </div>
+            <div id="blackjack-actions" class="player-actions"></div>
+            <div id="betting-controls"></div>
+        </div>
+    `;
+
+    // Now that the elements are created, cache them.
+    dom.dealerHand = document.getElementById('dealer-hand');
+    dom.playerHand = document.getElementById('player-hand');
+    dom.blackjackActions = document.getElementById('blackjack-actions');
+    dom.bettingControls = document.getElementById('betting-controls');
+
+    document.getElementById('player-balance').textContent = `Tokens: ${appState.soloGameState?.balance || 100}`;
+    renderBettingControls();
 }
 
 export function getInitialState() {

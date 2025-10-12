@@ -9,22 +9,32 @@ import { showWinnerScreen, showToast } from '../ui.js';
 const WORD_LIST = ["COOPERATIVE", "ASSISTANT", "ENGINEERING", "JAVASCRIPT", "SYNTHESIS", "BROWSER", "OFFLINE", "CHALLENGE"];
 
 export function initialize() {
-    // Ensure the main "New Game" button is correctly wired up for Spelling Bee.
-    dom.newPuzzleButton.onclick = loadPuzzle;
-
-    dom.spellingBeeArea.classList.remove('hidden');
-    document.getElementById('spelling-bee-feedback').textContent = 'Click "New Game" to start!';
-    document.getElementById('speak-word-btn').onclick = () => speakWord(appState.soloGameState.currentWord);
+    // If we are initializing for a solo game, draw the grid.
+    if (appState.isInitiator && !appState.playerTeam) {
+        createGrid();
+    }
 }
 
 export function cleanup() {
     stopTimer();
-    dom.spellingBeeArea.classList.add('hidden');
 }
 
 export function createGrid() {
-    // This game doesn't use the main grid, it uses its own UI area.
-    setupQuestion();
+    // Create the necessary HTML structure within the generic game board area.
+    dom.gameBoardArea.innerHTML = `
+        <div id="spelling-bee-area">
+            <div id="spelling-bee-controls">
+                <button id="speak-word-btn" class="theme-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                    <span>Speak Word</span>
+                </button>
+            </div>
+            <div id="spelling-bee-answer-area"></div>
+            <p id="spelling-bee-feedback"></p>
+        </div>
+    `;
+    // Now that the elements are created, we can proceed with setting up the question.
+    setupQuestion(); 
 }
 
 export function getInitialState(difficulty, gameMode) {
@@ -67,6 +77,9 @@ function setupQuestion() {
     }
 
     gameState.currentWord = gameState.words[gameState.currentWordIndex];
+    // Wire up the speak button now that it exists.
+    document.getElementById('speak-word-btn').onclick = () => speakWord(gameState.currentWord);
+
     const feedbackEl = document.getElementById('spelling-bee-feedback');
     feedbackEl.textContent = `Word ${gameState.currentWordIndex + 1} of ${gameState.words.length}. Score: ${gameState.score}`;
     if (gameState.gameMode === 'multiple-choice') {
@@ -82,7 +95,7 @@ function setupQuestion() {
 }
 
 function setupMultipleChoice() {
-    const answerArea = dom.spellingBeeAnswerArea;
+    const answerArea = document.getElementById('spelling-bee-answer-area');
     answerArea.innerHTML = '';
     const correctWord = appState.soloGameState.currentWord;
 
@@ -106,7 +119,7 @@ function setupMultipleChoice() {
 }
 
 function setupTypingInput() {
-    const answerArea = dom.spellingBeeAnswerArea;
+    const answerArea = document.getElementById('spelling-bee-answer-area');
     answerArea.innerHTML = `
         <input type="text" id="spelling-input" placeholder="Type the word..." style="font-size: 1.5rem; text-align: center;">
         <button id="submit-spelling-btn" class="theme-button">Submit</button>
@@ -128,7 +141,7 @@ function setupTypingInput() {
 }
 
 function setupAnagramMode() {
-    const answerArea = dom.spellingBeeAnswerArea;
+    const answerArea = document.getElementById('spelling-bee-answer-area');
     const correctWord = appState.soloGameState.currentWord;
     const isHardMode = appState.soloGameState.gameMode === 'anagram-plus';
 
