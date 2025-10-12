@@ -170,8 +170,8 @@ body.connection-background #background-image-container {
     color: white;
     font-size: 3rem;
     border-radius: 5px;    
-    z-index: 1;
-    display: none; /* Temporarily hide for layout debugging */
+    z-index: 1; /* Lower the z-index */
+    display: inline-block;
 }
 
 /* Use tabular-nums to ensure all numbers have the same width, preventing layout shift */
