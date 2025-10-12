@@ -658,6 +658,7 @@ textarea {
     height: 100dvh;
 }
 
+/* This section now contains the game board */
 #game-board-area {
     display: flex;
     flex-grow: 1;
@@ -665,6 +666,7 @@ textarea {
     justify-content: center;
     align-items: center;
     min-height: 300px; /* Prevent it from becoming too small */
+    width: 100%;
 }
 
 /* Sudoku-specific intrinsic layout */

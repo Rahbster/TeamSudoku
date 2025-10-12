@@ -11,6 +11,7 @@ import { playBeepSound } from '../misc.js'; // playBeepSound is now used here
 
 export function initialize() {
     console.log("Sudoku Initialized");
+    document.body.classList.add('sudoku-layout-active');
     document.querySelectorAll('.host-only').forEach(el => {
         if (el.id === 'difficulty-select' || el.id === 'new-puzzle-btn') {
             el.style.display = '';
@@ -32,8 +33,7 @@ export function initialize() {
  */
 export function cleanup() {
     console.log("Sudoku Cleanup");
-    // Move the timer back to the game screen before this module's UI is destroyed.
-    document.getElementById('game-screen').appendChild(document.getElementById('timer-area'));
+    document.body.classList.remove('sudoku-layout-active');
     // Also hide the host-only controls that Sudoku shows
     document.querySelectorAll('.host-only').forEach(el => {
         if (el.id === 'difficulty-select' || el.id === 'new-puzzle-btn') {
@@ -73,8 +73,6 @@ export function createGrid() {
             </div>
         </div>
     `;
-    // Move the main timer into the left column for proper layout
-    document.getElementById('sudoku-left-column').prepend(document.getElementById('timer-area'));
 
     const sudokuGrid = document.getElementById('sudoku-grid');
     sudokuGrid.innerHTML = '';

@@ -32,14 +32,6 @@ aiWorker.onmessage = function(e) {
 export function initialize() {
     debugLog("Connect 4 Initialized");
 
-    // Show undo button only for solo standard mode
-    if (appState.isInitiator && !appState.playerTeam && dom.connect4ModeSelect.value === 'standard') {
-        dom.undoBtn.style.display = '';
-        dom.undoBtn.onclick = undoLastMoves;
-    } else {
-        dom.undoBtn.style.display = 'none';
-    }
-
     // Set the button text for Connect 4
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Game';
@@ -56,12 +48,22 @@ export function initialize() {
  * Cleans up UI elements specific to Connect 4 when switching games.
  */
 export function cleanup() {
-    dom.undoBtn.style.display = 'none';
+    // No cleanup needed now that the undo button is self-contained.
 }
 
 export function createGrid() {
     debugLog('Connect4 createGrid called.');
-    dom.gameBoardArea.innerHTML = '<div id="connect4-grid"></div>';
+    const showUndo = appState.isInitiator && !appState.playerTeam && dom.connect4ModeSelect.value === 'standard';
+
+    dom.gameBoardArea.innerHTML = `
+        <div id="connect4-container">
+            <div id="connect4-grid"></div>
+            ${showUndo ? `
+            <div class="button-row" style="justify-content: center; margin-top: 1rem;">
+                <button class="theme-button" id="connect4-undo-btn">Undo</button>
+            </div>` : ''}
+        </div>
+    `;
     const grid = document.getElementById('connect4-grid');
     grid.innerHTML = '';
     grid.className = 'connect4-grid'; // Set class for Connect 4 styling
@@ -79,6 +81,11 @@ export function createGrid() {
             cell.addEventListener('click', handleCellClick);
             grid.appendChild(cell);
         }
+    }
+
+    if (showUndo) {
+        const undoBtn = document.getElementById('connect4-undo-btn');
+        if (undoBtn) undoBtn.onclick = undoLastMoves;
     }
 
     // For Five-in-a-Row, pre-fill the side columns

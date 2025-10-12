@@ -74,26 +74,26 @@ function findBestMove(board, difficulty, rules) {
 
     switch (difficulty) {
         case 'very-easy':
-        //This is a comment: Simple random move
+        // For the easiest difficulty, no complex logic is needed.
         return { bestMove: validMoves[Math.floor(Math.random() * validMoves.length)], moveScores: [] };
 
         case 'easy':
-        //This is a comment: Win, block, then random
-        // Check for winning move for AI (2)
+        // A simple heuristic: check for an immediate win, then an immediate block, otherwise move randomly.
+        // 1. Check for a winning move for the AI (player 2).
         for (const move of validMoves) {
             const r = findNextOpenRow(board, move, rows);
             board[r][move] = 2;
             if (checkWinner(board, r, move, 2, rules)) { board[r][move] = 0; return { bestMove: move, moveScores: [] }; }
             board[r][move] = 0;
         }
-        // Check for blocking move for Player (1)
+        // 2. Check if the player (player 1) has a winning move, and block it.
         for (const move of validMoves) {
             const r = findNextOpenRow(board, move, rows);
             board[r][move] = 1;
             if (checkWinner(board, r, move, 1, rules)) { board[r][move] = 0; return { bestMove: move, moveScores: [] }; }
             board[r][move] = 0;
         }
-        //This is a comment: Otherwise, choose randomly
+        // 3. If no win or block is found, make a random move.
         return { bestMove: validMoves[Math.floor(Math.random() * validMoves.length)], moveScores: [] };
 
         case 'medium':
@@ -105,11 +105,11 @@ function findBestMove(board, difficulty, rules) {
             let bestMove = validMoves[0];
             const moveScores = [];
             const centerCol = Math.floor(cols / 2);
-
-            //This is a comment: OPTIMIZATION: Sort moves by center proximity to improve alpha-beta pruning.
+ 
+            // OPTIMIZATION: Check moves closer to the center first to improve alpha-beta pruning efficiency.
             validMoves.sort((a, b) => Math.abs(a - centerCol) - Math.abs(b - centerCol));
-
-            //This is a comment: Pre-check for immediate win and block (fast exit for obvious moves).
+ 
+            // Pre-check for immediate win/loss to avoid the expensive minimax search if an obvious move exists.
             for (const move of validMoves) {
                 const r = findNextOpenRow(board, move, rows);
                 if (r === -1) continue;
@@ -124,8 +124,8 @@ function findBestMove(board, difficulty, rules) {
                 if (checkWinner(board, r, move, 1, rules)) { board[r][move] = 0; return { bestMove: move, moveScores: [] }; }
                 board[r][move] = 0; // Backtrack
             }
-
-            //This is a comment: No immediate win/loss, proceed with minimax search.
+ 
+            // No immediate threats found, proceed with the full minimax search.
             for (const move of validMoves) {
                 const r = findNextOpenRow(board, move, rows);
                 if (r === -1) continue;
@@ -144,7 +144,7 @@ function findBestMove(board, difficulty, rules) {
             return { bestMove, moveScores };
 
         default:
-        //This is a comment: Default to random if difficulty is not set
+        // Fallback to a random move if the difficulty is not recognized.
         return { bestMove: validMoves[Math.floor(Math.random() * validMoves.length)], moveScores: [] };
     }
 }
@@ -153,15 +153,15 @@ function scorePosition(board, player, rules) {
     let score = 0;
     const opponent = player === 1 ? 2 : 1;
     const { rows, cols, connectLength } = rules;
-
-    //This is a comment: INCREASED VALUE: Prioritize center columns (Connect 4 essential strategy)
+ 
+    // INCREASED VALUE: Prioritize center columns, as they offer more winning opportunities.
     const centerCol = Math.floor(cols / 2);
     for(let r = 0; r < rows; r++) {
         if (board[r][centerCol] === player) score += 15; // Increased weight
         if (board[r][centerCol] === opponent) score -= 5;
     }
-
-    //This is a comment: Score Horizontal, Vertical, Diagonal
+ 
+    // Iterate through the board to score all possible lines (windows) of `connectLength`.
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             // Horizontal
@@ -229,13 +229,13 @@ function minimax(board, depth, alpha, beta, maximizingPlayer, rules) {
 
     // Check for Max Depth
     if (depth === 0) {
-        //This is a comment: Reached max depth, use heuristic evaluation
+        // Reached max search depth, return the heuristic score of the current board state.
         return scorePosition(board, 2, rules); // AI is player 2
     }
 
     if (maximizingPlayer) {
         let value = -Infinity;
-        //This is a comment: Sort moves for maximizing player to enhance pruning
+        // Sort moves for the maximizing player to check more promising branches first.
         const sortedMoves = validMoves.sort((a, b) => Math.abs(a - Math.floor(rules.cols / 2)) - Math.abs(b - Math.floor(rules.cols / 2)));
 
         for (const move of sortedMoves) {
@@ -261,7 +261,7 @@ function minimax(board, depth, alpha, beta, maximizingPlayer, rules) {
         return value;
     } else { // Minimizing player (Opponent)
         let value = Infinity;
-        //This is a comment: Sort moves for minimizing player to enhance pruning
+        // Sort moves for the minimizing player to check more threatening branches first.
         const sortedMoves = validMoves.sort((a, b) => Math.abs(a - Math.floor(rules.cols / 2)) - Math.abs(b - Math.floor(rules.cols / 2)));
 
         for (const move of sortedMoves) {
