@@ -32,6 +32,8 @@ export function initialize() {
  */
 export function cleanup() {
     console.log("Sudoku Cleanup");
+    // Move the timer back to the game screen before this module's UI is destroyed.
+    document.getElementById('game-screen').appendChild(document.getElementById('timer-area'));
     // Also hide the host-only controls that Sudoku shows
     document.querySelectorAll('.host-only').forEach(el => {
         if (el.id === 'difficulty-select' || el.id === 'new-puzzle-btn') {
@@ -43,30 +45,37 @@ export function cleanup() {
 export function createGrid() {
     // Create the necessary structure within the generic game board area
     dom.gameBoardArea.innerHTML = `
-        <div id="puzzle-area">
-            <div id="sudoku-grid"></div>
-        </div>
-        <div id="sudoku-controls">
-            <div id="number-pad">
-                <button class="number-btn" id="number-btn-1">1</button>
-                <button class="number-btn" id="number-btn-2">2</button>
-                <button class="number-btn" id="number-btn-3">3</button>
-                <button class="number-btn" id="number-btn-4">4</button>
-                <button class="number-btn" id="number-btn-5">5</button>
-                <button class="number-btn" id="number-btn-6">6</button>
-                <button class="number-btn" id="number-btn-7">7</button>
-                <button class="number-btn" id="number-btn-8">8</button>
-                <button class="number-btn" id="number-btn-9">9</button>
-                <button class="number-btn" id="empty-btn">X</button>
+        <div id="sudoku-layout-container">
+            <div id="sudoku-left-column">
+                <div id="sudoku-controls">
+                    <div id="number-pad">
+                        <button class="number-btn" id="number-btn-1">1</button>
+                        <button class="number-btn" id="number-btn-2">2</button>
+                        <button class="number-btn" id="number-btn-3">3</button>
+                        <button class="number-btn" id="number-btn-4">4</button>
+                        <button class="number-btn" id="number-btn-5">5</button>
+                        <button class="number-btn" id="number-btn-6">6</button>
+                        <button class="number-btn" id="number-btn-7">7</button>
+                        <button class="number-btn" id="number-btn-8">8</button>
+                        <button class="number-btn" id="number-btn-9">9</button>
+                        <button class="number-btn" id="empty-btn">X</button>
+                    </div>
+                    <div id="pencil-pad">
+                        <button class="theme-button" id="pencil-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                            <span id="pencil-status">OFF</span>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="button-row">
-                 <button class="theme-button" id="pencil-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                    <span id="pencil-status">OFF</span>
-                </button>
+            <div id="puzzle-area">
+                <div id="sudoku-grid"></div>
             </div>
         </div>
     `;
+    // Move the main timer into the left column for proper layout
+    document.getElementById('sudoku-left-column').prepend(document.getElementById('timer-area'));
+
     const sudokuGrid = document.getElementById('sudoku-grid');
     sudokuGrid.innerHTML = '';
     sudokuGrid.className = 'sudoku-grid'; // Set class for Sudoku styling

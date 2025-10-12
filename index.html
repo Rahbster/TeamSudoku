@@ -34,6 +34,12 @@
             </div>
         </div>
 
+        <!-- Hamburger Menu Panel -->
+        <div id="hamburger-menu" class="hamburger-panel">
+            <a href="javascript:void(0)" class="close-btn" id="close-hamburger-btn">&times;</a>
+            <!-- Content will be moved here by JavaScript -->
+        </div>
+
         <!-- =================== GAME SCREEN =================== -->
         <div id="game-screen" class="hidden">
             <!-- Modal for winner announcement -->
@@ -45,6 +51,18 @@
                 </div>
             </div>
 
+            <!-- Hamburger Icon/Button -->
+            <div id="hamburger-icon">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <!-- Timer is now part of the main game screen -->
+            <div id="timer-area">
+                <h2>Time: <span id="timer-display">00:00</span></h2>
+            </div>
+
             <!-- Main game area, containing the number pad and the Sudoku grid -->
             <section id="game-board-area">
                 <!-- This area will be dynamically populated by the active game module -->
@@ -52,27 +70,12 @@
 
             <!-- Section for game controls like timer, theme, difficulty, and connection toggle -->
             <section id="game-controls">
-                <div id="timer-area">
-                    <h2>Time: <span id="timer-display">00:00</span></h2>
-                </div>
+                <!-- This area is for elements that will be dynamically moved into the hamburger menu -->
                 <div id="team-display-area" class="hidden">
                     <h2>Team</h2>
                     <h3 id="player-name-display"></h3>
                     <h3 id="team-name-display"></h3>
                 </div>
-                <div class="selector-container">
-                    <label for="theme-select">Theme</label>
-                    <div class="select-wrapper">
-                            <select id="theme-select">
-                                <option value="default">Default</option>
-                                <option value="dark-mode">Dark Mode</option>
-                                <option value="banished">Banished</option>
-                                <option value="forerunner">Forerunner</option>
-                                <option value="unsc">UNSC</option>
-                            </select>
-                    </div>
-                </div>
-
                 <div class="button-row">
                     <button class="theme-button host-only" id="new-puzzle-btn">
                         <div class="button-content">

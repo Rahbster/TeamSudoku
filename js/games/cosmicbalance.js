@@ -13,10 +13,6 @@ const MIN_STAR_DISTANCE = 80;
 
 export function initialize() {
     startTimer();
-    // Hide all other game areas
-
-    // Show the Cosmic Balance area
-    dom.cosmicBalanceArea.classList.remove('hidden');
 
     // If we are initializing for a solo game, draw the grid.
     if (appState.isInitiator && !appState.playerTeam) {
@@ -26,11 +22,22 @@ export function initialize() {
 
 export function cleanup() {
     stopTimer();
-    dom.cosmicBalanceArea.classList.add('hidden');
 }
 
 export function createGrid() {
-    const starmapView = document.getElementById('starmap-view');
+    // Create the necessary HTML structure within the generic game board area.
+    dom.gameBoardArea.innerHTML = `
+        <section id="cosmic-balance-area">
+            <div id="info-panel"></div>
+            <div id="starmap-view">
+                <!-- The star map will be rendered here by JS -->
+            </div>
+            <div id="combat-map-view" class="hidden">
+                <!-- The tactical combat map will be rendered here -->
+            </div>
+        </section>
+    `;
+    const starmapView = document.getElementById('starmap-view'); // Now this element exists
     const infoPanel = document.getElementById('info-panel');
     starmapView.innerHTML = '';
     infoPanel.innerHTML = '<h3>Sector Status</h3><p>Select a system to view details.</p>';

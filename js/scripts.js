@@ -106,6 +106,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.winnerModal = document.getElementById('winner-modal');
     dom.winnerText = document.getElementById('winner-text');
     dom.newPuzzleWinnerBtn = document.getElementById('new-puzzle-winner-btn');
+
+    // Hamburger Menu
+    dom.hamburgerIcon = document.getElementById('hamburger-icon');
+    dom.hamburgerMenu = document.getElementById('hamburger-menu');
+    dom.closeHamburgerBtn = document.getElementById('close-hamburger-btn');
     dom.scanOverlayMessage = document.getElementById('scan-overlay-message');
 
     // General Controls
@@ -117,7 +122,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Config Screen Selectors
     dom.playerNameInput = document.getElementById('player-name-input');
-    dom.themeSelector = document.getElementById('theme-select');
     dom.themeSelectorConfig = document.getElementById('theme-select-config');
     dom.gameSelector = document.getElementById('game-select');
     dom.difficultySelector = document.getElementById('difficulty-select');
@@ -205,7 +209,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.deckCountSelect = document.getElementById('deck-count-select');
     dom.memorymatchConfigContainer = document.getElementById('memorymatch-config-container');
     dom.memorymatchModeSelect = document.getElementById('memorymatch-mode-select');
-    dom.cosmicBalanceArea = document.getElementById('cosmic-balance-area'); // This is a game area, not config
 
     // Set initial button states
     dom.prevQrBtn.disabled = true;
@@ -219,7 +222,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load saved theme from localStorage, or default to 'default'
     const savedTheme = localStorage.getItem('sudokuTheme') || 'default';
     dom.body.classList.add(savedTheme);
-    dom.themeSelector.value = savedTheme;
     dom.themeSelectorConfig.value = savedTheme;
 
     // Load saved connection method and role from localStorage BEFORE initializing the UI

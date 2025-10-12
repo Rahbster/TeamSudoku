@@ -22,12 +22,56 @@ export function showScreen(screenName) {
     document.body.classList.remove('connection-background');
 
     if (screenName === 'config') {
+        closeHamburgerMenu(); // Ensure hamburger is closed when going to config
         dom.configScreen.classList.remove('hidden');
         document.body.classList.add('connection-background');
         dom.backToGameBtn.classList.remove('hidden'); // Always show the back button
     } else if (screenName === 'game') {
         dom.gameScreen.classList.remove('hidden');
+        // Move controls into the hamburger menu
+        const menu = dom.hamburgerMenu;
+        if (menu.children.length <= 1) { // Only move them if they haven't been moved yet
+            menu.appendChild(dom.gameSelector.parentElement.parentElement);
+            menu.appendChild(dom.connect4ModeContainer);
+            menu.appendChild(dom.wordsearchConfigContainer);
+            menu.appendChild(dom.spellingbeeConfigContainer);
+            menu.appendChild(dom.memorymatchConfigContainer);
+            menu.appendChild(dom.blackjackConfigContainer);
+            menu.appendChild(dom.difficultySelector.parentElement.parentElement);
+            menu.appendChild(dom.themeSelectorConfig.parentElement.parentElement);
+            menu.appendChild(dom.newPuzzleButton.parentElement);
+            menu.appendChild(dom.configBtn.parentElement);
+            menu.appendChild(dom.teamDisplayArea);
+        }
         showInstructions(); // Show instructions every time the game screen is shown.
+    }
+}
+
+function openHamburgerMenu() {
+    // Check if the menu is already open
+    if (dom.hamburgerMenu.style.transform === "translateX(0%)") return;
+
+    dom.hamburgerMenu.style.transform = "translateX(0%)";
+    // Add a listener to the document to detect clicks outside the menu
+    // Use a timeout to ensure this listener is added after the current click event is processed
+    setTimeout(() => {
+        document.addEventListener('click', handleClickOutsideMenu);
+    }, 0);
+}
+
+function closeHamburgerMenu() {
+    dom.hamburgerMenu.style.transform = "translateX(100%)";
+    // Clean up the listener when the menu is closed
+    document.removeEventListener('click', handleClickOutsideMenu);
+}
+
+/**
+ * Closes the hamburger menu if a click is detected outside of it.
+ * @param {Event} event The click event.
+ */
+function handleClickOutsideMenu(event) {
+    if (!dom.hamburgerMenu.contains(event.target) && !dom.hamburgerIcon.contains(event.target)) {
+        closeHamburgerMenu();
     }
 }
 
@@ -621,6 +665,10 @@ async function createAnswerQr(connection) {
  * Initializes all primary event listeners for the application's UI elements.
  */
 export function initializeEventListeners() {
+    // Hamburger Menu Listeners
+    dom.hamburgerIcon.addEventListener('click', openHamburgerMenu);
+    dom.closeHamburgerBtn.addEventListener('click', closeHamburgerMenu);
+
     // Event listeners for configuration drop-downs
     dom.signalingMethodSelect.addEventListener('change', (event) => {
         toggleSignalingUI();
@@ -656,8 +704,23 @@ export function initializeEventListeners() {
         initializeSoloGame();
     });
 
-    // Event listener for the theme selector
-    dom.themeSelector.addEventListener('change', handleThemeChange);
+    // Event listener for the theme selector in the config/hamburger menu
+    dom.themeSelectorConfig.addEventListener('change', handleThemeChange);
+
+    // Event listeners for sub-game mode selectors
+    dom.connect4ModeSelect.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuConnect4Mode', event.target.value);
+    });
+    dom.spellingbeeModeSelect.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuSpellingBeeMode', event.target.value);
+    });
+    dom.memorymatchModeSelect.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuMemoryMatchMode', event.target.value);
+    });
+    dom.deckCountSelect.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuDeckCount', event.target.value);
+    });
+
 
     // Event listener for the player name input
     dom.playerNameInput.addEventListener('change', (event) => {
@@ -1036,8 +1099,7 @@ function handleThemeChange(event) {
     dom.body.classList.remove('default', 'dark-mode', 'banished', 'unsc', 'forerunner');
     dom.body.classList.add(selectedTheme);
     localStorage.setItem('sudokuTheme', selectedTheme); // Save the theme choice
-    // Sync both dropdowns
-    dom.themeSelector.value = selectedTheme;
+    // No need to sync dropdowns anymore as there is only one
 }
 
 /**
