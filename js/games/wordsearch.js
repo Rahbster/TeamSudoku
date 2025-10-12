@@ -13,18 +13,8 @@ let selectionPath = [];
 
 export function initialize() {
     debugLog("Word Search Initialized");
-    dom.numberPad.classList.add('hidden');
-    dom.pencilButton.classList.add('hidden');
     dom.wordSearchListArea.classList.remove('hidden');
     dom.sudokuGridArea.classList.remove('hidden');
-    document.querySelectorAll('.host-only').forEach(el => {
-        if (el.id === 'difficulty-select') {
-            el.style.display = 'none';
-        }
-        if (el.id === 'new-puzzle-btn') {
-            el.style.display = '';
-        }
-    });
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Game';
 
@@ -38,9 +28,7 @@ export function initialize() {
 }
 
 export function cleanup() {
-    debugLog("Word Search Cleanup: Hiding word-search-list-area and sudoku-grid-area.");
     dom.wordSearchListArea.classList.add('hidden');
-    dom.sudokuGridArea.classList.add('hidden');
 }
 
 export function createGrid() {

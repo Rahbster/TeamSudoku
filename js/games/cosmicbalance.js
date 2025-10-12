@@ -14,7 +14,6 @@ const MIN_STAR_DISTANCE = 80;
 export function initialize() {
     startTimer();
     // Hide all other game areas
-    dom.sudokuGridArea.classList.add('hidden');
     dom.numberPad.classList.add('hidden');
     dom.pencilButton.classList.add('hidden');
 

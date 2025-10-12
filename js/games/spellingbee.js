@@ -12,9 +12,6 @@ export function initialize() {
     // Ensure the main "New Game" button is correctly wired up for Spelling Bee.
     dom.newPuzzleButton.onclick = loadPuzzle;
 
-    dom.numberPad.classList.add('hidden');
-    dom.pencilButton.classList.add('hidden');
-    dom.sudokuGridArea.classList.add('hidden'); // Hide the main grid
     dom.spellingBeeArea.classList.remove('hidden');
     document.getElementById('spelling-bee-feedback').textContent = 'Click "New Game" to start!';
     document.getElementById('speak-word-btn').onclick = () => speakWord(appState.soloGameState.currentWord);

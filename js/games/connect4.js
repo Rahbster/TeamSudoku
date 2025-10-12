@@ -15,7 +15,7 @@ aiWorker.onmessage = function(e) {
     const { bestMove, moveScores } = e.data;
     if (bestMove !== null) {
         // A short delay to simulate AI thinking
-        setTimeout(() => {
+        setTimeout(() => {            
             debugLog(`AI is making a move in column: ${bestMove}`);
             makeSoloMove(bestMove, 2); // AI is always player 2
             displayAiScores(moveScores); // Display the new scores after the AI move
@@ -23,7 +23,7 @@ aiWorker.onmessage = function(e) {
             dom.gameGrid.style.pointerEvents = 'auto';
             findAndHighlightImminentThreats(appState.soloGameState.board);
         }, 1000);
-    } else {
+    } else {        
         dom.gameGrid.style.pointerEvents = 'auto';
         debugLog('AI worker returned no valid moves.');
     }
@@ -32,8 +32,6 @@ aiWorker.onmessage = function(e) {
 export function initialize() {
     debugLog("Connect 4 Initialized");
     // Hide UI elements not used by Connect 4
-    dom.numberPad.classList.add('hidden');
-    dom.pencilButton.classList.add('hidden');
     dom.sudokuGridArea.classList.remove('hidden'); // Ensure the grid container is visible
 
     // Show undo button only for solo standard mode
@@ -43,15 +41,6 @@ export function initialize() {
     } else {
         dom.undoBtn.style.display = 'none';
     }
-
-    document.querySelectorAll('.host-only').forEach(el => {
-        if (el.id === 'difficulty-select') {
-            el.style.display = 'none';
-        }
-        if (el.id === 'new-puzzle-btn') {
-            el.style.display = ''; // Show the button
-        }
-    });
 
     // Set the button text for Connect 4
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
@@ -71,19 +60,17 @@ export function initialize() {
  * Cleans up UI elements specific to Connect 4 when switching games.
  */
 export function cleanup() {
-    debugLog("Connect 4 Cleanup: Hiding sudoku-grid-area.");
-    dom.sudokuGridArea.classList.add('hidden');
-    dom.undoBtn.style.display = 'none'; // Hide undo button on cleanup
+    dom.undoBtn.style.display = 'none';
 }
 
 export function createGrid() {
     debugLog('Connect4 createGrid called.');
-    dom.gameGrid.innerHTML = '';
-    dom.gameGrid.className = 'connect4-grid'; // Set class for Connect 4 styling
+    dom.sudokuGrid.innerHTML = '';
+    dom.sudokuGrid.className = 'connect4-grid'; // Set class for Connect 4 styling
     
     const { rows, cols } = getBoardDimensions();
-    dom.gameGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    dom.gameGrid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+    dom.sudokuGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    dom.sudokuGrid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
 
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
@@ -92,7 +79,7 @@ export function createGrid() {
             cell.id = `cell-${r}-${c}`;
             cell.dataset.col = c;
             cell.addEventListener('click', handleCellClick);
-            dom.gameGrid.appendChild(cell);
+            dom.sudokuGrid.appendChild(cell);
         }
     }
 
@@ -132,7 +119,7 @@ async function handleCellClick(event) {
                 findAndHighlightImminentThreats(appState.soloGameState.board);
 
                 // Disable player input while AI is "thinking"
-                dom.gameGrid.style.pointerEvents = 'none';
+                dom.sudokuGrid.style.pointerEvents = 'none';
                 // Offload the AI move calculation to the Web Worker
                 debugLog(`Posting board to AI worker. Difficulty: ${appState.soloGameState.difficulty}`);
                 aiWorker.postMessage({
@@ -147,7 +134,7 @@ async function handleCellClick(event) {
             const playerMoveSuccessful = makeSoloSabotageMove(col, 1);
 
             if (playerMoveSuccessful && !appState.winner) {
-                dom.gameGrid.style.pointerEvents = 'none';
+                dom.sudokuGrid.style.pointerEvents = 'none';
                 setTimeout(() => {
                     // Pass a deep copy of the board to the AI to prevent state mutation.
                     const aiColumn = findBestSabotageMove(JSON.parse(JSON.stringify(appState.soloGameState.board)));
@@ -159,7 +146,7 @@ async function handleCellClick(event) {
                         console.log("AI is trapped! Player wins.");
                         showWinnerScreen('all');
                     }
-                    dom.gameGrid.style.pointerEvents = 'auto';
+                    dom.sudokuGrid.style.pointerEvents = 'auto';
                 }, 500);
             }
         }
@@ -546,7 +533,7 @@ function undoLastMoves() {
     }
 
     // Stop any AI move that might be in progress
-    dom.gameGrid.style.pointerEvents = 'auto';
+    dom.sudokuGrid.style.pointerEvents = 'auto';
 
     // Revert the last two moves
     for (let i = 0; i < 2; i++) {
@@ -671,7 +658,7 @@ function handleGameOver(line, winner, loser) {
 
     // Disable further moves immediately
     // This is now handled at the top of the function.
-    dom.gameGrid.style.pointerEvents = 'none';
+    dom.sudokuGrid.style.pointerEvents = 'none';
 
     if (line) {
         line.forEach(cell => {
@@ -704,7 +691,7 @@ function handleGameOver(line, winner, loser) {
         if (line) line.forEach(cell => document.getElementById(`cell-${cell.r}-${cell.c}`)?.classList.remove('winning-cell-blink'));
         // Re-enable clicks for a new game, but only if the modal isn't up.
         // The 'New Game' button will handle pointer events from here.
-        if (!document.querySelector('.modal:not(.hidden)')) {
+        if (!document.querySelector('.modal:not(.hidden)')) {            
             dom.gameGrid.style.pointerEvents = 'auto';
         }
     }, 3000); // 3 seconds, matching the animation duration
@@ -797,7 +784,7 @@ function displayAiScores(moveScores) {
     if (!moveScores || moveScores.length === 0) return;
 
     const board = appState.soloGameState.board;
-    const grid = dom.gameGrid;
+    const grid = dom.sudokuGrid;
 
     moveScores.forEach(({ move, score }) => {
         const col = move;
