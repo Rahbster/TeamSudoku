@@ -58,11 +58,6 @@
                 <span></span>
             </div>
 
-            <!-- Timer is now part of the main game screen -->
-            <div id="timer-area">
-                <h2>Time: <span id="timer-display">00:00</span></h2>
-            </div>
-
             <!-- Main game area, containing the number pad and the Sudoku grid -->
             <section id="game-board-area">
                 <!-- This area will be dynamically populated by the active game module -->
@@ -82,10 +77,6 @@
                             <span class="text">Puzzle</span>
                         </div>
                         <span class="rotated-text">New</span>
-                    </button>
-                    <button class="theme-button" id="undo-btn" style="display: none;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13v-2.2A4.8 4.8 0 0 0 16.2 6H5M5 10l-4-4 4-4"></path></svg>
-                        <span>Undo</span>
                     </button>
                 </div>
 
@@ -134,7 +125,7 @@
                     </div>
                     <div class="selector-container host-only" id="wordsearch-config-container" style="display: none;">
                         <div class="selector-container">
-                            <label for="custom-word-list-input">Custom Word List (one per line)</label>
+                            <label for="custom-word-list-input">Word List</label>
                             <textarea id="custom-word-list-input" rows="5" placeholder="Enter words here..."></textarea>
                         </div>
                         <label for="word-count-input">Number of Words</label>
@@ -151,7 +142,7 @@
                             </select>
                         </div>
                         <div class="selector-container">
-                            <label for="spelling-bee-word-list-input">Custom Word List (one per line)</label>
+                            <label for="spelling-bee-word-list-input">Word List</label>
                             <textarea id="spelling-bee-word-list-input" rows="5" placeholder="Enter words here..."></textarea>
                         </div>
                         <div class="selector-container">

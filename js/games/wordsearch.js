@@ -4,7 +4,7 @@
 
 import { startTimer } from '../timer.js';
 import { dom, appState, dataChannels } from '../scripts.js';
-import { showWinnerScreen } from '../ui.js';
+import { showWinnerScreen, createTimerHTML } from '../ui.js';
 import { playRemoteMoveSound, debugLog } from '../misc.js';
 
 const GRID_SIZE = 15;
@@ -32,10 +32,13 @@ export function createGrid() {
     debugLog('WordSearch createGrid called.');
     // Create the necessary structure within the generic game board area
     dom.gameBoardArea.innerHTML = `
-        <div id="wordsearch-grid"></div>
-        <div id="word-search-list-area">
-            <h3>Word List</h3>
-            <ul id="word-list"></ul>
+        <div id="wordsearch-layout-container">
+            <div id="wordsearch-grid"></div>
+            <div id="wordsearch-sidebar" class="glass-panel">
+                ${createTimerHTML()}
+                <h3>Word List</h3>
+                <ul id="word-list"></ul>
+            </div>
         </div>
     `;
     // Now that the elements are created, cache them.

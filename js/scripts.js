@@ -117,7 +117,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.configBtn = document.getElementById('config-btn');
     dom.backToGameBtn = document.getElementById('back-to-game-btn');
     dom.newPuzzleButton = document.getElementById('new-puzzle-btn');
-    dom.undoBtn = document.getElementById('undo-btn');
     dom.hardResetBtn = document.getElementById('hard-reset-btn');
 
     // Config Screen Selectors

@@ -4,7 +4,7 @@
 
 import { startTimer, stopTimer } from '../timer.js';
 import { dom, appState, dataChannels } from '../scripts.js';
-import { showWinnerScreen, showToast } from '../ui.js';
+import { showWinnerScreen, showToast, createTimerHTML } from '../ui.js';
 import { playRemoteMoveSound, debugLog } from '../misc.js';
 
 // Initialize the AI Web Worker
@@ -16,7 +16,7 @@ aiWorker.onmessage = function(e) {
     if (bestMove !== null) {
         // A short delay to simulate AI thinking
         setTimeout(() => {            
-            debugLog(`AI is making a move in column: ${bestMove}`); //This is a comment
+            debugLog(`AI is making a move in column: ${bestMove}`);
             makeSoloMove(bestMove, 2); // AI is always player 2
             displayAiScores(moveScores); // Display the new scores after the AI move
             // Re-enable player input
@@ -31,6 +31,7 @@ aiWorker.onmessage = function(e) {
 
 export function initialize() {
     debugLog("Connect 4 Initialized");
+    document.body.classList.add('connect4-active');
 
     // Set the button text for Connect 4
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
@@ -48,22 +49,26 @@ export function initialize() {
  * Cleans up UI elements specific to Connect 4 when switching games.
  */
 export function cleanup() {
-    // No cleanup needed now that the undo button is self-contained.
+    document.body.classList.remove('connect4-active');
 }
 
 export function createGrid() {
     debugLog('Connect4 createGrid called.');
     const showUndo = appState.isInitiator && !appState.playerTeam && dom.connect4ModeSelect.value === 'standard';
 
+    // Create a two-column layout for Connect 4
     dom.gameBoardArea.innerHTML = `
-        <div id="connect4-container">
-            <div id="connect4-grid"></div>
-            ${showUndo ? `
-            <div class="button-row" style="justify-content: center; margin-top: 1rem;">
-                <button class="theme-button" id="connect4-undo-btn">Undo</button>
-            </div>` : ''}
+        <div id="connect4-layout-container">
+            <div id="connect4-left-column">
+                ${createTimerHTML()}
+                ${showUndo ? `<button class="theme-button" id="connect4-undo-btn">Undo</button>` : ''}
+            </div>
+            <div id="connect4-grid-area">
+                <div id="connect4-grid"></div>
+            </div>
         </div>
     `;
+
     const grid = document.getElementById('connect4-grid');
     grid.innerHTML = '';
     grid.className = 'connect4-grid'; // Set class for Connect 4 styling

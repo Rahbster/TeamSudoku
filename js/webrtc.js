@@ -269,6 +269,8 @@ export async function createOffer() {
     setupDataChannel(channel);
     const offer = await connection.createOffer();
     await connection.setLocalDescription(offer);
+    // Wait until ICE gathering is complete before returning the connection
+    await waitForIceGathering(connection);
     return connection;
 }
 

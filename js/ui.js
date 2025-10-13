@@ -224,6 +224,17 @@ export function showWinnerScreen(winningTeam, losingTeam) {
 }
 
 /**
+ * Returns the HTML string for the timer component.
+ * This allows any game module to create a consistent timer.
+ * @returns {string}
+ */
+export function createTimerHTML() {
+    return `<div id="timer-area" class="glass-panel">
+                <h2>Time: <span id="timer-display">00:00</span></h2>
+            </div>`;
+}
+
+/**
  * Displays a short-lived toast notification at the bottom of the screen.
  * @param {string} message - The message to display in the toast.
  * @param {'info' | 'error'} [type='info'] - The type of toast to display.

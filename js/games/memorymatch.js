@@ -4,7 +4,7 @@
 
 import { startTimer, stopTimer } from '../timer.js';
 import { dom, appState, dataChannels } from '../scripts.js';
-import { showWinnerScreen } from '../ui.js';
+import { showWinnerScreen, createTimerHTML } from '../ui.js';
 import { playRemoteMoveSound } from '../misc.js';
 
 let flippedCards = [];
@@ -35,7 +35,10 @@ export function createGrid() {
         return;
     }
 
-    dom.gameBoardArea.innerHTML = '<div id="memory-grid"></div>';
+    dom.gameBoardArea.innerHTML = `
+        ${createTimerHTML()}
+        <div id="memory-grid"></div>
+    `;
     const grid = document.getElementById('memory-grid');
     grid.className = 'memory-grid';
     grid.style.gridTemplateColumns = `repeat(${gameState.cols}, 1fr)`;
