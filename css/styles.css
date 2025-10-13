@@ -1411,8 +1411,19 @@ body.dark-mode #timer-area {
 /* When Connect 4 is active, ensure timer is at the top of its column */
 body.connect4-active #timer-area {
     position: static;
-    align-self: flex-start;
-    margin-bottom: 1rem;
+    /* Add flex properties to vertically center the timer content */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Ensure it has enough width and remove any conflicting margins */
+    min-width: 200px;
+    margin-bottom: 0;
+}
+/* Increase the font size of the timer text itself for Connect 4 */
+body.connect4-active #timer-area h2 {
+    font-size: 1.5rem; /* Match the font size of the Undo button */
+    display: flex;
+    gap: 0.5em; /* Add some space between "Time:" and the numbers */
 }
 
 /* Dark Mode Theme for Connect 4 */
@@ -2015,6 +2026,42 @@ body.host .host-only {
   Connect 4 Game Styles
 ==============================*/
 
+/* New layout container for Connect 4 to make the grid larger */
+#connect4-layout-container {
+    display: flex;
+    flex-direction: column; /* Stack top bar and grid vertically */
+    align-items: center; /* Center grid and undo button horizontally */
+    width: 100%;
+    height: 100%;
+    padding: 1rem;
+    box-sizing: border-box;
+    gap: 1rem;
+}
+
+/* New container for the top controls */
+#connect4-top-bar {
+    display: flex;
+    justify-content: space-between; /* Pushes timer to left, undo to right */
+    align-items: stretch; /* Make children the same height */
+    width: 100%;
+    gap: 1rem;
+}
+
+/* Center the Undo button within its flex space */
+#connect4-top-bar #connect4-undo-btn {
+    margin: 0 auto; /* This centers the button between the timer and the edge */
+}
+
+/* When Connect 4 is active, ensure its layout container fills the game board area */
+body.connect4-active #game-board-area {
+    align-items: stretch; /* Allow children to stretch vertically */
+    justify-content: stretch; /* Allow children to stretch horizontally */
+    height: 100%; /* Explicitly set height to allow child to grow */
+}
+
+
+/* The undo button will be centered at the bottom by default due to align-items: center */
+
 .connect4-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -2024,14 +2071,7 @@ body.host .host-only {
     border-radius: 10px;
     padding: 10px;
     gap: 10px;
-    width: 100%;
     aspect-ratio: 7 / 6;
-}
-
-/* Ensure the container for the grid fills the available space */
-#connect4-container {
-    width: 100%;
-    height: 100%;
 }
 
 .connect4-grid .grid-cell {
@@ -2068,6 +2108,56 @@ body.host .host-only {
         transform: scale(1.15);
         box-shadow: 0 0 15px 5px #fff;
     }
+}
+
+/* Wrapper for the Connect 4 grid to contain the thinking indicator */
+#connect4-grid-wrapper {
+    position: relative;
+    display: flex; /* Use flex to make the grid inside fill the space */
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    width: 100%;
+    max-height: 100%;
+}
+/* The actual grid inside the wrapper should grow to fill it */
+#connect4-grid-wrapper > .connect4-grid {
+    flex-grow: 1;
+    width: auto; /* Allow width to be determined by height and aspect-ratio */
+    max-width: 100%; /* Don't overflow the container */
+    max-height: 100%; /* Don't overflow the container */
+}
+
+
+/* Style for the AI thinking indicator overlay */
+#ai-thinking-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 20px 40px;
+    border-radius: 10px;
+    font-size: 2rem;
+    font-weight: bold;
+    z-index: 100; /* Make sure it's on top of the grid */
+    pointer-events: none; /* Don't block clicks */
+}
+
+/* Style for the AI score display to be an overlay */
+.ai-score-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1rem;
+    font-weight: bold;
+    color: black;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 2px 5px;
+    border-radius: 3px;
+    pointer-events: none; /* Make sure it doesn't block clicks */
 }
 
 .connect4-grid .grid-cell.imminent-victory-cell {

@@ -98,9 +98,7 @@ function findBestMove(board, difficulty, rules) {
 
         case 'medium':
         case 'hard':
-            // CRITICAL CHANGE: Maxing out depth to 8 for medium and 10 for hard. 
-            // If this causes performance issues, reduce it, but 10 is needed to spot deep traps.
-            const depth = difficulty === 'medium' ? 8 : 10;
+            const depth = difficulty === 'medium' ? 5 : 6;
             let bestScore = -Infinity;
             let bestMove = validMoves[0];
             const moveScores = [];

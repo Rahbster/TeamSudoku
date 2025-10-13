@@ -14,16 +14,16 @@ aiWorker.onmessage = function(e) {
     debugLog('Received message from AI worker:', e.data);
     const { bestMove, moveScores } = e.data;
     if (bestMove !== null) {
-        // A short delay to simulate AI thinking
-        setTimeout(() => {            
-            debugLog(`AI is making a move in column: ${bestMove}`);
-            makeSoloMove(bestMove, 2); // AI is always player 2
-            displayAiScores(moveScores); // Display the new scores after the AI move
-            // Re-enable player input
-            document.getElementById('connect4-grid').style.pointerEvents = 'auto';
-            findAndHighlightImminentThreats(appState.soloGameState.board);
-        }, 1000);
+        // AI move is now immediate
+        debugLog(`AI is making a move in column: ${bestMove}`);
+        document.getElementById('ai-thinking-indicator')?.classList.add('hidden');
+        makeSoloMove(bestMove, 2); // AI is always player 2
+        // displayAiScores(moveScores); // Temporarily disabled as requested
+        // Re-enable player input
+        document.getElementById('connect4-grid').style.pointerEvents = 'auto';
+        findAndHighlightImminentThreats(appState.soloGameState.board);
     } else {        
+        document.getElementById('ai-thinking-indicator')?.classList.add('hidden');
         document.getElementById('connect4-grid').style.pointerEvents = 'auto';
         debugLog('AI worker returned no valid moves.');
     }
@@ -59,12 +59,13 @@ export function createGrid() {
     // Create a two-column layout for Connect 4
     dom.gameBoardArea.innerHTML = `
         <div id="connect4-layout-container">
-            <div id="connect4-left-column">
+            <div id="connect4-top-bar">
                 ${createTimerHTML()}
                 ${showUndo ? `<button class="theme-button" id="connect4-undo-btn">Undo</button>` : ''}
             </div>
-            <div id="connect4-grid-area">
+            <div id="connect4-grid-wrapper">
                 <div id="connect4-grid"></div>
+                <div id="ai-thinking-indicator" class="hidden">Thinking...</div>
             </div>
         </div>
     `;
@@ -120,6 +121,10 @@ async function handleCellClick(event) {
         if (appState.soloGameState.gameMode === 'standard') {
             // --- Standard Player vs. AI Logic ---
             debugLog(`Player is making a move in column: ${col}`);
+            // Start the timer on the very first move of the game.
+            if (appState.soloGameState.moves === 0) {
+                startTimer();
+            }
             const playerMoveSuccessful = makeSoloMove(col, 1); // Player is always 1
 
             // If player's move was valid, the game isn't over, and no one is connected, let the AI take a turn.
@@ -130,6 +135,7 @@ async function handleCellClick(event) {
 
                 // Disable player input while AI is "thinking"
                 document.getElementById('connect4-grid').style.pointerEvents = 'none';
+                document.getElementById('ai-thinking-indicator').classList.remove('hidden');
                 // Offload the AI move calculation to the Web Worker
                 debugLog(`Posting board to AI worker. Difficulty: ${appState.soloGameState.difficulty}`);
                 aiWorker.postMessage({
@@ -544,7 +550,7 @@ function undoLastMoves() {
     }
 
     // Stop any AI move that might be in progress
-    dom.sudokuGrid.style.pointerEvents = 'auto';
+    document.getElementById('connect4-grid').style.pointerEvents = 'auto';
 
     // Revert the last two moves
     for (let i = 0; i < 2; i++) {
@@ -771,22 +777,17 @@ function displayAiScores(moveScores) {
     if (!moveScores || moveScores.length === 0) return;
 
     const board = appState.soloGameState.board;
-    const grid = dom.sudokuGrid;
 
     moveScores.forEach(({ move, score }) => {
         const col = move;
         const row = findNextOpenRow(board, col);
 
         if (row !== -1) {
+            const cell = document.getElementById(`cell-${row}-${col}`);
             const scoreDiv = document.createElement('div');
             scoreDiv.className = 'ai-score-display';
             scoreDiv.textContent = score.toLocaleString(); // Format large numbers
-            
-            // Position the score in the top-most empty cell of the column
-            scoreDiv.style.gridRowStart = row + 1;
-            scoreDiv.style.gridColumnStart = col + 1;
-
-            grid.appendChild(scoreDiv);
+            cell.appendChild(scoreDiv);
         }
     });
 }
