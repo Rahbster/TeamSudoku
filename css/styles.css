@@ -656,13 +656,11 @@ textarea {
 /* --- Intrinsic Layout (Replaces Media Queries) --- */
 #game-screen {
     display: flex;
-    flex-wrap: wrap; /* Allow content to wrap */
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
+    flex-direction: column; /* Stack children vertically */
+    justify-content: flex-start; /* Align content to the top to prevent overflow gap */
+    align-items: stretch; /* Stretch children to fill width */
     box-sizing: border-box;
-    height: 100dvh;
+    min-height: 100dvh; /* Use min-height to be flexible */
 }
 
 /* This section now contains the game board */
@@ -672,7 +670,6 @@ textarea {
     flex-basis: 500px; /* Give the game board a base size to encourage wrapping */
     justify-content: center;
     align-items: center;
-    min-height: 300px; /* Prevent it from becoming too small */
     width: 100%;
 }
 
@@ -2028,11 +2025,9 @@ body.host .host-only {
 
 /* New layout container for Connect 4 to make the grid larger */
 #connect4-layout-container {
-    display: flex;
-    flex-direction: column; /* Stack top bar and grid vertically */
-    align-items: center; /* Center grid and undo button horizontally */
+    display: grid; /* Use CSS Grid for robust layout */
+    grid-template-rows: auto 1fr; /* Top bar takes its content height, grid takes the rest */
     width: 100%;
-    height: 100%;
     padding: 1rem;
     box-sizing: border-box;
     gap: 1rem;
@@ -2054,9 +2049,9 @@ body.host .host-only {
 
 /* When Connect 4 is active, ensure its layout container fills the game board area */
 body.connect4-active #game-board-area {
-    align-items: stretch; /* Allow children to stretch vertically */
-    justify-content: stretch; /* Allow children to stretch horizontally */
-    height: 100%; /* Explicitly set height to allow child to grow */
+    align-items: stretch; /* Make the child container fill the height */
+    justify-content: stretch; /* Make the child container fill the width */
+    flex-grow: 1;
 }
 
 
@@ -2069,7 +2064,6 @@ body.connect4-active #game-board-area {
     background-color: #007bff; /* Classic blue board color */
     border: 10px solid #0056b3;
     border-radius: 10px;
-    padding: 10px;
     gap: 10px;
     aspect-ratio: 7 / 6;
 }
@@ -2113,21 +2107,20 @@ body.connect4-active #game-board-area {
 /* Wrapper for the Connect 4 grid to contain the thinking indicator */
 #connect4-grid-wrapper {
     position: relative;
-    display: flex; /* Use flex to make the grid inside fill the space */
+    display: flex;
     justify-content: center;
     align-items: center;
-    flex-grow: 1;
     width: 100%;
-    max-height: 100%;
-}
-/* The actual grid inside the wrapper should grow to fill it */
-#connect4-grid-wrapper > .connect4-grid {
-    flex-grow: 1;
-    width: auto; /* Allow width to be determined by height and aspect-ratio */
-    max-width: 100%; /* Don't overflow the container */
-    max-height: 100%; /* Don't overflow the container */
+    height: 100%;
+    min-height: 0; /* Important for flexbox children in a grid layout */
 }
 
+/* The actual grid inside the wrapper should grow to fill it */
+#connect4-grid-wrapper > .connect4-grid {
+    width: auto; /* Allow width to be determined by height and aspect-ratio */
+    height: 100%;
+    max-width: 100%; /* Don't overflow the container */
+}
 
 /* Style for the AI thinking indicator overlay */
 #ai-thinking-indicator {
