@@ -22,9 +22,7 @@ export function initialize() {
     if (newGameBtnText) newGameBtnText.textContent = 'Puzzle';
 
     // If we are initializing for a solo game, draw the grid and load the puzzle.
-    if (appState.isInitiator && !appState.playerTeam) {
-        loadPuzzle(dom.difficultySelector.value, appState.soloGameState, false);
-    }
+    loadPuzzle();
 
 }
 
@@ -308,7 +306,7 @@ export function highlightConflictingCells(row, col, value) {
     }
 }
 
-export async function loadPuzzle(difficulty, puzzleData, resetTeams = false) {
+export async function loadPuzzle() {
     createGrid();
     let puzzle = puzzleData;
     if (!puzzleData) {
@@ -417,15 +415,16 @@ export function checkGridState() {
     updateNumberPadState();
     const { isValid, isComplete } = validatePuzzle();
     if (isComplete && isValid) {
-        if (appState.isInitiator && !appState.winner) {
-            appState.winner = appState.playerTeam;
+        if (!appState.winner) { // Prevent multiple triggers
             appState.gameInProgress = false;
-            const gameOverMessage = { type: 'game-over', winningTeam: appState.playerTeam };
-            const messageString = JSON.stringify(gameOverMessage);
-            dataChannels.forEach(channel => {
-                if (channel.readyState === 'open') channel.send(messageString);
-            });
-            showWinnerScreen(appState.playerTeam);
+            if (appState.isInitiator) {
+                const winner = appState.playerTeam || 'You';
+                appState.winner = winner;
+                const gameOverMessage = { type: 'game-over', winningTeam: winner };
+                const messageString = JSON.stringify(gameOverMessage);
+                dataChannels.forEach(channel => channel.send(messageString));
+                showWinnerScreen(winner);
+            }
         }
     }
 }

@@ -4,15 +4,13 @@
 
 import { startTimer, stopTimer } from '../timer.js';
 import { dom, appState } from '../scripts.js';
-import { showWinnerScreen, showToast } from '../ui.js';
+import { showWinnerScreen, showToast, createTimerHTML } from '../ui.js';
 
 const WORD_LIST = ["COOPERATIVE", "ASSISTANT", "ENGINEERING", "JAVASCRIPT", "SYNTHESIS", "BROWSER", "OFFLINE", "CHALLENGE"];
 
 export function initialize() {
     // If we are initializing for a solo game, draw the grid.
-    if (appState.isInitiator && !appState.playerTeam) {
-        createGrid();
-    }
+    loadPuzzle();
 }
 
 export function cleanup() {
@@ -23,6 +21,7 @@ export function createGrid() {
     // Create the necessary HTML structure within the generic game board area.
     dom.gameBoardArea.innerHTML = `
         <div id="spelling-bee-area">
+            ${createTimerHTML()}
             <div id="spelling-bee-controls">
                 <button id="speak-word-btn" class="theme-button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
@@ -63,9 +62,9 @@ export function getInitialState(difficulty, gameMode) {
 
 export function loadPuzzle() {
     appState.winner = null;
-    startTimer();
     appState.soloGameState = getInitialState();
     createGrid();
+    startTimer();
 }
 
 function setupQuestion() {
@@ -301,7 +300,11 @@ function checkAnswer(answer) {
 
     if (answer === gameState.currentWord) {
         gameState.score++;
-        showToast('Correct!');
+        // Add a visual indicator for correct answer
+        const buttons = document.querySelectorAll('.spelling-bee-option-btn');
+        const correctButton = Array.from(buttons).find(btn => btn.textContent === answer);
+        if (correctButton) correctButton.classList.add('correct');
+        showToast('Correct!', 'info');
     } else {
         showToast(`Incorrect. The correct spelling is ${gameState.currentWord}.`, 'error');
     }

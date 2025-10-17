@@ -201,7 +201,12 @@ export function showWinnerScreen(winningTeam, losingTeam) {
     } else if (winningTeam === 'tie') {
         dom.winnerText.textContent = "It's a tie!";
     } else if (losingTeam) {
-        dom.winnerText.textContent = `Game Over! Team "${losingTeam}" made a move that created a line.`;
+        // Check for solo Connect 4 loss
+        if (dom.gameSelector.value === 'connect4' && !appState.playerTeam) {
+            dom.winnerText.textContent = `${losingTeam} has won the game!`;
+        } else {
+            dom.winnerText.textContent = `Game Over! Team "${losingTeam}" made a move that created a line.`;
+        }
     } else if (winningTeam === 'You' && appState.soloGameState?.gameMode) {
         // Check if it's a spelling bee game to show the score
         if (dom.gameSelector.value === 'spellingbee') {
@@ -730,6 +735,39 @@ export function initializeEventListeners() {
     });
     dom.deckCountSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuDeckCount', event.target.value);
+    });
+
+    // Event listener for the voice selector
+    dom.voiceSelect.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuVoice', event.target.value);
+    });
+
+    // Event listener for the word search word list to auto-format on blur
+    dom.customWordListInput.addEventListener('blur', () => {
+        const input = dom.customWordListInput;
+        const words = input.value.trim()
+            .split(/[\n, ]+/) // Split by newlines, commas, or spaces
+            .map(word => word.trim().toUpperCase()) // Trim and convert to uppercase
+            .filter(word => word.length > 0); // Filter out any empty strings
+
+        // Sort alphabetically and join back with newlines for readability
+        words.sort();
+        input.value = '\n' + words.join('\n');
+        localStorage.setItem('sudokuWordSearchWordList', input.value);
+    });
+
+    // Event listener for the spelling bee word list to auto-format on blur
+    dom.spellingBeeWordListInput.addEventListener('blur', () => {
+        const input = dom.spellingBeeWordListInput;
+        const words = input.value.trim()
+            .split(/[\n, ]+/) // Split by newlines, commas, or spaces
+            .map(word => word.trim().toUpperCase()) // Trim and convert to uppercase
+            .filter(word => word.length > 0); // Filter out any empty strings
+
+        // Sort alphabetically and join back with newlines for readability
+        words.sort();
+        input.value = '\n' + words.join('\n');
+        localStorage.setItem('sudokuSpellingBeeWordList', input.value);
     });
 
 

@@ -18,9 +18,7 @@ export function initialize() {
     if (newGameBtnText) newGameBtnText.textContent = 'Game';
 
     // If we are initializing for a solo game, draw the grid.
-    if (appState.isInitiator && !appState.playerTeam) {
-        createGrid();
-    }
+    loadPuzzle();
 }
 
 export function cleanup() {
@@ -237,7 +235,7 @@ export function getInitialState() {
         // Filter out empty strings and convert to uppercase.
         const customWords = customWordList.split(/[\n, ]+/)
             .map(word => word.trim().toUpperCase())
-            .filter(word => word.length > 1 && word.length <= 12); // Basic validation
+            .filter(word => word.length > 1 && word.length <= 12); // Basic validation, also filters empty strings
 
         if (customWords.length > 0) {
             // Shuffle the array and take the configured number of words
@@ -399,13 +397,17 @@ export function processUIUpdate(data) {
     const allFound = gameState.words.every(w => w.found);
     if (allFound && !appState.winner) {
         if (appState.isInitiator) {
-            const winner = appState.playerTeam || 'You';
+            const winner = appState.playerTeam || 'You'; // Solo win or team win
             const gameOverMessage = { type: 'game-over', winningTeam: winner };
             const messageString = JSON.stringify(gameOverMessage);
             dataChannels.forEach(channel => {
                 if (channel.readyState === 'open') channel.send(messageString);
             });
             showWinnerScreen(winner);
+        }
+    } else if (gameState.moves >= GRID_SIZE * GRID_SIZE && !appState.winner) {
+        if (appState.isInitiator) {
+            showWinnerScreen('tie');
         }
     }
 }

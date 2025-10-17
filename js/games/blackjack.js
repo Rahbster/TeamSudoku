@@ -3,20 +3,15 @@
 //==============================
 
 import { dom, appState } from '../scripts.js';
-import { showToast } from '../ui.js';
+import { showToast, createTimerHTML } from '../ui.js';
 import { startTimer, stopTimer } from '../timer.js';
 
 const SUITS = ['♥', '♦', '♣', '♠'];
 const VALUES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
 export function initialize() {
-    startTimer(); // Start the session timer
     document.body.classList.add('blackjack-active');
-
-    // If we are initializing for a solo game, draw the grid.
-    if (appState.isInitiator && !appState.playerTeam) {
-        createGrid();
-    }
+    loadPuzzle();
 }
 
 export function cleanup() {
@@ -32,7 +27,10 @@ export function createGrid() {
                 <h3>Dealer: <span id="dealer-score"></span></h3>
                 <div class="cards"></div>
             </div>
-            <div id="player-balance">Tokens: 100</div>
+            <div class="blackjack-info-bar">
+                ${createTimerHTML()}
+                <div id="player-balance" class="glass-panel">Tokens: 100</div>
+            </div>
             <div id="player-hand" class="hand-area">
                 <!-- Player hands will be rendered here -->
             </div>
@@ -65,11 +63,14 @@ export function getInitialState() {
 }
 
 export function loadPuzzle() {
+    appState.soloGameState = getInitialState();
+    createGrid();
+    startTimer();
     // In Black Jack, "New Game" starts a new hand.
-    if (appState.soloGameState.playerHands[0].bet > 0) {
+    if (appState.soloGameState?.playerHands[0].bet > 0) {
         startHand();
     } else {
-        showToast("Place a bet to start a new hand!", "error");
+        // On initial load, just show the betting controls.
     }
 }
 
@@ -149,7 +150,7 @@ function renderBettingControls() {
         btn.onclick = () => placeBet(parseInt(btn.dataset.bet, 10));
     });
     dom.blackjackActions.innerHTML = `<button id="start-hand-btn" class="theme-button">Deal</button>`;
-    document.getElementById('start-hand-btn').onclick = loadPuzzle;
+    document.getElementById('start-hand-btn').onclick = startHand;
 }
 
 function createCardElement(card, hide = false) {

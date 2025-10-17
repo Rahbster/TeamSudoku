@@ -38,10 +38,7 @@ export function initialize() {
     if (newGameBtnText) newGameBtnText.textContent = 'Game';
 
     // If we are initializing for a solo game, draw the grid.
-    debugLog('Connect4 initialize. Current soloGameState:', JSON.parse(JSON.stringify(appState.soloGameState || null)));
-    if (appState.isInitiator && !appState.playerTeam) {
-        createGrid();
-    }
+    loadPuzzle();
 
 }
 
@@ -211,8 +208,9 @@ export function updateGridForTeam(teamName) {
     createGrid(); // Recreate grid to ensure correct structure
     if (team.gameState) {
         const board = team.gameState.board;
-        for (let r = 0; r < ROWS; r++) {
-            for (let c = 0; c < COLS; c++) {
+        const { rows, cols } = getGameRules(team.gameState.gameMode);
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
                 const cell = document.getElementById(`cell-${r}-${c}`);
                 if (board[r][c]) {
                     cell.classList.remove('empty');
@@ -223,8 +221,7 @@ export function updateGridForTeam(teamName) {
     }
 }
 
-export function getInitialState(difficulty) {
-    const gameMode = dom.connect4ModeSelect.value;
+export function getInitialState(difficulty, gameMode) {
     const rules = getGameRules(gameMode);
     const board = Array(rules.rows).fill(null).map(() => Array(rules.cols).fill(0));
 
@@ -273,7 +270,6 @@ export function loadPuzzle() {
     debugLog('Connect4 loadPuzzle called.');
 
     appState.winner = null;
-    startTimer();
     if (appState.playerTeam) {
         const team = appState.teams[appState.playerTeam];
         team.gameState = getInitialState(team.difficulty, team.gameMode);
@@ -281,6 +277,7 @@ export function loadPuzzle() {
     } else if (appState.isInitiator) {
         appState.soloGameState = getInitialState(dom.difficultySelector.value, dom.connect4ModeSelect.value);
         createGrid();
+        startTimer();
         clearAiScores();
     }
 }
@@ -307,7 +304,8 @@ function processSabotageMove(moveData) {
     const team = appState.teams[teamName];
     const board = team.gameState.board;
     const col = moveData.col;
-    const row = findNextOpenRow(board, col);
+    const rules = getGameRules(team.gameState.gameMode);
+    const row = findNextOpenRow(board, col, rules.rows);
 
     if (row !== -1) { // If the column is not full
         const playerNumber = team.gameState.players[teamName];
@@ -322,7 +320,7 @@ function processSabotageMove(moveData) {
         if (line) {
             loser = teamName;
             appState.winner = 'lost';
-        } else if (team.gameState.moves === ROWS * COLS) {
+        } else if (team.gameState.moves === rules.rows * rules.cols) {
             winner = 'all'; // Co-op win
             appState.winner = 'all';
         } else {
@@ -364,13 +362,13 @@ function processStandardMove(moveData) {
     const team = appState.teams[teamName];
     const board = team.gameState.board;
     const col = moveData.col;
-    const row = findNextOpenRow(board, col);
+    const rules = getGameRules(team.gameState.gameMode);
+    const row = findNextOpenRow(board, col, rules.rows);
 
     if (row !== -1) { // If the column is not full
         const playerNumber = team.gameState.players[teamName];
         board[row][col] = playerNumber;
         team.gameState.moves++;
-        const rules = getGameRules(team.gameState.gameMode);
 
         const line = checkWinner(board, row, col, playerNumber, rules);
         let winner = null;
@@ -379,7 +377,7 @@ function processStandardMove(moveData) {
         if (line) { // A winning line was found
             winner = teamName;
             appState.winner = teamName;
-        } else if (team.gameState.moves === ROWS * COLS) {
+        } else if (team.gameState.moves === rules.rows * rules.cols) {
             winner = 'tie'; // It's a tie
             appState.winner = 'tie';
         } else {
@@ -473,7 +471,7 @@ function checkWinner(board, r, c, player, rules) {
 function makeSoloMove(col, playerNumber) {
     const board = appState.soloGameState.board;
     const rules = getGameRules(appState.soloGameState.gameMode);
-    const row = findNextOpenRow(board, col);
+    const row = findNextOpenRow(board, col, rules.rows);
 
     if (row !== -1) {
         board[row][col] = playerNumber;
@@ -493,8 +491,11 @@ function makeSoloMove(col, playerNumber) {
                 handleGameOver(line, null, 'The Computer'); // AI wins
             }
         } else if (appState.soloGameState.moves === rules.rows * rules.cols) {
-            clearThreatHighlights(); // Clear any highlights on a tie
-            showWinnerScreen('tie'); // It's a tie
+            // It's a tie. Wait for a moment before showing the screen to be consistent.
+            setTimeout(() => {
+                clearThreatHighlights(); // Clear any highlights on a tie
+                showWinnerScreen('tie');
+            }, 3000);
         }
         return true; // Move was successful
     }
@@ -510,7 +511,7 @@ function makeSoloMove(col, playerNumber) {
 function makeSoloSabotageMove(col, playerNumber) {
     const board = appState.soloGameState.board;
     const rules = getGameRules(appState.soloGameState.gameMode);
-    const row = findNextOpenRow(board, col);
+    const row = findNextOpenRow(board, col, rules.rows);
 
     if (row !== -1) {
         board[row][col] = playerNumber;
@@ -581,9 +582,10 @@ function undoLastMoves() {
  * @param {number} col - The column to check.
  * @returns {number} - The row index, or -1 if the column is full.
  */
-function findNextOpenRow(board, col) {
-    const rows = board.length;
-    for (let r = rows - 1; r >= 0; r--) {
+function findNextOpenRow(board, col, rows) {
+    // If rows is not provided, get it from the board.
+    const numRows = rows || board.length;
+    for (let r = numRows - 1; r >= 0; r--) {
         if (board[r][col] === 0) {
             return r;
         }
@@ -597,10 +599,11 @@ function findNextOpenRow(board, col) {
  * @returns {number|null} - A safe column to play, or null if no safe moves exist.
  */
 function findBestSabotageMove(board) {
+    const rows = board.length;
     const cols = board[0].length;
     const safeMoves = [];
-    for (let c = 0; c < COLS; c++) {
-        const r = findNextOpenRow(board, c);
+    for (let c = 0; c < cols; c++) {
+        const r = findNextOpenRow(board, c, rows);
         if (r !== -1) {
             // Check if placing a piece here for player 2 (AI) creates a line
             board[r][c] = 2;
@@ -619,7 +622,7 @@ function findBestSabotageMove(board) {
     }
 
     // If no safe moves, the AI is trapped and will lose. Return any valid move.
-    const anyValidMove = findNextOpenRow(board, 0) !== -1 ? 0 : findNextOpenRow(board, 1) !== -1 ? 1 : null; // etc.
+    const anyValidMove = findNextOpenRow(board, 0, rows) !== -1 ? 0 : findNextOpenRow(board, 1, rows) !== -1 ? 1 : null; // etc.
     return anyValidMove;
 }
 

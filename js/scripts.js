@@ -86,6 +86,37 @@ export async function copyToClipboard(elementId) {
     }
 }
 
+/**
+ * Populates the voice selection dropdown for the Spelling Bee game.
+ * This function is designed to handle the asynchronous nature of the Web Speech API.
+ */
+function populateVoiceList() {
+    const voices = window.speechSynthesis.getVoices();
+    dom.voiceSelect.innerHTML = ''; // Clear existing options
+
+    if (voices.length > 0) {
+        const badge = document.getElementById('voice-count-badge');
+        if (badge) {
+            badge.textContent = voices.length;
+        }
+
+        voices.forEach(voice => {
+            const option = document.createElement('option');
+            option.textContent = `${voice.name} (${voice.lang})`;
+            option.setAttribute('data-lang', voice.lang);
+            option.value = voice.name; // Use the unique name as the value
+            option.setAttribute('data-name', voice.name);
+            dom.voiceSelect.appendChild(option);
+        });
+
+        // Load and apply the saved voice preference
+        const savedVoice = localStorage.getItem('sudokuVoice');
+        if (savedVoice) {
+            dom.voiceSelect.value = savedVoice;
+        }
+    }
+}
+
 //==============================
 // Initial Setup
 //==============================
@@ -277,12 +308,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         dom.deckCountSelect.value = savedDeckCount;
     }
 
-    // Saved voice preference will be loaded by the populateVoiceList function
-    // once the voices are available from the browser.
-    // const savedVoice = localStorage.getItem('sudokuVoice');
-    // if (savedVoice) {
-    //     dom.voiceSelect.value = savedVoice;
-    // }
+    // Populate the voice list for the speech synthesis API.
+    // It needs to be called once, and then the 'voiceschanged' event will handle updates.
+    populateVoiceList();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = populateVoiceList;
+    }
 
     // Initialize UI visibility and event listeners.
     initializeEventListeners();
@@ -297,6 +328,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedSpellingBeeWordList = localStorage.getItem('sudokuSpellingBeeWordList');
     if (savedSpellingBeeWordList) {
         dom.spellingBeeWordListInput.value = savedSpellingBeeWordList;
+    }
+
+    // Load saved word search word list
+    const savedWordSearchWordList = localStorage.getItem('sudokuWordSearchWordList');
+    if (savedWordSearchWordList) {
+        dom.customWordListInput.value = savedWordSearchWordList;
     }
 
     // After all preferences are loaded and UI is toggled, initialize the solo game view.
