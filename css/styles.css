@@ -1385,6 +1385,174 @@ body.blackjack-active #game-board-area {
     opacity: 0.8;
 }
 
+.weapon-selector {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    cursor: crosshair;
+    z-index: 5; /* Above ship, below status bars */
+    transition: transform 0.2s ease;
+}
+
+.weapon-selector:hover {
+    transform: scale(1.5);
+}
+
+.ship-visual {
+    cursor: pointer; /* Make the main ship body clickable for selection */
+}
+
+.ship-designer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(13, 17, 23, 0.95); /* Almost opaque dark background */
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.designer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--primary-cyan);
+    margin-bottom: 15px;
+}
+
+.designer-header h2 {
+    margin: 0;
+}
+
+.designer-close-btn {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--text-light);
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+.ship-designer {
+    display: flex;
+    gap: 20px;
+    flex-grow: 1; /* Fill the remaining space */
+    box-sizing: border-box;
+    min-height: 0; /* Fix for flexbox overflow */
+}
+
+.designer-column {
+    flex: 1;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.component-list h4 {
+    color: var(--secondary-orange);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.component-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    cursor: grab;
+}
+
+.component-item:active {
+    cursor: grabbing;
+}
+
+.ship-layout-area {
+    flex: 2; /* Make the center column wider */
+    border: 2px dashed var(--border-color);
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Allow this area to scroll if content overflows */
+    gap: 15px;
+}
+
+.ship-layout-area.drag-over {
+    border-color: var(--primary-cyan);
+    box-shadow: inset 0 0 15px var(--primary-cyan-glow);
+}
+
+.ship-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    color: var(--text-light);
+}
+
+.stat-item {
+    background-color: rgba(0,0,0,0.4);
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.designer-context-menu {
+    position: absolute;
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 5px;
+    z-index: 1001; /* Above the designer overlay */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.designer-context-menu button {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text-light);
+    text-align: left;
+}
+
+.installed-component {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.installed-component:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.arc-selector-btn {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    margin-left: 10px;
+    background-color: var(--secondary-orange);
+    color: var(--text-dark);
+}
+
+.remove-component-btn {
+    background: none;
+    border: none;
+    color: var(--error-red);
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+}
 @keyframes impact-animation {
     0% {
         transform: translate(-50%, -50%) scale(0);

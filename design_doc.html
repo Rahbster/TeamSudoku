@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Balance - Game Design Document</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+        }
+        .container, .game-section {
+            max-width: 900px;
+            margin: auto;
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        h1, h2, h3 {
+            color: #00A0C0;
+            border-bottom: 1px solid #4A6A8A;
+            padding-bottom: 5px;
+        }
+        .status {
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .done {
+            background-color: #208060;
+            color: #e0e0e0;
+        }
+        .progress {
+            background-color: #EFB82A;
+            color: #0D1117;
+        }
+        .todo {
+            background-color: #CC3333;
+            color: #e0e0e0;
+        }
+        code {
+            background-color: #111;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li, p {
+            margin-bottom: 10px;
+        }
+        .game-section {
+            margin-top: 30px;
+            border: 2px solid #4A6A8A;
+        }
+        .game-section h2 {
+            text-align: center;
+            font-size: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cosmic Balance - Game Design Document</h1>
+        <p>A living document tracking the features and implementation status of the Cosmic Balance game, based on the original manuals for Cosmic Balance I & II.</p>
+
+        <h2>Core Concepts</h2>
+        <ul>
+            <li><strong>Game Phases:</strong> The game is divided into a strategic layer (fleet movement, production) and a tactical layer (ship-to-ship combat). Tactical combat itself has three phases: Setup, Orders, and Execution.</li>
+            <li>
+                <strong>Multiplayer Teams:</strong> The game will support multiple teams of players competing against each other on the strategic map. <span class="status todo">[TODO]</span>
+                <em>This requires extending the P2P architecture to handle more than two players and broadcasting state to team members.</em>
+            </li>
+            <li>
+                <strong>AI Opponents:</strong> The game will feature AI-controlled players/teams for solo play. <span class="status todo">[TODO]</span>
+                <ul>
+                    <li><strong>AI Difficulty:</strong> AI difficulty levels (e.g., 1-4) will affect their strategic decisions and ship designs (e.g., higher difficulty AI gets bonuses like improved crew efficiency and more power per engine, per the original manual). <span class="status todo">[TODO]</span></li>
+                </ul>
+            </li>
+        </ul>
+
+        <hr>
+
+        <h2>I. Ship Designer (Setup Phase)</h2>
+        <p>The heart of the game. Players must balance speed, power, defenses, and weaponry within the space constraints of a chosen hull.</p>
+
+        <h3>1. Hull and Technology</h3>
+        <ul>
+            <li>
+                <strong>Select Hull Size:</strong> Players choose from 5 ship sizes, which determines the base mass and available space. <span class="status done">DONE</span>
+                <ul>
+                    <li>Corvette (Size 1)</li>
+                    <li>Frigate (Size 2)</li>
+                    <li>Destroyer (Size 3)</li>
+                    <li>Cruiser (Size 4)</li>
+                    <li>Dreadnought (Size 5)</li>
+                </ul>
+                <em>Implemented in <code>cosmicbalance.js</code> via the <code>HULLS</code> constant and the "New Design" UI.</em>
+            </li>
+            <li>
+                <strong>Select Tech Level:</strong> Players choose a tech level from 1 to 6. This affects the space available and the effectiveness of certain systems. <span class="status done">DONE</span>
+                <em>Implemented in the "New Design" UI.</em>
+            </li>
+            <li>
+                <strong>Space Left:</strong> The total available design space is calculated based on the formula: <code>Space = (9 + Tech Level) * 2^(Size - 1)</code>. <span class="status done">DONE</span>
+                <em>Implemented in <code>updateShipStats()</code>.</em>
+            </li>
+        </ul>
+
+        <h3>2. Components & Systems</h3>
+        <p>Players add components to their design, which consumes space and affects ship stats.</p>
+        <ul>
+            <li><strong>Drives:</strong> Propel the ship. More drives increase acceleration and turning ability. <span class="status progress">IN PROGRESS</span> (Component exists, but stat calculation is a TODO).</li>
+            <li><strong>Engines:</strong> Generate power for shields and weapons. Each engine provides 8 power units. <span class="status done">DONE</span> (Component exists and power is calculated in <code>updateShipStats()</code>).</li>
+            <li><strong>Warp Drives:</strong> Determine the ship's strategic range and ability to escape combat. <span class="status progress">IN PROGRESS</span> (Component exists, but range/escape logic is a TODO).</li>
+            <li><strong>Armor:</strong> Adds layers of protection that reduce incoming damage. <span class="status progress">IN PROGRESS</span> (Component exists, but damage reduction logic is a TODO).</li>
+            <li><strong>Marines & Transporters:</strong> Used for boarding enemy ships. <span class="status progress">IN PROGRESS</span> (Components exist, but boarding combat logic is a TODO).</li>
+            <li><strong>Belts:</strong> Defensive satellites that can shoot down incoming seekers and fighters. <span class="status progress">IN PROGRESS</span> (Component exists, but defensive logic is a TODO).</li>
+            <li><strong>Seeker Racks & Seekers:</strong> Launching platforms for guided missiles (Light/Heavy Seekers). <span class="status progress">IN PROGRESS</span> (Components exist, but rack space logic is a TODO).</li>
+            <li><strong>Fighter Bays:</strong> Launch swarms of 30 robot fighters. <span class="status progress">IN PROGRESS</span> (Component exists, but fighter logic is a TODO).</li>
+            <li><strong>Cargo Holds:</strong> Carry troops or supplies for specific scenarios. <span class="status progress">IN PROGRESS</span> (Component exists, but scenario integration is a TODO).</li>
+            <li><strong>Tractor Beams:</strong> Used to tow disabled friendly ships. <span class="status progress">IN PROGRESS</span> (Component exists, but towing logic is a TODO).</li>
+            <li>
+                <strong>Weapons:</strong> Offensive systems. Space cost depends on the weapon and its firing arcs. <span class="status progress">IN PROGRESS</span> (Basic components exist, but space cost calculation needs to be fully accurate per the manual).
+                <ul>
+                    <li>Light/Heavy/Siege Phasers</li>
+                    <li>Photon Torpedoes (drains shields)</li>
+                    <li>Disruptors (long range)</li>
+                    <li>Plasma Torpedoes (high damage, wrecks armor)</li>
+                </ul>
+                <em>All weapon types exist in the <code>COMPONENTS</code> catalog.</em>
+            </li>
+            <li>
+                <strong>Weapon Arcs:</strong> Weapons can be assigned to 1-8 firing arcs. The space cost increases with more arcs. <span class="status progress">IN PROGRESS</span> (UI exists, but space calculation is simplified and needs to match the manual's fractional costs).
+                <em>Implemented via the "Set Arcs" button and <code>calculateComponentSpace()</code>.</em>
+            </li>
+            <li>
+                <strong>Shields:</strong> Defensive energy fields with 8 arcs. Strength per arc (up to 30) can be set by the player. <span class="status todo">[TODO]</span>
+                <em>Currently, shields are only defined on default templates. Needs to be a configurable component where players allocate shield batteries to arcs.</em>
+            </li>
+        </ul>
+
+        <h3>3. Ship Stats Calculation</h3>
+        <ul>
+            <li><strong>Space Left:</strong> <span class="status done">DONE</span></li>
+            <li><strong>Power:</strong> <span class="status done">DONE</span></li>
+            <li><strong>Mass:</strong> <span class="status done">DONE</span> (Based on hull).</li>
+            <li><strong>Max Speed:</strong> <span class="status todo">[TODO]</span> (Should be determined by drives and ship size).</li>
+            <li><strong>Max Acceleration:</strong> <span class="status todo">[TODO]</span> (Should be determined by drives and ship size).</li>
+            <li><strong>Crew Efficiency:</strong> <span class="status todo">[TODO]</span> (Should be determined by hull space allocated above the minimum).</li>
+        </ul>
+
+        <h3>4. Saving and Loading Designs</h3>
+        <ul>
+            <li><strong>Default Designs:</strong> The Enterprise and Reliant are available as starting templates. <span class="status done">DONE</span></li>
+            <li><strong>Save Custom Designs:</strong> Players can name and save their designs to local storage. <span class="status done">DONE</span></li>
+            <li><strong>Load Designs:</strong> Clicking a saved design loads it into the designer for viewing or modification. <span class="status done">DONE</span></li>
+            <li><strong>Delete Designs:</strong> Players can remove custom designs. <span class="status done">DONE</span></li>
+        </ul>
+
+        <hr>
+
+        <h2>II. Tactical Combat (Orders & Execution)</h2>
+        <p>During this phase, players give each of their ships orders for the upcoming 16-second turn. The UI presents a status display and a list of commands: (M)ap, (I)dentify, (C)ourse, (S)hield, (W)eapon, (B)elt, (J)am, (E)CCM, (T)ransport, E(X)it.</p>
+        
+        <h3>1. Orders Phase</h3>
+        <ul>
+            <li><strong>Course & Speed:</strong> Set a target heading and speed. The ship's ability to turn and accelerate is limited by its drives and current speed. <span class="status progress">IN PROGRESS</span> (Basic UI exists).
+                <ul>
+                    <li>Power Cost for Maneuvering: <span class="status todo">[TODO]</span></li>
+                    <li>Drag Chute Effect: A special maneuver to slow down without using power. <span class="status todo">[TODO]</span></li>
+                </ul>
+            </li>
+            <li><strong>Shield Management:</strong> Players can issue orders to manage shield power. <span class="status todo">[TODO]</span>
+                <ul>
+                    <li><strong>Charge:</strong> Allocate power from engines to recharge depleted shield batteries.</li>
+                    <li><strong>Drain:</strong> Inefficiently drain power from a shield back to the ship's main power supply.</li>
+                    <li><strong>Transfer:</strong> Inefficiently transfer power from one shield arc to another.</li>
+                </ul>
+            </li>
+            <li><strong>Weapon Management:</strong> <span class="status progress">IN PROGRESS</span> (Basic targeting exists).
+                <ul>
+                    <li><b>Weapon Charging:</b> Weapons must be charged with power before use. A weapon not charged in a given turn loses all accumulated charge. <span class="status todo">[TODO]</span></li>
+                    <li><b>Power Cost:</b> Each weapon type has a specific power cost per turn to charge. <span class="status todo">[TODO]</span></li>
+                    <li><b>Firing Modes:</b>
+                        <ul>
+                            <li><b>(R)ange:</b> Fire when target is within a specified range. <span class="status todo">[TODO]</span></li>
+                            <li><b>(T)ime:</b> Fire at a specific second of the turn. <span class="status todo">[TODO]</span></li>
+                            <li><b>(L)ast Instant:</b> The computer fires at the optimal moment. <span class="status todo">[TODO]</span></li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <li><strong>Electronic Warfare:</strong> Activate ECM (jammers) and ECCM (sensors). Strength is equal to the ship's tech level. <span class="status todo">[TODO]</span></li>
+            <li><strong>Boarding Actions:</strong> Order marines to be beamed to an enemy ship. This can only succeed if the target's shields are down or have been breached by 5+ damage points. <span class="status todo">[TODO]</span></li>
+            <li><strong>Running Away:</strong> After turn 10, ships with sufficient range (Warp Drives) can be ordered to escape the battle. <span class="status todo">[TODO]</span></li>
+        </ul>
+
+        <h3>2. Execution Phase</h3>
+        <ul>
+            <li><strong>Movement:</strong> Ships turn and accelerate/decelerate towards their ordered heading and speed. <span class="status done">DONE</span> (Implemented in <code>executeTurn()</code>).</li>
+            <li><strong>Weapon Firing:</strong> Weapons fire based on their orders. Projectiles travel across the map. <span class="status progress">IN PROGRESS</span> (Basic beam and projectile firing exists).</li>
+            <li><strong>Damage Resolution:</strong> Damage is calculated and applied. <span class="status progress">IN PROGRESS</span> (Basic shield/hull damage exists).
+                <ul>
+                    <li><strong>Shield Draining:</strong> Photon Torpedoes and Seekers drain extra shield batteries on hit. <span class="status todo">[TODO]</span></li>
+                    <li><strong>Armor:</strong> Reduces hull damage that gets through shields. <span class="status todo">[TODO]</span></li>
+                    <li><strong>System Damage:</strong> Hits that penetrate defenses have a chance to damage a random system. "Protected" systems have a higher chance of surviving. <span class="status todo">[TODO]</span></li>
+                    <li><strong>Extraordinary Damage:</strong> A type of damage that kills crew/marines or destroys sensors/jammers. <span class="status todo">[TODO]</span></li>
+                    <li><strong>Critical Hits:</strong> The most serious type of damage. A ship is only destroyed by accumulating a number of Critical Hits equal to its Mass. <span class="status todo">[TODO]</span></li>
+                </ul>
+            </li>
+        </ul>
+
+        <hr>
+
+        <h2>III. Strategic Layer (Cosmic Balance II)</h2>
+        <p>This section details the grand strategy elements introduced in the sequel. All features in this section are currently marked as <span class="status todo">[TODO]</span>.</p>
+
+        <h3>1. Map & Movement</h3>
+        <ul>
+            <li><strong>Map:</strong> View the tactical map. Can change scale (0-5) to zoom in/out. Can also view the ship's projected position at any of the 16 seconds in the upcoming turn.</li>
+            <li><strong>Identify:</strong> Get a detailed status report on a target ship, including its Speed, Course, Bearing, Mass, Range, and which of your shield arcs is facing it.</li>
+        </ul>
+
+        <h4>Course & Speed Commands</h4>
+        <ul>
+            <li><strong>Course Change:</strong> Set a new heading (0-359 degrees). The rate of turn depends on the ship's Maximum Acceleration factor. This costs power. <span class="status progress">IN PROGRESS</span> (Implemented, but power cost is a TODO).</li>
+            <li><strong>Speed Change:</strong> Set a new speed. The amount of acceleration/deceleration possible in one turn is limited. This costs power. <span class="status progress">IN PROGRESS</span> (Implemented, but power cost is a TODO).</li>
+            <li><strong>Drag Chute Effect:</strong> Reduce speed by one pulse factor per turn without using power by extending solar panels. This can only be used if no drives are available for deceleration and it prevents any course changes during the turn. <span class="status todo">[TODO]</span></li>
+        </ul>
+
+        <h4>Shield Management Commands <span class="status todo">[TODO]</span></h4>
+        <ul>
+            <li><strong>Charge:</strong> Allocate power from engines to recharge depleted shield batteries.</li>
+            <li><strong>Drain:</strong> Inefficiently drain power from a shield back to the ship's main power supply (4 battery units drained = 1 power unit gained).</li>
+            <li><strong>Transfer:</strong> Inefficiently transfer power from one shield arc to another (2 battery units drained = 1 unit gained at the other shield).</li>
+        </ul>
+
+        <h4>Weapon & Defense Commands</h4>
+        <ul>
+            <li><strong>Weapon Charging:</strong> Weapons must be charged with power before use. A weapon not charged in a given turn loses all accumulated charge. <span class="status progress">IN PROGRESS</span> (Cooldowns exist, but charging and power cost are TODOs).
+                <ul>
+                    <li><b>Charge Time:</b> Phasers/Photons (1 turn), Disruptors (2 turns), Plasma Torpedoes (3 turns).</li>
+                    <li><b>Power Cost:</b> Light Phaser (1), Heavy Phaser (1), Siege Phaser (2), Photon Torpedo (5), Disruptor (2 per turn), Plasma Torpedo (5 per turn).</li>
+                </ul>
+            </li>
+            <li><strong>Firing Modes:</strong> <span class="status todo">[TODO]</span>
+                <ul>
+                    <li><b>(R)ange:</b> Fire when target is within a specified range.</li>
+                    <li><b>(T)ime:</b> Fire at a specific second of the turn.</li>
+                    <li><b>(L)ast Instant:</b> The computer fires at the optimal moment (e.g., just before the target moves out of arc or range).</li>
+                </ul>
+            </li>
+            <li><strong>Belts:</strong> Charge defensive satellite belts. Each charged belt has a chance to shoot down incoming guided weapons. Costs 1 power per belt. <span class="status todo">[TODO]</span></li>
+            <li><strong>ECM/ECCM:</strong> Activate Electronic Countermeasures (Jammers) and Counter-Countermeasures (Sensors). Strength is equal to the ship's tech level. ECM reduces enemy accuracy; ECCM cancels enemy ECM. <span class="status todo">[TODO]</span></li>
+        </ul>
+
+        <h4>Transport & Boarding Commands <span class="status todo">[TODO]</span></h4>
+        <ul>
+            <li><strong>Transport:</strong> Order marines to be beamed to an enemy ship. Each transporter can beam 2 marine detachments at a time and costs 1 power unit.</li>
+            <li><strong>Boarding Conditions:</strong> Transport can only succeed if the target's facing shield is down or has been breached by 5+ damage points more than its strength.</li>
+            <li><strong>On-Ship Combat:</strong> If boarding is successful, a battle between marines and the defending crew/marines begins, resolving over several turns.</li>
+        </ul>
+
+        <h4>Ending the Phase</h4>
+        <ul>
+            <li><strong>Ending Turn:</strong> Once all orders are given, the player ends their turn. In a two-player game, the other player then gives their orders.</li>
+            <li><strong>Running Away:</strong> After turn 10, ships with sufficient range (Warp Drives) can be ordered to escape the battle. A ship with a tractor beam can tow one additional ship. <span class="status todo">[TODO]</span></li>
+        </ul>
+
+        <h3>2. Economy & Production</h3>
+        <ul>
+            <li><strong>Commerce Nets:</strong> A group of 1 Industrial, 2 Mining, and 7 Farming planets, connected by 18 resource points, produces Industrial Output Points (IOs).</li>
+            <li><strong>Ship Construction:</strong> New ships are built at starbases using IOs. The cost is equal to its base Victory Point value, and construction time is 1 turn for every 10 IOs of cost.</li>
+            <li><strong>Research:</strong> IOs can be spent on research. For every 400 IOs spent, there is a ~1% chance of increasing the player's Tech Level.</li>
+            <li><strong>Repair & Refit:</strong> Damaged ships can be repaired at starbases, consuming IOs and time.</li>
+        </ul>
+
+        <h3>3. Colonization & Planets</h3>
+        <ul>
+            <li><strong>Planet Types:</strong> Industrial, Mining, Farming, and Terran.</li>
+            <li><strong>Planet Status:</strong> Active, Ecolapse, Colonial (levels 1-10), and Discovered.</li>
+            <li><strong>Colonization:</strong> Use transported supplies to colonize discovered worlds. There is an 87% chance of success per attempt.</li>
+        </ul>
+
+        <h3>4. Game Scenarios & Victory</h3>
+        <p>Cosmic Balance II includes a scenario editor allowing players to define the starting state of the galaxy. This involves:</p>
+        <ul>
+            <li>The game includes 5 scenarios with specific objectives, from simple economic goals to all-out war.</li>
+            <li><strong>Terran Expansion (Solitaire):</strong> The player must establish a commerce net within 15 turns, starting with Tech Level 1. This scenario serves as a tutorial for the economic rules.</li>
+            <li><strong>Colonial Wars:</strong> A 10-turn, two-player scenario where the Independent Confederation of Planets (ICP) at Tech 2 rebels against Terra (Tech 1). Victory is achieved by bringing all of the opponent's planets out of Active status.</li>
+            <li><strong>First Contact:</strong> A 10-turn scenario where the Tech 4 ICP must survive an attack from a Tech 2 Empire. The ICP wins by preventing the Empire from capturing Terra or causing a total economic collapse.</li>
+            <li><strong>Rebellion:</strong> A 14-turn scenario where the Tech 4 ICP supports a rebellion within the Tech 4 Empire. The ICP must establish commerce nets in a contested sector to win.</li>
+            <li><strong>The Final Conflict:</strong> An open-ended war between the Tech 5 ICP and the Tech 5 Empire. The game continues until one player achieves total victory or both declare peace. The winner is the player controlling the most sectors.</li>
+        </ul>
+
+        <hr style="margin: 40px 0;">
+
+        <h2>Original Documentation</h2>
+
+        <div class="game-section">
+            <h2>Cosmic Balance I</h2>
+            <pre style="font-family: monospace, monospace; white-space: pre-wrap; text-align: center; background-color: #111; padding: 15px; border-radius: 5px; overflow-x: auto;">
+    ///////////      ////    ///         ////    ///  ///  //////////////////
+   /////////////  ////////  ///       ////////  ///  ///  //////////////////
+            ///       ///  ///            ///  //// ///
+      /// ///   ////////  ///       ////////  ////////  ///       ///////
+     ///  ///  ///  ///            ///  ///  /// ////  ///       ///
+    ////////  ///  ///  ////////  ///  ///  ///  ///  ////////  ////////
+   //////    ///  ///  ////////  ///  ///  ///  ///  ////////  ////////
+            </pre>
+            <pre style="font-family: monospace, monospace; white-space: pre-wrap; text-align: left; background-color: #111; padding: 15px; border-radius: 5px; overflow-x: auto;">
+          _________________
+             /                 \_____
+             |___ _________ _________&lt;                 NAME     :  QUESTAR
+          ___ ___/_________/______            ____     CLASS    :  EXPLORATION
+       _ &gt;___/______ _______      \__________/ __ \    TOP SPEED:  700
+      \_`\___\______/       \_____/__         /__&lt; \   WEAPONRY :  HEAVY CANONS
+      /_,/___/______\_______/     \__________ \__&lt; /               MED LASERS
+         &gt;___\___ _________ ______/          \____/
+              ___\_________\_________                     _______________
+             |                 ______&lt;                ---&lt;_____          &gt;
+             \________________/                                `-,------|
+                                          ______                 /      |&lt;
+                                         /___   \_________/-----/\_____/ \
+     NAME     :  KALTARG                &lt;\ _ &gt;\              ___/__  __\_ &lt;
+     CLASS    :  COMBAT                 &lt;/___&gt;/  _________      \ _____/  &lt;
+     TOP SPEED:  1350                    \______/         \-----\/     \ /
+     WEAPONRY :  EX HEAVY PHASERS                                \      |&lt;
+                 PHOTON TORPEDOES                         _____,-`------|
+                                                      ---&lt;_______________&gt;
+
+            </pre>
+            <pre style="font-family: monospace, monospace; white-space: pre-wrap; text-align: left; background-color: #111; padding: 15px; border-radius: 5px; overflow-x: auto;">
+  _|________________________________________________________________________|_
+   |                                                                        |
+   |      The fighting spacecraft of the 24th Century were some of the most |
+   | beautiful and deadly machines ever built.   Their designers sought the |
+   | optimum  balance of speed,  maneuverability,  defenses,  and offensive |
+   | weaponry, always trying to create the perfect ship.                    |
+   |      Unfortunately,  many a  confident  starship  commander  found his |
+   | "perfect" ship  reduced to a helpless  hulk by a superior ship  in the |
+   | hands of a  skilled commander.   He had learned the  first rule of the |
+   | Cosmic  Balance:   for every  ship,  there  is an  equal and  opposite |
+   | countership.                                                           |
+  _|________________________________________________________________________|_
+            </pre>
+
+            <h3>1.0 INTRODUCTION</h3>
+            <p>COSMIC BALANCE is a simulation of tactical combat in deep space. You design your ships, give them their orders, and then see how they perform in combat against enemy ships. The outcome will depend almost entirely upon your judgement as a designer and your skill as a commander.</p>
+            <p>The game is played in three phases:</p>
+            <ul>
+                <li><strong>THE SETUP PHASE:</strong> You choose one of six different tactical scenarios, and then design up to four different ships on each side to fight them.</li>
+                <li><strong>THE ORDERS PHASE:</strong> Your map will show you the positions of your ships and the enemy ships. You give each ship its orders for a sixteen-second turn. Your ships may maneuver, change course, fire weapons, or try to beam a boarding party onto an enemy ship. Your Opponent will then give his orders for the same turn.</li>
+                <li><strong>THE EXECUTION PHASE:</strong> You will now watch the ships battle each other, each following the instructions given them during the orders phase. The scenario will end when all of your ships or all the enemy ships have been destroyed, when one or both players have run away, or when one player has achieved the victory conditions for that scenario.</li>
+            </ul>
+
+            <h3>2.0 BEGINNING THE GAME</h3>
+            <p>The original game presented a main menu to configure the game. This is handled by our modern UI, but the options were:</p>
+            <pre style="white-space: pre-wrap; font-family: monospace, monospace;">
+                           THE COSMIC BALANCE
+
+                1. NEW GAME     SAVED GAME
+                2. TWO PLAYER   SOLITAIRE 1 2 3 4
+                                Easiest:1  Hardest:4
+                SCENARIOS
+                3. DEEPSPACE ENCOUNTER
+                4. PLANETARY RAID
+                5. COMMERCE RAIDER
+                6. INVASION
+                7. DOGFIGHT
+                8. SURPRISE ATTACK
+            </pre>
+            <p><strong>Solitaire Level:</strong> For solitaire play, you could choose a difficulty from 1 to 4. A level 1 enemy has technology equal to yours. A level 4 enemy has a crew efficiency +3 better than the ship's design and 3 more power points per engine.</p>
+
+            <h3>3.0 VICTORY POINTS</h3>
+            <p>Victory points are awarded to each ship according to how well it has survived combat. The points depend upon its size and tech level, less the critical damage received.</p>
+            <h4>VICTORY POINTS FOR UNDAMAGED SHIPS</h4>
+            <p>The values of undamaged ships are shown on this table:</p>
+            <pre>
+                   Tech level   -1-     -2-     -3-     -4-     -5-     -6-
+Size 1 Corvette                   4       5       6       7       8       9
+Size 2 Frigate                   12      14      17      21      25      29
+Size 3 Destroyer                 25      31      37      49      60      71
+Size 4 Cruiser                   58      72      86     105     125     150
+Size 5 Dreadnought              105     130     155     180     210     250
+            </pre>
+            <h4>VICTORY POINTS FOR DAMAGED SHIPS</h4>
+            <p>Each time a ship suffers critical damage, a percentage of victory points equal to the percentage of critical hits is subtracted from the Victory Points. For example, if a Tech 6 dreadnought has suffered 8 critical hits (50% of its allowance), its 250 point value is reduced to 125.</p>
+            <h4>VICTORY POINTS FOR CAPTURED SHIPS</h4>
+            <p>If you capture an enemy ship, its victory points are added to yours. The player with the most victory points at the end of the game is the winner.</p>
+
+            <h3>3.1 The Scenarios</h3>
+            <h4>SCENARIO ONE: DEEPSPACE ENCOUNTER</h4>
+            <p>Player One commands the Enterprise; Player Two commands the Reliant. Both are Tech 5, Size 4 cruisers with a range factor of two. The objective is to destroy or capture the opposing ship. The battle takes place in Alliance space, so the Reliant needs two range factors to escape, while the Enterprise only needs one.</p>
+
+            <h4>SCENARIO TWO: PLANETARY RAID</h4>
+            <p>Player One commands an Alliance Dreadnought (range >= 2) attacking the planet Dirgos. Player Two commands three Size 3 Brotherhood Destroyers defending the planet. The planet itself is represented as an immobile, heavily armored Dreadnought. The Alliance player wins by destroying the planet. The Brotherhood ships are worth 1/4 of their normal victory points. The Alliance ship automatically attempts to warp out after 10 turns.</p>
+
+            <h4>SCENARIO THREE: COMMERCE RAIDER</h4>
+            <p>Player One commands an Alliance Cruiser (range >= 2) trying to intercept a Brotherhood Transport Dreadnought (range >= 1, 7 cargo holds). The Alliance player must wreck, capture, or destroy the cargo of the transport. The Brotherhood player must escape with their cargo. The transport automatically attempts to warp out after 10 turns.</p>
+
+            <h4>SCENARIO FOUR: INVASION</h4>
+            <p>Player One commands an Alliance Invasion Force (1 Dreadnought, 3 Cruisers, all range >= 2) carrying at least three battalions of troops (in cargo holds). Player Two commands a Brotherhood Defense Force (1 Dreadnought with range >= 1, 3 Destroyers with no range). The Alliance wins extra victory points if they have three battalions of troops intact at the end of the scenario.</p>
+
+            <h4>SCENARIO FIVE: DOGFIGHT</h4>
+            <p>Each commander assembles their own squadron of up to four ships. Any ship needs a range of at least one to escape. The winner is the side with the most victory points at the end.</p>
+
+            <h4>SCENARIO SIX: SURPRISE ATTACK (Solitaire)</h4>
+            <p>The player commands a squadron of up to four ships and is attacked by one to four Tech 6 robot Dreadnoughts. The player's ships need a range of at least one to escape.</p>
+
+            <h3>4.0 SETUP PHASE (THE SHIP DESIGNER)</h3>
+
+            <h4>4.1 Technological Level</h4>
+            <p>Determines the advancement of the ship's technology, from 1 (earliest) to 6 (most advanced).</p>
+
+            <h4>4.2 Ship Size</h4>
+            <p>Ships come in five sizes: Corvette, Frigate, Destroyer, Cruiser, Dreadnought.</p>
+
+            <h4>4.4 Design Status Display</h4>
+            <p>The designer shows the following ship statistics:</p>
+            <ul>
+                <li><strong>SPACE LEFT:</strong> The available internal space for components. Formula: <code>Space = (9 + Tech Level) * 2^(Size - 1)</code>.</li>
+                <li><strong>MAX SPEED:</strong> Determined by the number of drives and ship size.</li>
+                <li><strong>POWER:</strong> Generated by engines, needed for weapons and shields.</li>
+                <li><strong>EFFICIENCY:</strong> Crew and marine effectiveness, determined by hull space.</li>
+                <li><strong>MAX ACCEL:</strong> Maximum acceleration, depends on drives and ship size.</li>
+                <li><strong>MASS:</strong> Depends on size. Determines how much critical damage a ship can survive.</li>
+            </ul>
+            <p><strong>TECH SECTORS:</strong> Some systems have their space measured in Technological Sectors. 1 Tech Sector = <code>9 + Tech Level</code> cubic sectors.</p>
+
+            <h4>4.12 Range (Warp Drives)</h4>
+            <p>Determines the ability to escape from battle. Requires 1 tech sector per warp drive.</p>
+
+            <h4>4.13 Cargo Holds</h4>
+            <p>Cargo holds for supplies or troops. Requires 1 tech sector per hold.</p>
+
+            <h4>4.14 Fighter Bays</h4>
+            <p>Each bay holds 30 robot fighters. Requires 2 tech sectors per bay.</p>
+
+            <h4>4.15 Hull</h4>
+            <p>Living quarters for the crew. Minimum space is set by ship size. Increasing hull space raises crew EFFICIENCY. Requires 1.5x minimum space for level 2, and 2x for level 3. Also requires 1 cubic sector per marine detachment.</p>
+
+            <h4>4.16 Racks</h4>
+            <p>Launching platforms for seekers. Each rack takes 2 cubic sectors.</p>
+
+            <h4>4.17 Light Seekers (LTSKR)</h4>
+            <p>Guided weapons effective against shields. Each takes 1 rack space.</p>
+
+            <h4>4.18 Heavy Seekers (HSKR)</h4>
+            <p>Slower, more powerful seekers. Each takes 2 rack spaces.</p>
+
+            <h4>4.19 Engines</h4>
+            <p>Generate power. Each engine provides 8 energy units and takes 2 cubic sectors.</p>
+
+            <h4>4.20 Drives</h4>
+            <p>Propel the ship. Affect acceleration and turning. Each drive takes 4 cubic sectors.</p>
+
+            <h4>4.21 Transporters (TRANS)</h4>
+            <p>Beam marines for boarding actions. Each can beam 2 detachments and takes 1 cubic sector.</p>
+
+            <h4>4.22 Tractors (TRAC)</h4>
+            <p>Used to tow disabled ships. Each takes 4 cubic sectors.</p>
+
+            <h4>4.23 Armor</h4>
+            <p>Deflects damage. Each layer takes 1 cubic sector.</p>
+
+            <h4>4.24 Marines</h4>
+            <p>Used for boarding and defense. Each detachment takes 1 cubic sector.</p>
+
+            <h4>4.25 Belts</h4>
+            <p>Outer defense satellites that shoot at incoming fighters and seekers. Each takes 1 cubic sector.</p>
+
+            <h4>4.26 Weapons</h4>
+            <p>Up to 12 weapons can be installed. Maximum weapons per arc depends on ship size.</p>
+            <ul>
+                <li><strong>Light Phaser:</strong> Base space 0.5, +3/16 for each additional arc.</li>
+                <li><strong>Heavy Phaser:</strong> Base space 1, +3/8 for each additional arc.</li>
+                <li><strong>Siege Phaser:</strong> Base space 2, +3/4 for each additional arc.</li>
+                <li><strong>Disruptor:</strong> Same as Siege Phaser.</li>
+                <li><strong>Photon Torpedo:</strong> Same as Siege Phaser. Drains shields.</li>
+                <li><strong>Plasma Torpedo:</strong> 15 space. No arc needed. High damage, effective against armor.</li>
+            </ul>
+
+            <h4>4.27 Shields</h4>
+            <p>Configurable for each of the 8 arcs, up to a strength of 30. Each point of strength requires 8 shield batteries. Each battery takes 1/64 cubic sector. (1 full shield point on all 8 arcs = 1 cubic sector).</p>
+
+            <h3>5.0 THE ORDERS PHASE</h3>
+            <p>Players give orders for a 16-second turn. The status display shows ship course, speed, and system readiness.</p>
+
+            <h4>5.4 Course and Speed</h4>
+            <p>Players can set a new course and speed. The ability to turn and accelerate depends on the number of drives and current speed. Maneuvers cost power. A "drag chute" effect allows slowing down without power.</p>
+
+            <h4>5.5 Charging Shields</h4>
+            <p>Power can be allocated to recharge damaged shields. Power can also be drained from shields or transferred between them inefficiently in an emergency.</p>
+
+            <h4>5.6 Charging and Firing Weapons</h4>
+            <p>Weapons must be charged with power before firing. A weapon not charged in a given turn loses all accumulated charge.</p>
+            <ul>
+                <li><strong>Charge Time:</strong> Phasers/Photons (1 turn), Disruptors (2 turns), Plasma Torpedoes (3 turns).</li>
+                <li><strong>Power Cost:</strong> Light Phaser (1), Heavy Phaser (1), Siege Phaser (2), Photon Torpedo (5), Disruptor (2 per turn), Plasma Torpedo (5 per turn).</li>
+                <li><strong>Firing Modes:</strong>
+                    <ul>
+                        <li><strong>(R)ange:</strong> Fire when target is in a specified range.</li>
+                        <li><strong>(T)ime:</strong> Fire at a specific second of the turn.</li>
+                        <li><strong>(L)ast Instant:</strong> Fire at the optimal moment before the target moves out of range or arc.</li>
+                    </ul>
+                </li>
+                <li><strong>Draining Shields:</strong> Weapons like Photon Torpedoes drain 4 shield batteries for each point of damage they cause, in addition to normal damage.</li>
+            </ul>
+
+            <h4>5.7 Belts, ECM and ECCM</h4>
+            <ul>
+                <li><strong>Belts:</strong> Each charged belt has a chance to shoot down incoming guided weapons. Costs 1 power per belt to charge.</li>
+                <li><strong>ECM (Jammers):</strong> Reduces damage from guided weapons and accuracy of beam weapons. Strength equals ship's tech level.</li>
+                <li><strong>ECCM (Sensors):</strong> Cancels out enemy ECM on a 1-to-1 basis. Strength equals ship's tech level.</li>
+            </ul>
+
+            <h4>5.8 Transporting and On-Ship Combat</h4>
+            <p>Marines can be beamed to an enemy ship if its shields are down or have been breached by 5+ damage points. This initiates a battle between the boarding party and the ship's crew/marines, which resolves over several turns. Success depends on the number and efficiency of marines and crew.</p>
+
+            <h4>5.10 Running Away</h4>
+            <p>After turn 10, ships with sufficient range (Warp Drives) can attempt to escape the battle.</p>
+
+            <h3>7.0 DAMAGE</h3>
+            <ul>
+                <li><strong>Systems Damage:</strong> Hits that penetrate defenses have a chance to damage a random system, proportional to the space it occupies. Some systems are "protected" and have a higher chance of surviving a hit.</li>
+                <li><strong>Extraordinary Damage:</strong> Damage that kills crew/marines or destroys sensors/jammers.</li>
+                <li><strong>Critical Hits:</strong> The most serious damage. A ship is destroyed only when it has accumulated critical hits equal to its Mass.</li>
+            </ul>
+        </div>
+        
+        <div class="game-section">
+            <h2>Original Documentation (Cosmic Balance II)</h2>
+            <h3>2.0 Glossary</h3>
+            <p>This section from the original manual defines key terms for the strategic layer, such as Active, Cargo Hold, Colony Level, Commerce Net, Ecolapse, IO (Industrial Output Point), Mission, Resource Point, and TLVD.</p>
+            <h3>4.0 Sequence Outline</h3>
+            <p>This details the turn structure: Production Phase (Ship Supply, Construction), First Movement Phase, Execution Phase (Combat), Colony Supply Phase (Discovery, Supply), and Second Movement Phase.</p>
+            <h3>5.0, 6.0, 7.0 - Planets, Ships, and Commerce Nets</h3>
+            <p>These sections explain the different types and statuses of planets, the attributes of the 15 new ship classes (Size, Range, Cargo), and the composition of a commerce net (1 Industrial, 2 Mining, 7 Farming planets).</p>
+            <h3>9.0, 10.0, 12.0, 13.0 - Phase Details</h3>
+            <p>These sections provide granular rules for each phase, including ship maintenance costs, research mechanics, mission types (Patrol, Invasion, etc.), and colonization rules.</p>
+            <h3>15.0, 16.0, 17.0 - Scenarios & Combat Option</h3>
+            <p>Details the five new strategic scenarios, the "Create a Scenario" mode, and the option to resolve strategic battles using the tactical combat engine of the first game.</p>
+        </div>
+
+        <div class="game-section">
+            <h2>8.0 & 9.0 Saving & Ending the Game</h2>
+            <h4>Saving a Game in Progress</h4>
+            <p>Before the Orders Phase of each turn, the player is asked if they want to stop and save the game. If yes, the game presents the `SSI SAVE ROUTINE` menu. The player must insert a save disk.</p>
+            <ul>
+                <li><strong>(I)NITALIZE:</strong> Formats a blank disk to be a Save Game Disk.</li>
+                <li><strong>(S)AVE:</strong> Saves the current game state under a player-provided name.</li>
+                <li><strong>(C)ATALOG:</strong> Lists all saved games and ships on the disk.</li>
+                <li><strong>(D)ELETE:</strong> Deletes a previously saved item.</li>
+                <li><strong>(E)ND:</strong> Ends the game immediately, assuming both players ran away, and proceeds to victory calculation.</li>
+                <li><strong>(R)ETURN:</strong> Returns to the game.</li>
+            </ul>
+            <h4>Ending the Game</h4>
+            <p>After a scenario ends (ships destroyed, escaped, or objectives met), the game asks if the sector was contested, friendly to Player 1, or friendly to Player 2. This determines if ships with remaining range factors could have successfully escaped. The game then displays the final Victory Point tally and declares a winner.</p>
+        </div>
+
+        <div class="game-section">
+            <h2>Appendix A: A Short History of Starship Design</h2>
+            <pre style="white-space: pre-wrap; font-family: monospace, monospace; text-align: center;">
+      __      __     __      _   _  __          __ __  _   _         _   __
+     /_/     /_/    /_  /_/ / / /_&gt; /    /_/ / /_  /  / / /_&gt; \/    / / /_
+    / /.    / /    __/ / / /_/ / \ /    / / / __/ /  /_/ / \  /    /_/ /
+              __  __  __  _   __        __     _   __  __    __
+             /_   /  /_/ /_&gt; /_  /_/ / /_/    / &gt; /_  /_  / /   /\/
+            __/  /  / / / \ __/ / / / /      /_/ /_  __/ / /_/ / /
+            </pre>
+            <p>Military starship design during the 24th Century is usually divided into six periods, which correspond to the six technological levels.</p>
+            
+            <h4>1. THE PIONEER WARRIORS (2298-2330)</h4>
+            <p>The ships of the early century were relatively primitive, but rugged and versatile. When called upon to fight, these ships launched swarms of guided seekers and torpedoes in the general direction of the enemy ships and hoped for the best. Hundreds of these weapons from this era are still floating through deep space, still vainly seeking their targets. When their long-distance weapons failed, many starship commanders won reputations by closing on the enemy and fighting deadly close range phaser battles with their opponents. Both Kellius, who became Chief Designer of the alliance, and Yezov, later chief architect of the Brotherhood, were students at the Academy of Starship Design and Technology at this time.</p>
+
+            <h4>2. THE DISTANT WARS (2330-2341)</h4>
+            <p>As Alliance ships explored deeper and deeper space, they began to encounter ships and outposts of the Brotherhood, a league of warlike civilizations eager to dominate the known universe. The requirements of battle in remote space led to the development of longer-range frigates and cruisers, and deadly new weapons, including a new generation of seekers and torpedoes whose designers claimed they could find a digital wrist watch in the Milky Way. As his graduate project from the Academy, Kellius designed a side-firing siege phaser cruiser, which was widely derided by starship traditionalists. The derision stopped when a prototype of his cruiser in its first battle, destroyed the Brotherhood Dreadnought "Star Lord."</p>
+
+            <h4>3. INVASION (2341-2355)</h4>
+            <p>The Alliance suffered a setback when Yezov, the most promising designer after Kellius, defected to the Brotherhood, lured by a promise of unlimited resources and a chance to defeat his bitter rival, Kellius. Using captured ships filled with prisoners for realistic battle testing, Yezov developed a new generation of Super Dreadnoughts. In 2344, fleets of these huge battleships broke through the Alliance's ring of fortress stars and began to invade the Alliance system.</p>
+
+            <h4>4. THE DARK YEARS (2355-2380)</h4>
+            <p>In these years, Alliance fought desperate battles against the Brotherhood invaders, Kellius and his designers were hard-pressed to design faster ships and more effective weapons to offset the Brotherhood's huge advantage in numbers. Alliance privateers ventured deep into Brotherhood territory to attack Brotherhood merchant convoys.</p>
+
+            <h4>5. THE GREAT WAR (2380-2389)</h4>
+            <p>Early in 2355, a daring Alliance raid captured intact the new Brotherhood Cruiser "Liquidator". Having studied its systems, Kellius was able to design a new generation of counterships. The battles that followed between his new fleets and the Brotherhood invaders were the largest battles ever fought in space. Hundreds of derelict ghost ships, victims of these battles are still drifting lifelessly.</p>
+
+            <h4>6. THE COSMIC BALANCE</h4>
+            <p>An uneasy balance exists between the Brotherhood and the Alliance, as the invaders have been pushed back to the borderline. The disciples of Kellius and the students of Yezov are hard at work, designing new specialty ships; fighter carriers, plasma torpedo frigates, tractor ships, ECM and ECCCM ships, decoy ships, and others that will fight the battles of the next century. In 2390, on his ninetieth birthday, Kellius addressed the students at the Academy of Starship Design and Technology. The five maxims of starship design he gave the students are still widely quoted:</p>
+            <ul>
+                <li>"Ships are destroyed by the mistakes of their designers, not by the enemy."</li>
+                <li>"Never economize on the crew space. If a crewman can't sleep, he can't fight."</li>
+                <li>"Be sure that your ship can run if it can't fight, and fight if it can't run."</li>
+                <li>"The best ship is the simplest ship that can accomplish its mission."</li>
+                <li>"For each perfect ship, there is an equal and opposite countership that will be able to destroy it."</li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0;">
+
+        <div class="game-section">
+            <h2>Appendix B: Summary of Space Costs</h2>
+            <pre style="white-space: pre-wrap; font-family: monospace, monospace;">
+SYSTEM                   CUBIC SECTORS
+Drives                   4 each
+Engines                  2 each
+Warp Drives              1 tech sector each*
+Cargo Holds              1 tech sector each*
+Fighter Bays             2 tech sectors each*
+Tractor Beams            4 each
+Transporters             1 each
+Armor                    1 per layer
+Hull Space (Crew Space)  Min. of 1/2 per crew space or 1 per marine detachment
+Racks                    2 each
+Belts                    1 each
+Light Phasers            1/2 each for first arc, 3/16 each additional shield arc
+Heavy Phasers            1 for first arc, 3/8 for each additional shield arc
+Siege Phasers            2 for first arc, 3/4 for each additional shield arc
+Disruptors               2 for first arc, 3/4 for each additional shield arc
+Photon Torpedoes         2 for first arc, 3/4 for each additional shield arc
+Plasma Torpedoes         15 each
+Shields                  1/64 per battery (1/8 per arc for each shield strength)
+
+* 1 tech sector = 9 cubic sectors + tech level of ship
+            </pre>
+        </div>
+
+        <div class="game-section">
+            <h2>Weapon Characteristics Summary</h2>
+            <pre style="white-space: pre-wrap; font-family: monospace, monospace;">
+WEAPON          TYPICAL RANGE     SPEED        MAXIMUM DAMAGE
+Light Seeker         32        16 per turn     12 factors (drains shields)*
+                                (2 turns)
+Heavy Seeker         30        16 per turn     18 factors (drains shields)*
+                                (3 turns)
+Light Phasers        15          Instant       10 factors (less at long range)
+Heavy Phasers        20          Instant       14 factors (less at long range)
+Siege Phasers        30          Instant       20 factors (less at long range)
+Photon Torpedo       20          Instant       14 factors (drains shields)*
+                                               (less at long range)
+Fighters          Unlimited       -----        1 per fighter (30 per swarm)
+Disruptors          100          Instant       12 plus tech level (esp affected
+                                               by speed of target)
+Plasma Torpedos      32        16 per turn     60 factors (wrecks armor)
+                                               (less at long range)
+
+* Drains shields: Drains 4 shield batteries per damage point in addition to normal damage.
+            </pre>
+        </div>
+
+        <div class="game-section">
+            <h4>6.3 Ship Characteristics Table (CB II)</h4>
+            <pre style="white-space: pre-wrap; font-family: monospace, monospace;">
+SHIP   ID  SIZ RAN CARG ATK DEF ARM% MAX SPD  FULL SHIP NAME
+-----------------------------------------------------------------
+INTR   IN   1   0   00   01  03   0    32      INTERCEPTOR
+FRIG   FG   2   0   00   03  02   0    32      FRIGATE
+WTCH   WT   3   0   00   05  08   8    24      WATCHER
+GRDN   GD   4   0   00   10  22  11    24      GUARDIAN
+DFND   DF   5   0   00   14  26  20    24      DEFENDER
+DEST   DE   3   1   00   04  04   8    16      DESTROYER ESCORT
+ESCT   ES   4   1   00   08  12   8    20      ESCORT
+ATTK   AT   5   1   00   12  28  17    24      ATTACK SHIP
+LNCR   LN   4   2   00   07  09   6    16      LANCER
+RAID   RD   5   2   00   12  19   8    24      RAIDER
+TRDR   TD   4   1   05   01  12   0    12      FREE TRADER
+MRCH   MR   5   1   07   02  15   6    16      MERCHANT
+FRTR   FR   5   1   11   01  25   0     2      FREIGHTER
+TRAN   TR   5   2   04   08  34   6     8      TRANSPORT
+CLYS   CS   5   2   10   01  25   0     2      COLONY SHIP
+PLANET      5   0   00   00  30  50     -      PLANET
+            </pre>
+    
+            <h4>9.4.3 Ship Cost and Maintenance Table (CB II)</h4>
+            <pre style="white-space: pre-wrap; font-family: monospace, monospace;">
+SHIP   BUILD   MAINT   SCUTTLE   |   SHIP   BUILD   MAINT   SCUTTLE
+TYPE   COST    COST    BONUS     |   TYPE   COST    COST    BONUS
+----------------------------------|------------------------------------
+INTR     50       5        6      |   LNCR   1500      50      187
+FRIG    300      15       37      |   RAID   4000     110      500
+WTCH    650      30       81      |   TRDR    800      35      100
+GRDN   1500      50      187      |   MRCH   1600      55      200
+DFND   4000      90      500      |   FRTR   1600      40      200
+DEST    650      30       81      |   TRAN   3000      90      375
+ESCT   1500      45      187      |   CLYS   1600      50      200
+ATTK   4000     100      500      |
+            </pre>
+        </div>
+
+        <div class="game-section">
+            <h2>10.0 Credits</h2>
+            <pre style="white-space: pre-wrap; font-family: monospace, monospace;">
+Game Program -- Paul Murray
+Game Rules -- David Siefkin
+Art & Graphic  Design -- Louis Saekow, Kevin Heney and Don Woo
+            </pre>
+        </div>
+
+        <div class="game-section">
+            <h2>Appendix C: Ship Data Sheets</h2>
+            <pre style="white-space: pre-wrap; font-family: monospace, monospace;">
+                       T H E  C O S M I C  B A L A N C E
+
+         SHIP NAME __ENTERPRISE__         TECH LEVEL __5____________
+
+         EFFICIENCY __3__         MAX SPEED __16_         POWER __32_
+                                  MAX ACCEL __8__         MASS  __8__
+
+          RANGE __2__     CARGO __0__     FTBAY __0__     HULL __22_
+          RACKS __0__     LTSKR __0__     HSKR  __0__
+          ENGIN __4__     DRIVE __4__     TRANS __1__     TRAC __0__
+          ARMOR __0__     MARIN __1__     BELTS __0__
+
+               WEAPON           FIRE ARC
+           1  PHOTON            1 x x x x x x 8         SHIELD 1 __21_
+           2  PHOTON            1 x x x x x x 8         SHIELD 2 __20_
+           3  PHOTON            1 x x x x x x 8         SHIELD 3 __20_
+           4  PHOTON            1 x x x x x x 8         SHIELD 4 __20_
+           5  HVY PHASER        1 2 3 x x 6 7 8         SHIELD 5 __20_
+           6  HVY PHASER        1 2 3 x x 6 7 8         SHIELD 6 __20_
+           7                    1 2 3 4 5 6 7 8         SHIELD 7 __20_
+           8                    1 2 3 4 5 6 7 8         SHIELD 8 __21_
+           9                    1 2 3 4 5 6 7 8
+          10                    1 2 3 4 5 6 7 8
+          11                    1 2 3 4 5 6 7 8
+          12                    1 2 3 4 5 6 7 8
+            </pre>
+            <hr>
+            <pre style="white-space: pre-wrap; font-family: monospace, monospace;">
+                       T H E  C O S M I C  B A L A N C E
+
+         SHIP NAME __RELIANT_____         TECH LEVEL __5____________
+
+         EFFICIENCY __2__         MAX SPEED __16_         POWER __32_
+                                  MAX ACCEL __8__         MASS  __8__
+
+          RANGE __2__     CARGO __0__     FTBAY __0__     HULL __15_
+          RACKS __0__     LTSKR __0__     HSKR  __0__
+          ENGIN __4__     DRIVE __4__     TRANS __0__     TRAC __0__
+          ARMOR __0__     MARIN __0__     BELTS __0__
+
+               WEAPON           FIRE ARC
+           1  PHOTON            1 x x x x x x 8         SHIELD 1 __25_
+           2  PHOTON            1 x x x x x x 8         SHIELD 2 __25_
+           3  HVY PHASER        1 2 3 4 5 6 7 8         SHIELD 3 __25_
+           4  HVY PHASER        1 2 3 4 5 6 7 8         SHIELD 4 __25_
+           5  HVY PHASER        1 2 3 4 5 6 7 8         SHIELD 5 __25_
+           6  LIGHT PHASER      1 2 3 4 5 6 7 8         SHIELD 6 __25_
+           7  LIGHT PHASER      1 2 3 4 5 6 7 8         SHIELD 7 __25_
+           8                    1 2 3 4 5 6 7 8         SHIELD 8 __25_
+           9                    1 2 3 4 5 6 7 8
+          10                    1 2 3 4 5 6 7 8
+          11                    1 2 3 4 5 6 7 8
+          12                    1 2 3 4 5 6 7 8
+            </pre>
+            <hr>
+            <pre style="white-space: pre-wrap; font-family: monospace, monospace;">
+                       T H E  C O S M I C  B A L A N C E
+
+         SHIP NAME _______________         TECH LEVEL _______________
+
+         EFFICIENCY _____         MAX SPEED _____         POWER _____
+                                  MAX ACCEL _____         MASS  _____
+
+          RANGE _____     CARGO _____     FTBAY _____     HULL _____
+          RACKS _____     LTSKR _____     HSKR  _____
+          ENGIN _____     DRIVE _____     TRANS _____     TRAC _____
+          ARMOR _____     MARIN _____     BELTS _____
+
+               WEAPON           FIRE ARC
+           1                    1 2 3 4 5 6 7 8         SHIELD 1 _____
+           2                    1 2 3 4 5 6 7 8         SHIELD 2 _____
+           3                    1 2 3 4 5 6 7 8         SHIELD 3 _____
+           4                    1 2 3 4 5 6 7 8         SHIELD 4 _____
+           5                    1 2 3 4 5 6 7 8         SHIELD 5 _____
+           6                    1 2 3 4 5 6 7 8         SHIELD 6 _____
+           7                    1 2 3 4 5 6 7 8         SHIELD 7 _____
+           8                    1 2 3 4 5 6 7 8         SHIELD 8 _____
+           9                    1 2 3 4 5 6 7 8
+          10                    1 2 3 4 5 6 7 8
+          11                    1 2 3 4 5 6 7 8
+          12                    1 2 3 4 5 6 7 8
+            </pre>
+        </div>
+
+    </div>
+</body>
+</html>
