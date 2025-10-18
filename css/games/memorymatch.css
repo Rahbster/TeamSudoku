@@ -1,0 +1,59 @@
+/*==============================
+  Memory Match Game Styles
+==============================*/
+
+.memory-grid {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+    flex-grow: 1; /* Allow the grid to fill the available space */
+}
+
+.memory-card {
+    perspective: 1000px;
+    cursor: pointer;
+    height: 100%; /* Add this to make cards visible */
+}
+
+.memory-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.memory-card.is-flipped .memory-card-inner {
+    transform: rotateY(180deg);
+}
+
+.memory-card.is-matched .memory-card-inner {
+    box-shadow: 0 0 15px 5px var(--solved-green, #28a745);
+}
+
+.memory-card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    font-weight: bold;
+    border-radius: 8px;
+}
+
+.memory-card-back {
+    background-color: var(--primary-cyan, #007bff);
+}
+
+.memory-card-front {
+    background-color: #f0f0f0;
+    color: #333;
+    transform: rotateY(180deg);
+}

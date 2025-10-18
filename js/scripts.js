@@ -243,6 +243,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.aiPlayerCountSelect = document.getElementById('ai-player-count-select');
     dom.blackjackConfigContainer = document.getElementById('blackjack-config-container');
     dom.deckCountSelect = document.getElementById('deck-count-select');
+    dom.cosmicbalanceConfigContainer = document.getElementById('cosmicbalance-config-container');
+    dom.cbAiPlayerCountSelect = document.getElementById('cb-ai-player-count-select');
     dom.memorymatchConfigContainer = document.getElementById('memorymatch-config-container');
     dom.memorymatchModeSelect = document.getElementById('memorymatch-mode-select');
 
@@ -318,6 +320,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedAiCount = localStorage.getItem('sudokuAiPlayerCount');
     if (savedAiCount) {
         dom.aiPlayerCountSelect.value = savedAiCount;
+    }
+
+    // Load saved Cosmic Balance AI player count
+    const savedCbAiCount = localStorage.getItem('sudokuCbAiPlayerCount');
+    if (savedCbAiCount) {
+        dom.cbAiPlayerCountSelect.value = savedCbAiCount;
     }
 
     // Populate the voice list for the speech synthesis API.

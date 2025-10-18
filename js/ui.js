@@ -30,16 +30,12 @@ export function showScreen(screenName) {
         dom.gameScreen.classList.remove('hidden');
         // Move controls into the hamburger menu
         const menu = dom.hamburgerMenu;
-        if (menu.children.length <= 1) { // Only move them if they haven't been moved yet
+        if (menu.children.length <= 1) { // Only move them once
             menu.appendChild(dom.gameSelector.parentElement.parentElement);
-            menu.appendChild(dom.connect4ModeContainer);
-            menu.appendChild(dom.wordsearchConfigContainer);
-            menu.appendChild(dom.spellingbeeConfigContainer);
-            menu.appendChild(dom.memorymatchConfigContainer);
-            menu.appendChild(dom.blackjackConfigContainer);
             menu.appendChild(dom.difficultySelector.parentElement.parentElement);
             menu.appendChild(dom.themeSelectorConfig.parentElement.parentElement);
             menu.appendChild(dom.newPuzzleButton.parentElement);
+            menu.appendChild(dom.cosmicbalanceConfigContainer);
             menu.appendChild(dom.configBtn.parentElement);
             menu.appendChild(dom.teamDisplayArea);
         }
@@ -712,9 +708,7 @@ export function initializeEventListeners() {
         dom.spellingbeeConfigContainer.style.display = isSpellingBee ? '' : 'none';
         dom.blackjackConfigContainer.style.display = isBlackjack ? '' : 'none';
         dom.memorymatchConfigContainer.style.display = isMemoryMatch ? '' : 'none';
-        // No config for Cosmic Balance yet
-        // Show difficulty for games that use it.
-        dom.difficultySelector.parentElement.parentElement.style.display = (isSudoku || isConnect4 || isMemoryMatch) ? '' : 'none';
+        dom.cosmicbalanceConfigContainer.style.display = isCosmicBalance ? '' : 'none';
 
         // Re-initialize the solo game view to reflect the new game choice immediately.
         initializeSoloGame();
@@ -738,6 +732,9 @@ export function initializeEventListeners() {
     });
     dom.aiPlayerCountSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuAiPlayerCount', event.target.value);
+    });
+    dom.cbAiPlayerCountSelect.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuCbAiPlayerCount', event.target.value);
     });
 
     // Event listener for the voice selector

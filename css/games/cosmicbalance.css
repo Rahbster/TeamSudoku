@@ -1,0 +1,448 @@
+/*==============================
+  Cosmic Balance Game Styles
+==============================*/
+#cosmic-balance-area {
+    display: flex;
+    order: 2; /* Position in the center, like sudoku-grid-area */
+    flex-direction: column;
+    align-items: stretch; /* Stretch children to fill width, which left-aligns the info panel */
+    gap: 1dvh;
+    flex-grow: 1; /* Allow the area to take up the available space */
+    height: 95dvh; /* Match the height of other game areas */
+    padding: 1dvh 1dvw;
+    box-sizing: border-box;
+}
+
+#starmap-view, #combat-map-view {
+    position: relative; /* Establish a positioning context for stars/ships */
+    background-color: #000;
+    border: 2px solid var(--primary-cyan, #00A0C0);
+    border-radius: 8px;
+    overflow: hidden;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+    width: 100%; /* Take full width of the container */
+    flex-grow: 1; /* Take up the remaining vertical space */
+}
+
+.star-system {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    /* Use a radial gradient to create a spherical look. --star-color is set by JS. */
+    background: radial-gradient(circle at 30% 30%, #fff, var(--star-color, '#fff') 80%);
+    box-shadow: 0 0 5px var(--star-color, '#fff');
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    z-index: 10; /* Ensure stars are on top of the map background and clickable */
+}
+
+.star-system:hover {
+    transform: scale(1.5);
+    box-shadow: 0 0 10px #fff, 0 0 20px var(--secondary-orange, #EFB82A);
+}
+
+.star-system.active-star {
+    transform: scale(1.5); /* Make it larger like the hover state */
+    animation: pulse-active-star 2s infinite;
+}
+
+@keyframes pulse-active-star {
+    0% {
+        box-shadow: 0 0 10px #fff, 0 0 20px var(--primary-cyan, #00A0C0);
+    }
+    50% {
+        box-shadow: 0 0 20px #fff, 0 0 40px var(--primary-cyan, #00A0C0);
+    }
+    100% {
+        box-shadow: 0 0 10px #fff, 0 0 20px var(--primary-cyan, #00A0C0);
+    }
+}
+
+.ship {
+    position: absolute;
+    width: 40px; /* Increased size to accommodate shield octagon */
+    /* The container is now slightly taller to accommodate the bars */
+    height: 55px;
+    transition: all 0.2s ease;
+    transform-origin: center 20px; /* Adjust rotation origin */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Center the ship visual and status bars inside the larger container */
+    justify-content: center;
+}
+
+.ship-shield-octagon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 40px; /* Match the width for a square aspect ratio */
+    z-index: 1; /* Behind the ship visual */
+    fill: #2196F3; /* Shield blue color */
+    transition: fill-opacity 0.3s ease;
+}
+
+.ship-visual {
+    width: 20px; /* Original ship width */
+    height: 25px; /* Original ship height */
+    /* A simple triangle shape */
+    background-color: var(--secondary-orange, #EFB82A);
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    position: relative; /* Ensure it can be layered with z-index */
+    z-index: 2; /* In front of the shield octagon */
+}
+
+.ship.enemy .ship-visual {
+     background-color: var(--error-red, #CC3333);
+}
+
+.ship-status-bars {
+    width: 30px; /* Make bars wider than the ship for visibility */
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 3px;
+}
+
+.status-bar-container {
+    width: 100%;
+    height: 4px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 1px solid #555;
+    border-radius: 2px;
+}
+
+.status-bar {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.weapon-fire {
+    position: absolute;
+    background: linear-gradient(90deg, rgba(255,0,0,0) 0%, rgba(255,100,100,1) 50%, rgba(255,0,0,0) 100%);
+    height: 3px;
+    transform-origin: 0 50%;
+    opacity: 0;
+    animation: fadeOut 0.5s ease-out;
+    z-index: 20;
+    border-radius: 2px;
+    box-shadow: 0 0 8px #ff0000;
+}
+
+.impact-explosion {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 200, 100, 0.8);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    animation: impact-animation 0.4s ease-out;
+    z-index: 21;
+    pointer-events: none;
+}
+
+.projectile {
+    position: absolute;
+    z-index: 18; /* Above ships, below explosions */
+    pointer-events: none;
+    transition: all 0.1s linear; /* Smooth movement between turns */
+}
+
+.projectile.missile {
+    width: 3px;
+    height: 10px;
+    background-color: var(--secondary-orange, #EFB82A);
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--secondary-orange, #EFB82A),
+                0 0 12px #fff; /* Bright core */
+    transform-origin: center center;
+}
+
+.order-line {
+    position: absolute;
+    background-color: var(--secondary-orange, #EFB82A);
+    height: 2px;
+    transform-origin: 0 50%;
+    z-index: 15;
+    pointer-events: none; /* Make sure it doesn't interfere with mouse events */
+    box-shadow: 0 0 5px var(--secondary-orange, #EFB82A);
+}
+
+.targeting-line {
+    position: absolute;
+    height: 2px;
+    transform-origin: 0 50%;
+    z-index: 16; /* Higher than order-line */
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.weapon-selector {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    cursor: crosshair;
+    z-index: 5; /* Above ship, below status bars */
+    transition: transform 0.2s ease;
+}
+
+.weapon-selector:hover {
+    transform: scale(1.5);
+}
+
+.ship-visual {
+    cursor: pointer; /* Make the main ship body clickable for selection */
+}
+
+.ship-designer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(13, 17, 23, 0.95); /* Almost opaque dark background */
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.designer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--primary-cyan);
+    margin-bottom: 15px;
+}
+
+.designer-header h2 {
+    margin: 0;
+}
+
+.designer-close-btn {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--text-light);
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+.ship-designer {
+    display: flex;
+    gap: 20px;
+    flex-grow: 1; /* Fill the remaining space */
+    box-sizing: border-box;
+    min-height: 0; /* Fix for flexbox overflow */
+}
+
+.designer-column {
+    flex: 1;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.component-list h4 {
+    color: var(--secondary-orange);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.component-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    cursor: grab;
+}
+
+.component-item:active {
+    cursor: grabbing;
+}
+
+.ship-layout-area {
+    flex: 2; /* Make the center column wider */
+    border: 2px dashed var(--border-color);
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Allow this area to scroll if content overflows */
+    gap: 15px;
+}
+
+.ship-layout-area.drag-over {
+    border-color: var(--primary-cyan);
+    box-shadow: inset 0 0 15px var(--primary-cyan-glow);
+}
+
+.ship-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    color: var(--text-light);
+}
+
+.stat-item {
+    background-color: rgba(0,0,0,0.4);
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.installed-component {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.installed-component:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.arc-selector-btn {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    margin-left: 10px;
+    background-color: var(--secondary-orange);
+    color: var(--text-dark);
+}
+
+.remove-component-btn {
+    background: none;
+    border: none;
+    color: var(--error-red);
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+@keyframes impact-animation {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0;
+    }
+}
+
+#info-panel {
+    width: 100%; /* Take full width */
+    max-width: 800px; /* But don't get too wide on large screens */
+    background-color: var(--container-bg, rgba(26, 42, 58, 0.85));
+    border-radius: 5px;
+    padding: 10px 20px;
+    color: var(--text-light, #E0E0E0); /* Ensure text is always light */
+    box-sizing: border-box;
+    max-height: 35%; /* Limit the panel's height to 35% of the container */
+    overflow-y: auto; /* Add a scrollbar if content overflows */
+}
+
+.shields-display {
+    display: flex;
+    justify-content: space-around;
+    background-color: rgba(0,0,0,0.3);
+    border-radius: 4px;
+    padding: 5px;
+    margin: 5px 0;
+}
+
+.shield-arc {
+    padding: 2px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+}
+
+#combat-scale-bar {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 20px;
+    border-top: 1px solid var(--primary-cyan);
+    pointer-events: none; /* So it doesn't interfere with map clicks */
+}
+
+.scale-tick {
+    position: absolute;
+    bottom: 0;
+    width: 1px;
+    height: 5px;
+    background-color: var(--primary-cyan);
+}
+
+.scale-tick::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    color: var(--text-light);
+}
+
+.arc-selector-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--background-dark);
+    border: 2px solid var(--primary-cyan);
+    border-radius: 10px;
+    padding: 20px;
+    z-index: 1002; /* Above designer overlay */
+    box-shadow: 0 0 30px var(--primary-cyan-glow);
+    width: 300px;
+    text-align: center;
+}
+
+.arc-selector-display {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 20px auto;
+}
+
+.arc-segment {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    clip-path: polygon(50% 50%, 0% 0%, 29.29% 0%); /* Creates a 45-degree wedge */
+    background-color: rgba(192, 208, 224, 0.3); /* --text-light with alpha */
+    transform-origin: 50% 50%;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.arc-segment:hover {
+    background-color: rgba(239, 184, 42, 0.5); /* --secondary-orange with alpha */
+}
+
+.arc-segment.active {
+    background-color: var(--secondary-orange);
+}
+
+/* Position each of the 8 segments */
+.arc-segment[data-arc="1"] { transform: rotate(0deg); }
+.arc-segment[data-arc="2"] { transform: rotate(45deg); }
+.arc-segment[data-arc="3"] { transform: rotate(90deg); }
+.arc-segment[data-arc="4"] { transform: rotate(135deg); }
+.arc-segment[data-arc="5"] { transform: rotate(180deg); }
+.arc-segment[data-arc="6"] { transform: rotate(225deg); }
+.arc-segment[data-arc="7"] { transform: rotate(270deg); }
+.arc-segment[data-arc="8"] { transform: rotate(315deg); }

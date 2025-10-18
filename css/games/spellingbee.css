@@ -1,0 +1,70 @@
+/*==============================
+  Spelling Bee Game Styles
+==============================*/
+
+#spelling-bee-answer-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.spelling-bee-option-btn {
+    background: linear-gradient(180deg, #10283B 0%, #0A1822 100%);
+    border: 1px solid #2495B4;
+    border-radius: 9999px; /* Creates the pill shape */
+    box-shadow: 0px 0px 10px rgba(36, 149, 180, 0.5);
+    color: #FFFFFF;
+    font-family: sans-serif;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    min-width: 300px; /* Ensure buttons have a nice width */
+}
+
+.anagram-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+}
+
+.anagram-drop-zone, .anagram-letter-pool {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px;
+    border-radius: 8px;
+    min-height: 70px;
+    width: 95%;
+}
+
+.anagram-drop-zone {
+    border: 2px dashed #aaa;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.anagram-drop-zone.drag-over {
+    background-color: rgba(0, 123, 255, 0.2);
+    border-color: #007bff;
+}
+
+.anagram-letter-tile {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: grab;
+    user-select: none;
+}
