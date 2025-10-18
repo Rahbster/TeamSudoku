@@ -1,7 +1,6 @@
 //==============================
 // Black Jack Game Logic
 //==============================
-import { debugLog } from '../misc.js';
 
 import { dom, appState } from '../scripts.js';
 import { showToast, createTimerHTML } from '../ui.js';
@@ -33,6 +32,20 @@ export function cleanup() {
     stopTimer(); // Stop the session timer
     clearTimeout(aiTurnTimeout); // Clear any pending AI turn
     document.body.classList.remove('blackjack-active');
+}
+
+/**
+ * Creates a new, empty hand object.
+ * @returns {{cards: Array, bet: number, isStanding: boolean, isBusted: boolean, result: null}}
+ */
+function createHand() {
+    return {
+        cards: [],
+        bet: 0,
+        isStanding: false,
+        isBusted: false,
+        result: null
+    };
 }
 
 export function createGrid() {
@@ -81,7 +94,7 @@ export function getInitialState() {
         name: appState.playerId,
         balance: 100, // Starting balance
         isReady: false, // For multiplayer "deal" state
-        hands: [{ cards: [], bet: 0, score: 0, isStanding: false, isBusted: false }],
+        hands: [createHand()],
         activeHandIndex: 0
     };
 
@@ -92,7 +105,7 @@ export function getInitialState() {
         for (let i = 0; i < aiCount; i++) {
             const aiId = `AI-${i + 1}`;
             const personality = aiPersonalities[i];
-            players[aiId] = { name: personality.name, riskProfile: personality.riskProfile, balance: 100, hands: [{ cards: [], bet: 0, score: 0, isStanding: false, isBusted: false }], activeHandIndex: 0, isAI: true, isReady: false };
+            players[aiId] = { name: personality.name, riskProfile: personality.riskProfile, balance: 100, hands: [createHand()], activeHandIndex: 0, isAI: true, isReady: false };
         }
     }
 
@@ -103,12 +116,12 @@ export function getInitialState() {
         dealerScore: 0,
         gameOver: true,
         deckCount: parseInt(dom.deckCountSelect.value, 10) || 1,
+        dealerIsPlaying: false, // New state to track dealer's turn
         turnPlayerId: null, // Whose turn is it to act
     };
 }
 
 export function loadPuzzle() {
-    debugLog('[BJ_CLEAR] loadPuzzle: Initializing new Black Jack game state.');
     // For multiplayer, the host initializes the state.
     if (appState.playerTeam && appState.isInitiator) {
         const team = appState.teams[appState.playerTeam];
@@ -122,9 +135,9 @@ export function loadPuzzle() {
     renderBettingControls(); // Render initial betting controls on load
 }
 
-function createDeck() {
-    const deck = [], gameState = appState.playerTeam ? appState.teams[appState.playerTeam].gameState : appState.soloGameState;
-    for (let i = 0; i < appState.soloGameState.deckCount; i++) {
+function createDeck(deckCount = 1) {
+    const deck = [];
+    for (let i = 0; i < deckCount; i++) {
         for (const suit of SUITS) {
             for (const value of VALUES) {
                 deck.push({ suit, value });
@@ -186,10 +199,11 @@ function renderHands() {
             const cardsHTML = hand.cards.map(card => createCardElement(card).outerHTML).join('');
             const handScore = calculateHandValue(hand.cards);
             const handIsActive = playerId === gameState.turnPlayerId && index === player.activeHandIndex && !gameState.gameOver;
+            const betOrResultText = hand.result ? hand.result : `Bet: ${hand.bet}`;
 
             handsHTML += `
                 <div class="hand-display ${handIsActive ? 'active-hand' : ''}">
-                    <h3>Score: ${handScore} | Bet: ${hand.bet}</h3>
+                    <h3>Score: ${handScore} | ${betOrResultText}</h3>
                     <div class="cards">${cardsHTML}</div>
                 </div>
             `;
@@ -365,11 +379,10 @@ function resetBet() {
 }
 
 function startHand() {
-    debugLog('[BJ_CLEAR] startHand: Starting new hand.');
     const gameState = appState.playerTeam ? appState.teams[appState.playerTeam].gameState : appState.soloGameState;
     gameState.gameOver = false;
 
-    gameState.deck = createDeck();
+    gameState.deck = createDeck(gameState.deckCount);
     shuffleDeck(gameState.deck);
 
     // AI places bets in solo mode
@@ -390,8 +403,8 @@ function startHand() {
             // In a real game, you might remove them from the round. For now, we'll let them sit out.
             player.hands = [];
             continue;
-        }
-        player.hands = [{ cards: [], bet: currentBet, score: 0, isStanding: false, isBusted: false }];
+        } // Reset hand but keep the bet
+        player.hands = [{ ...createHand(), bet: currentBet }];
         player.activeHandIndex = 0;
     }
 
@@ -404,7 +417,16 @@ function startHand() {
             }
         }
     }
-    debugLog(`[BJ_CLEAR] startHand: Clearing and dealing new dealer hand data.`);
+
+    // After dealing, check for any natural Blackjacks and auto-stand those players.
+    for (const playerId in gameState.players) {
+        const player = gameState.players[playerId];
+        if (player.hands.length > 0 && calculateHandValue(player.hands[0].cards) === 21) {
+            player.hands[0].isStanding = true;
+            showToast(`${player.name} has Blackjack!`, 'info');
+        }
+    }
+
     gameState.dealerHand = [gameState.deck.pop(), gameState.deck.pop()];
 
     // Set turn to the first player with a hand
@@ -428,16 +450,30 @@ function renderDealerHand(hideFirstCard) {
     const dealerCardsContainer = dom.dealerHand.querySelector('.cards');
     const dealerScoreElement = document.getElementById('dealer-score');
 
+    // If all human players have cleared their cards, do not render the dealer's hand,
+    // even if the data for the next hand already exists.
+    const allHumansCleared = Object.values(gameState.players).filter(p => !p.isAI).every(p => p.hands.every(h => h.cards.length === 0));
+    if (gameState.gameOver && allHumansCleared) {
+        dealerCardsContainer.innerHTML = '';
+        return;
+    }
+
     dealerCardsContainer.innerHTML = '';
     dealerHand.forEach((card, index) => {
         dealerCardsContainer.appendChild(createCardElement(card, index === 0 && hideFirstCard));
     });
-    dealerScoreElement.textContent = hideFirstCard ? '?' : calculateHandValue(dealerHand);
+
+    const dealerScore = calculateHandValue(dealerHand);
+    if (dealerScore > 21) {
+        dealerScoreElement.textContent = 'Bust!';
+    } else {
+        dealerScoreElement.textContent = hideFirstCard ? '?' : dealerScore;
+    }
 }
 
 function renderActionButtons() {
     const gameState = appState.playerTeam ? appState.teams[appState.playerTeam]?.gameState : appState.soloGameState;
-    if (gameState.gameOver || gameState.turnPlayerId !== appState.playerId) {
+    if (gameState.gameOver || gameState.turnPlayerId !== appState.playerId || gameState.dealerIsPlaying) {
         dom.blackjackActions.innerHTML = ''; // Not my turn, no actions
         // If the game is over and it's not our turn, check if we need to show the "Clear Cards" button
         if (gameState.gameOver) {
@@ -469,7 +505,6 @@ function renderActionButtons() {
 }
 
 function clearPlayerCards() {
-    debugLog(`[BJ_CLEAR] clearPlayerCards: User ${appState.playerId} clicked 'Clear Cards'. Creating move.`);
     const move = { type: 'move', game: 'blackjack', action: 'clear-cards', playerId: appState.playerId };
     if (appState.playerTeam) {
         if (appState.isInitiator) {
@@ -603,6 +638,7 @@ function moveToNextHandOrEnd() {
 function playDealerTurn() {
     const gameState = appState.playerTeam ? appState.teams[appState.playerTeam].gameState : appState.soloGameState;
     gameState.gameOver = true;
+    gameState.dealerIsPlaying = true; // Mark that the dealer's turn has started
     renderHands(); // Re-render to show dealer's card and remove active hand highlight
 
     const dealerPlay = setInterval(() => {
@@ -613,6 +649,7 @@ function playDealerTurn() {
             renderDealerHand(false);
         } else {
             clearInterval(dealerPlay);
+            gameState.dealerIsPlaying = false; // Mark that the dealer's turn is over
             endHand();
         }
     }, 1000);
@@ -626,43 +663,43 @@ function endHand() {
         const player = gameState.players[playerId];
         player.hands.forEach((hand, index) => {
             const playerScore = calculateHandValue(hand.cards);
-            let message = `${player.name}'s Hand ${index + 1}: `;
+            const bet = hand.bet;
 
             if (playerScore > 21) {
-                message += "Bust! You lose.";
+                hand.result = `Bust! Lost ${bet}`;
                 // Bet is already lost
             } else if (playerScore === 21 && hand.cards.length === 2 && player.hands.length === 1) {
-                message += "Blackjack! You win!";
-                player.balance += hand.bet * 2.5; // 3:2 payout
+                const winnings = Math.floor(bet * 1.5);
+                hand.result = `Win ${winnings} Blackjack!`;
+                player.balance += bet + winnings; // Return original bet + winnings
             } else if (dealerScore > 21) {
-                message += "Dealer busts! You win!";
-                player.balance += hand.bet * 2;
+                hand.result = `Win ${bet} (Dealer Busts!)`;
+                player.balance += bet * 2;
             } else if (playerScore > dealerScore) {
-                message += "You win!";
-                player.balance += hand.bet * 2;
+                hand.result = `Win ${bet}`;
+                player.balance += bet * 2;
             } else if (dealerScore > playerScore) {
-                message += "Dealer wins.";
+                hand.result = `Lost ${bet}`;
             } else {
-                message += "Push (Tie).";
-                player.balance += hand.bet;
+                hand.result = "Push";
+                player.balance += bet; // Return original bet
             }
-            showToast(message);
-            hand.bet = 0; // Clear bet for this hand
+            // The bet is not cleared here anymore, it's part of the result message.
+            // It will be cleared when the player clicks "Clear Cards".
         });
         // Automatically reset hands only for AI players. Human players will use the "Clear Cards" button.
-        if (player.isAI) {
-            debugLog(`[BJ_CLEAR] endHand: Automatically clearing cards for AI player: ${player.name}`);
-            player.hands = [{ cards: [], bet: 0, score: 0, isStanding: false, isBusted: false }];
-        }
+        // AI hands are no longer cleared here. They are cleared when the human player clears their own cards.
     }
 
-    setTimeout(() => {
+    setTimeout(() => { //NOSONAR
         if (appState.playerTeam && appState.isInitiator) {
             const update = { type: 'move-update', game: 'blackjack', gameState: gameState, newRound: true };
             processUIUpdate(update); // Host updates self
             dataChannels.forEach(dc => dc.send(JSON.stringify(update))); // Host broadcasts
+            renderHands(); // Host also needs to see the results
         } else if (!appState.playerTeam) {
             // At the end of a hand, only show the "Clear Cards" button.
+            renderHands(); // Re-render hands to show win/loss results
             renderActionButtons();
         }
     }, 2000);
@@ -730,9 +767,8 @@ export function processMove(moveData) {
             break;
         case 'clear-cards':
             if (gameState.gameOver && player) {
-                debugLog(`[BJ_CLEAR] processMove (multiplayer): Clearing cards for player: ${playerId}`);
                 // Reset this player's hand
-                player.hands = [{ cards: [], bet: 0, score: 0, isStanding: false, isBusted: false }];
+                player.hands = [createHand()];
             }
             break;
     }
@@ -788,21 +824,20 @@ function processSoloMove(moveData) {
             break;
         case 'clear-cards':
             if (gameState.gameOver && player) {
-                debugLog(`[BJ_CLEAR] processSoloMove: Clearing cards for player: ${playerId}`);
                 // Reset this player's hand
-                player.hands = [{ cards: [], bet: 0, score: 0, isStanding: false, isBusted: false }];
+                player.hands = [createHand()];
 
                 // Clear the dealer's hand visually if all human players have cleared their cards
-                const humanPlayers = Object.values(gameState.players).filter(p => !p.isAI);
-                debugLog(`[BJ_CLEAR] processSoloMove: Checking if all ${humanPlayers.length} human players have cleared cards.`);
-                humanPlayers.forEach(p => {
-                    debugLog(`[BJ_CLEAR] ...Player ${p.name} has ${p.hands[0]?.cards.length || 0} cards.`);
-                });
-
                 const allHumansCleared = Object.values(gameState.players).filter(p => !p.isAI).every(p => p.hands.every(h => h.cards.length === 0));
                 
                 if (allHumansCleared) {
-                    debugLog('[BJ_CLEAR] processSoloMove: All humans cleared. Clearing dealer UI.');
+                    // When the last human clears their cards, also clear the AI players' hands from the data state.
+                    for (const pId in gameState.players) {
+                        const p = gameState.players[pId];
+                        if (p.isAI) {
+                            p.hands = [createHand()];
+                        }
+                    }
                     dom.dealerHand.querySelector('.cards').innerHTML = '';
                     document.getElementById('dealer-score').textContent = '';
                 }
@@ -830,15 +865,9 @@ export function processUIUpdate(data) {
 
         // Clear dealer cards if they haven't been already
         const gameState = appState.teams[teamName].gameState;
-        const humanPlayers = Object.values(gameState.players).filter(p => !p.isAI);
-        debugLog(`[BJ_CLEAR] processUIUpdate (newRound): Checking if all ${humanPlayers.length} human players have cleared cards.`);
-        humanPlayers.forEach(p => {
-            debugLog(`[BJ_CLEAR] ...Player ${p.name} has ${p.hands[0]?.cards.length || 0} cards.`);
-        });
-        const allHumansCleared = humanPlayers.every(p => p.hands.every(h => h.cards.length === 0));
+        const allHumansCleared = Object.values(gameState.players).filter(p => !p.isAI).every(p => p.hands.every(h => h.cards.length === 0));
 
         if (allHumansCleared) {
-            debugLog('[BJ_CLEAR] processUIUpdate (newRound): All humans cleared. Clearing dealer UI.');
             dom.dealerHand.querySelector('.cards').innerHTML = '';
             document.getElementById('dealer-score').textContent = '';
         }
