@@ -3,7 +3,7 @@
 //==============================
 
 import { dom, appState, dataChannels } from '../scripts.js';
-import { showToast } from '../ui.js';
+import { showToast, createTimerHTML } from '../ui.js';
 import { startTimer, stopTimer } from '../timer.js';
 
 const MAP_WIDTH = 1000;
@@ -12,12 +12,7 @@ const NUM_SYSTEMS = 50;
 const MIN_STAR_DISTANCE = 80;
 
 export function initialize() {
-    startTimer();
-
-    // If we are initializing for a solo game, draw the grid.
-    if (appState.isInitiator && !appState.playerTeam) {
-        createGrid();
-    }
+    loadPuzzle();
 }
 
 export function cleanup() {
@@ -28,7 +23,10 @@ export function createGrid() {
     // Create the necessary HTML structure within the generic game board area.
     dom.gameBoardArea.innerHTML = `
         <section id="cosmic-balance-area">
-            <div id="info-panel"></div>
+            <div id="info-panel">
+                ${createTimerHTML()}
+                <div id="info-panel-content"></div>
+            </div>
             <div id="starmap-view">
                 <!-- The star map will be rendered here by JS -->
             </div>
@@ -39,13 +37,14 @@ export function createGrid() {
     `;
     const starmapView = document.getElementById('starmap-view'); // Now this element exists
     const infoPanel = document.getElementById('info-panel');
+    const infoPanelContent = document.getElementById('info-panel-content');
     starmapView.innerHTML = '';
-    infoPanel.innerHTML = '<h3>Sector Status</h3><p>Select a system to view details.</p>';
+    infoPanelContent.innerHTML = '<h3>Sector Status</h3><p>Select a system to view details.</p>';
 
     // Add a click listener to the map background to reset the info panel
     starmapView.addEventListener('click', (event) => {
         if (event.target === starmapView) {
-            infoPanel.innerHTML = '<h3>Sector Status</h3><p>Select a system to view details.</p>';
+            infoPanelContent.innerHTML = '<h3>Sector Status</h3><p>Select a system to view details.</p>';
             // Also remove the active star class
             const currentActive = starmapView.querySelector('.active-star');
             if (currentActive) {
@@ -84,7 +83,7 @@ export function createGrid() {
 }
 
 function renderInfoPanelForStarmap(system) {
-    document.getElementById('info-panel').innerHTML = `
+    document.getElementById('info-panel-content').innerHTML = `
         <h3>${system.name}</h3>
         <p>Coordinates: (${system.x}, ${system.y})</p>
         <p>Resources: TBD</p>
@@ -137,6 +136,7 @@ export function getInitialState() {
 export function loadPuzzle() {
     appState.soloGameState = getInitialState();
     createGrid();
+    startTimer();
 }
 
 function startCombat(system) {
@@ -186,8 +186,8 @@ function endCombat() {
     appState.soloGameState.combat.active = false;
     document.getElementById('combat-map-view').classList.add('hidden');
     document.getElementById('starmap-view').classList.remove('hidden');
-    // Reset info panel to default
-    document.getElementById('info-panel').innerHTML = '<h3>Sector Status</h3><p>Select a system to view details.</p>';
+    // Reset info panel content to default
+    document.getElementById('info-panel-content').innerHTML = '<h3>Sector Status</h3><p>Select a system to view details.</p>';
 }
 
 /**
@@ -326,17 +326,17 @@ function renderCombatMap() {
 }
 
 function renderCombatInfoPanel() {
-    const infoPanel = document.getElementById('info-panel');
+    const infoPanelContent = document.getElementById('info-panel-content');
     const gameState = appState.soloGameState;
     const selectedShip = gameState.combat.ships.find(s => s.id === gameState.combat.selectedShipId);
 
     if (!selectedShip) {
-        infoPanel.innerHTML = '<h3>No Ship Selected</h3>';
+        infoPanelContent.innerHTML = '<h3>No Ship Selected</h3>';
         return;
     }
 
     if (selectedShip.destroyed) {
-        infoPanel.innerHTML = `<h3>Ship Destroyed</h3><p>${selectedShip.name} has been destroyed.</p>`;
+        infoPanelContent.innerHTML = `<h3>Ship Destroyed</h3><p>${selectedShip.name} has been destroyed.</p>`;
         return;
     }
 
@@ -344,7 +344,7 @@ function renderCombatInfoPanel() {
     const isMyShip = (appState.isInitiator && selectedShip.owner === 'player1') || (!appState.isInitiator && selectedShip.owner === 'player2');
     const isHost = appState.isInitiator;
 
-    infoPanel.innerHTML = `
+    infoPanelContent.innerHTML = `
         <h3>Tactical Combat</h3>
         <p>Turn: ${gameState.combat.turn}</p>
         <hr>

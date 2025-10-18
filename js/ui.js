@@ -736,6 +736,9 @@ export function initializeEventListeners() {
     dom.deckCountSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuDeckCount', event.target.value);
     });
+    dom.aiPlayerCountSelect.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuAiPlayerCount', event.target.value);
+    });
 
     // Event listener for the voice selector
     dom.voiceSelect.addEventListener('change', (event) => {
@@ -874,7 +877,10 @@ export function initializeEventListeners() {
 
     dom.showChannelsBtn.addEventListener('click', toggleChannelList);
     dom.channelList.addEventListener('click', disconnectChannel);
-    dom.hardResetBtn.addEventListener('click', performHardReset);
+    dom.hardResetBtn.addEventListener('click', () => dom.resetModal.classList.remove('hidden'));
+    dom.fullResetBtn.addEventListener('click', performHardReset);
+    dom.preserveConfigResetBtn.addEventListener('click', performSoftReset);
+    dom.cancelResetBtn.addEventListener('click', () => dom.resetModal.classList.add('hidden'));
 
 
     // Wire the main "New Game" button to the game manager's loadPuzzle function.
@@ -1079,6 +1085,40 @@ function showInstructions() {
     setTimeout(() => {
         dom.instructionsModal.classList.add('hidden');
     }, 4000);
+}
+
+/**
+ * Performs a "soft reset" of the application by unregistering service workers
+ * and clearing caches, but preserving localStorage before reloading the page.
+ */
+async function performSoftReset() {
+    if (!confirm('Are you sure you want to reset? This will clear caches and service workers but preserve your settings.')) {
+        return;
+    }
+
+    try {
+        // 1. Unregister all service workers
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const registration of registrations) {
+                await registration.unregister();
+                console.log('Service Worker unregistered:', registration);
+            }
+        }
+
+        // 2. Clear all caches
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(key => caches.delete(key)));
+            console.log('All caches cleared.');
+        }
+
+        alert('Application has been reset. The page will now reload.');
+        window.location.reload();
+    } catch (error) {
+        console.error('Error during soft reset:', error);
+        alert('An error occurred during the reset. Please try clearing your browser cache manually.');
+    }
 }
 
 /**

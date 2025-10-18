@@ -34,6 +34,23 @@
             </div>
         </div>
 
+        <!-- Modal for Reset Options -->
+        <div id="reset-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Reset Application</h2>
+                <p>Choose the type of reset you want to perform.</p>
+                <div class="button-row" style="justify-content: center; gap: 20px;">
+                    <button id="full-reset-btn" class="theme-button">Full Reset</button>
+                    <button id="preserve-config-reset-btn" class="theme-button">Preserve Config</button>
+                </div>
+                <button id="cancel-reset-btn" class="theme-button" style="margin-top: 20px; background-color: #6c757d;">Cancel</button>
+                <p style="font-size: 0.8rem; margin-top: 15px; text-align: left; max-width: 400px; margin-left: auto; margin-right: auto;">
+                    <b>Full Reset:</b> Clears all data including saved settings, service workers, and cache. <br><br>
+                    <b>Preserve Config:</b> Clears service workers and cache but keeps your saved settings (theme, name, etc.).
+                </p>
+            </div>
+        </div>
+
         <!-- Hamburger Menu Panel -->
         <div id="hamburger-menu" class="hamburger-panel">
             <a href="javascript:void(0)" class="close-btn" id="close-hamburger-btn">&times;</a>
@@ -170,6 +187,15 @@
                                 <option value="2">2 Decks</option>
                                 <option value="4">4 Decks</option>
                                 <option value="6">6 Decks</option>
+                            </select>
+                        </div>
+                        <label for="ai-player-count-select">AI Players (Solo)</label>
+                        <div class="select-wrapper">
+                            <select id="ai-player-count-select">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
                             </select>
                         </div>
                     </div>
@@ -362,7 +388,7 @@
                 </div>
                 <div id="admin-controls" style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 20px;">
                     <h3>Admin</h3>
-                    <button class="theme-button" id="hard-reset-btn">Hard Reset Application</button>
+                    <button class="theme-button" id="hard-reset-btn">Reset Application</button>
                 </div>
             </section>
         </div>

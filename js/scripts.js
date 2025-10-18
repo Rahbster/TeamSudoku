@@ -136,6 +136,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.instructionsModal = document.getElementById('instructions-modal');
     dom.winnerModal = document.getElementById('winner-modal');
     dom.winnerText = document.getElementById('winner-text');
+    // Reset Modal
+    dom.resetModal = document.getElementById('reset-modal');
+    dom.fullResetBtn = document.getElementById('full-reset-btn');
+    dom.preserveConfigResetBtn = document.getElementById('preserve-config-reset-btn');
+    dom.cancelResetBtn = document.getElementById('cancel-reset-btn');
     dom.newPuzzleWinnerBtn = document.getElementById('new-puzzle-winner-btn');
 
     // Hamburger Menu
@@ -235,6 +240,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.spellingBeeWordListInput = document.getElementById('spelling-bee-word-list-input');
     dom.voiceSelect = document.getElementById('voice-select');
     dom.spellingBeeArea = document.getElementById('spelling-bee-area');
+    dom.aiPlayerCountSelect = document.getElementById('ai-player-count-select');
     dom.blackjackConfigContainer = document.getElementById('blackjack-config-container');
     dom.deckCountSelect = document.getElementById('deck-count-select');
     dom.memorymatchConfigContainer = document.getElementById('memorymatch-config-container');
@@ -306,6 +312,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedDeckCount = localStorage.getItem('sudokuDeckCount');
     if (savedDeckCount) {
         dom.deckCountSelect.value = savedDeckCount;
+    }
+
+    // Load saved AI player count
+    const savedAiCount = localStorage.getItem('sudokuAiPlayerCount');
+    if (savedAiCount) {
+        dom.aiPlayerCountSelect.value = savedAiCount;
     }
 
     // Populate the voice list for the speech synthesis API.

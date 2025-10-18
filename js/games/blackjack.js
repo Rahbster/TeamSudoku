@@ -1,6 +1,7 @@
 //==============================
 // Black Jack Game Logic
 //==============================
+import { debugLog } from '../misc.js';
 
 import { dom, appState } from '../scripts.js';
 import { showToast, createTimerHTML } from '../ui.js';
@@ -8,6 +9,20 @@ import { startTimer, stopTimer } from '../timer.js';
 
 const SUITS = ['♥', '♦', '♣', '♠'];
 const VALUES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const AI_PERSONALITIES = [
+    { name: 'Cautious Carl', riskProfile: 'conservative' },
+    { name: 'Standard Stan', riskProfile: 'standard' },
+    { name: 'All-in Annie', riskProfile: 'aggressive' },
+    { name: 'Betting Betty', riskProfile: 'standard' },
+    { name: 'Risk-it Rick', riskProfile: 'aggressive' },
+    { name: 'Steady Steve', riskProfile: 'conservative' }
+];
+
+let aiTurnTimeout = null; // To manage AI turn delays
+
+function getShuffledAiPersonalities() {
+    return [...AI_PERSONALITIES].sort(() => 0.5 - Math.random());
+}
 
 export function initialize() {
     document.body.classList.add('blackjack-active');
@@ -16,6 +31,7 @@ export function initialize() {
 
 export function cleanup() {
     stopTimer(); // Stop the session timer
+    clearTimeout(aiTurnTimeout); // Clear any pending AI turn
     document.body.classList.remove('blackjack-active');
 }
 
@@ -23,59 +39,91 @@ export function createGrid() {
     // Create the necessary HTML structure within the generic game board area.
     dom.gameBoardArea.innerHTML = `
         <div id="blackjack-area" class="blackjack-table">
-            <div id="dealer-hand" class="hand-area">
-                <h3>Dealer: <span id="dealer-score"></span></h3>
-                <div class="cards"></div>
+            <div id="blackjack-top-area">
+                <div id="blackjack-controls-container">
+                    <div class="blackjack-info-bar">
+                        ${createTimerHTML()}
+                    </div>
+                    <div id="blackjack-actions" class="player-actions"></div>
+                    <div id="betting-controls"></div>
+                </div>
+                <div id="dealer-hand" class="hand-area">
+                    <h3>Dealer: <span id="dealer-score"></span></h3>
+                    <div class="cards"></div>
+                </div>
             </div>
-            <div class="blackjack-info-bar">
-                ${createTimerHTML()}
-                <div id="player-balance" class="glass-panel">Tokens: 100</div>
+            <div id="player-area-container">
+                <!-- Player boxes will be rendered here -->
             </div>
-            <div id="player-hand" class="hand-area">
-                <!-- Player hands will be rendered here -->
-            </div>
-            <div id="blackjack-actions" class="player-actions"></div>
-            <div id="betting-controls"></div>
         </div>
     `;
 
-    // Now that the elements are created, cache them.
+    // Cache elements
     dom.dealerHand = document.getElementById('dealer-hand');
-    dom.playerHand = document.getElementById('player-hand');
     dom.blackjackActions = document.getElementById('blackjack-actions');
     dom.bettingControls = document.getElementById('betting-controls');
+    dom.playerAreaContainer = document.getElementById('player-area-container');
 
-    document.getElementById('player-balance').textContent = `Tokens: ${appState.soloGameState?.balance || 100}`;
-    renderBettingControls();
+    // Initial render based on game state
+    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam]?.gameState : appState.soloGameState;
+    if (gameState) {
+        renderHands();
+        renderBettingControls();
+    }
 }
 
 export function getInitialState() {
+    const isSoloGame = !appState.playerTeam;
+    const players = {};
+
+    // Add the human player for both solo and multiplayer
+    players[appState.playerId] = {
+        name: appState.playerId,
+        balance: 100, // Starting balance
+        isReady: false, // For multiplayer "deal" state
+        hands: [{ cards: [], bet: 0, score: 0, isStanding: false, isBusted: false }],
+        activeHandIndex: 0
+    };
+
+    // If it's a solo game, add AI players
+    if (isSoloGame) {
+        const aiCount = parseInt(dom.aiPlayerCountSelect.value, 10) || 0;
+        const aiPersonalities = getShuffledAiPersonalities();
+        for (let i = 0; i < aiCount; i++) {
+            const aiId = `AI-${i + 1}`;
+            const personality = aiPersonalities[i];
+            players[aiId] = { name: personality.name, riskProfile: personality.riskProfile, balance: 100, hands: [{ cards: [], bet: 0, score: 0, isStanding: false, isBusted: false }], activeHandIndex: 0, isAI: true, isReady: false };
+        }
+    }
+
     return {
         deck: [],
-        playerHands: [{ cards: [], bet: 0, score: 0, isStanding: false, isBusted: false }],
-        activeHandIndex: 0,
+        players: players,
         dealerHand: [],
         dealerScore: 0,
-        balance: appState.soloGameState?.balance || 100, // Persist balance between games
         gameOver: true,
         deckCount: parseInt(dom.deckCountSelect.value, 10) || 1,
+        turnPlayerId: null, // Whose turn is it to act
     };
 }
 
 export function loadPuzzle() {
-    appState.soloGameState = getInitialState();
-    createGrid();
-    startTimer();
-    // In Black Jack, "New Game" starts a new hand.
-    if (appState.soloGameState?.playerHands[0].bet > 0) {
-        startHand();
-    } else {
-        // On initial load, just show the betting controls.
+    debugLog('[BJ_CLEAR] loadPuzzle: Initializing new Black Jack game state.');
+    // For multiplayer, the host initializes the state.
+    if (appState.playerTeam && appState.isInitiator) {
+        const team = appState.teams[appState.playerTeam];
+        team.gameState = getInitialState();
+        // The host will add players as they join.
+    } else if (!appState.playerTeam) { // For solo play
+        appState.soloGameState = getInitialState();
     }
+    createGrid(); // This will render based on the new state
+    startTimer(); // Start timer for the session
+    renderBettingControls(); // Render initial betting controls on load
 }
 
 function createDeck() {
-    const deck = [];
+    const deck = [], gameState = appState.playerTeam ? appState.teams[appState.playerTeam].gameState : appState.soloGameState;
     for (let i = 0; i < appState.soloGameState.deckCount; i++) {
         for (const suit of SUITS) {
             for (const value of VALUES) {
@@ -110,47 +158,84 @@ function calculateHandValue(hand) {
 }
 
 function renderHands() {
-    const gameState = appState.soloGameState;
-    const playerHandArea = dom.playerHand;
-    playerHandArea.innerHTML = ''; // Clear previous hands
+    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam]?.gameState : appState.soloGameState;
+    if (!gameState) return;
 
-    // Render Player Hands
-    gameState.playerHands.forEach((hand, index) => {
-        const handContainer = document.createElement('div');
-        handContainer.className = 'hand-display';
-        if (index === gameState.activeHandIndex && !gameState.gameOver) {
-            handContainer.classList.add('active-hand');
+    const playerAreaContainer = dom.playerAreaContainer;
+    playerAreaContainer.innerHTML = ''; // Clear all player boxes
+
+    // Sort players to show the current client first, then others.
+    const playerIds = Object.keys(gameState.players);
+    playerIds.sort((a, b) => {
+        if (a === appState.playerId) return -1;
+        if (b === appState.playerId) return 1;
+        return a.localeCompare(b);
+    });
+
+    for (const playerId of playerIds) {
+        const player = gameState.players[playerId];
+        const playerBox = document.createElement('div');
+        playerBox.className = 'player-box';
+        playerBox.id = `player-box-${playerId}`;
+        if (playerId === gameState.turnPlayerId) {
+            playerBox.classList.add('active-turn');
         }
 
-        const cardsContainer = document.createElement('div');
-        cardsContainer.className = 'cards';
-        hand.cards.forEach(card => cardsContainer.appendChild(createCardElement(card)));
+        let handsHTML = '';
+        player.hands.forEach((hand, index) => {
+            const cardsHTML = hand.cards.map(card => createCardElement(card).outerHTML).join('');
+            const handScore = calculateHandValue(hand.cards);
+            const handIsActive = playerId === gameState.turnPlayerId && index === player.activeHandIndex && !gameState.gameOver;
 
-        const scoreElement = document.createElement('h3');
-        scoreElement.id = `player-score-${index}`;
-        scoreElement.textContent = calculateHandValue(hand.cards);
+            handsHTML += `
+                <div class="hand-display ${handIsActive ? 'active-hand' : ''}">
+                    <h3>Score: ${handScore} | Bet: ${hand.bet}</h3>
+                    <div class="cards">${cardsHTML}</div>
+                </div>
+            `;
+        });
 
-        handContainer.appendChild(scoreElement);
-        handContainer.appendChild(cardsContainer);
-        playerHandArea.appendChild(handContainer);
-    });
+        playerBox.innerHTML = `
+            <h4>${player.name}</h4>
+            <div class="player-info">Tokens: ${player.balance}</div>
+            <div class="player-hands-container">${handsHTML}</div>
+        `;
+        playerAreaContainer.appendChild(playerBox);
+    }
 
     // Render Dealer Hand
     renderDealerHand(gameState.gameOver ? false : true);
 }
 
 function renderBettingControls() {
+    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam]?.gameState : appState.soloGameState;
+    const me = gameState.players[appState.playerId];
+
+    // Do not show betting controls if the round is over but the player hasn't cleared their cards yet.
+    if (gameState.gameOver && me && me.hands.some(h => h.cards.length > 0)) {
+        dom.bettingControls.innerHTML = '';
+        return;
+    }
+    
     const bettingArea = dom.bettingControls;
     bettingArea.innerHTML = `
         <button class="theme-button" data-bet="1">Bet 1</button>
         <button class="theme-button" data-bet="5">Bet 5</button>
         <button class="theme-button" data-bet="10">Bet 10</button>
+        <button id="reset-bet-btn" class="theme-button">Reset</button>
     `;
-    bettingArea.querySelectorAll('button').forEach(btn => {
+    bettingArea.querySelectorAll('button[data-bet]').forEach(btn => {
         btn.onclick = () => placeBet(parseInt(btn.dataset.bet, 10));
     });
-    dom.blackjackActions.innerHTML = `<button id="start-hand-btn" class="theme-button">Deal</button>`;
-    document.getElementById('start-hand-btn').onclick = startHand;
+    const resetBtn = document.getElementById('reset-bet-btn');
+    if (resetBtn) resetBtn.onclick = resetBet;
+
+    // Check if a bet has been placed to decide whether to show the "Deal" button.
+    const hasBet = me && me.hands.some(h => h.bet > 0);    
+    // Always show the Deal button, but disable it if no bet has been placed.
+    dom.blackjackActions.innerHTML = `<button id="start-hand-btn" class="theme-button" ${!hasBet ? 'disabled' : ''}>Deal</button>`;
+    const dealBtn = document.getElementById('start-hand-btn');
+    if (dealBtn) dealBtn.onclick = startHand;
 }
 
 function createCardElement(card, hide = false) {
@@ -241,41 +326,105 @@ function checkPlayerMove(playerMove) {
 }
 
 function placeBet(amount) {
-    const gameState = appState.soloGameState;
-    if (amount > gameState.balance) {
-        showToast("Not enough tokens!", "error");
-        return;
+    const move = {
+        type: 'move',
+        game: 'blackjack',
+        action: 'bet',
+        amount: amount,
+        playerId: appState.playerId
+    };
+
+    if (appState.playerTeam) {
+        if (appState.isInitiator) {
+            processMove(move);
+        } else {
+            dataChannels[0]?.send(JSON.stringify(move));
+        }
+    } else { // Solo play
+        processMove(move);
     }
-    // Bets are placed on the first hand initially
-    gameState.playerHands[0].bet += amount;
-    gameState.balance -= amount;
-    document.getElementById('player-balance').textContent = `Tokens: ${gameState.balance} | Bet: ${gameState.playerHands[0].bet}`;
+}
+
+function resetBet() {
+    const move = {
+        type: 'move',
+        game: 'blackjack',
+        action: 'reset-bet',
+        playerId: appState.playerId
+    };
+
+    if (appState.playerTeam) {
+        if (appState.isInitiator) {
+            processMove(move);
+        } else {
+            dataChannels[0]?.send(JSON.stringify(move));
+        }
+    } else { // Solo play
+        processMove(move);
+    }
 }
 
 function startHand() {
-    const gameState = appState.soloGameState;
+    debugLog('[BJ_CLEAR] startHand: Starting new hand.');
+    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam].gameState : appState.soloGameState;
     gameState.gameOver = false;
-    gameState.activeHandIndex = 0;
-    // Reset hands, keeping the bet from the first hand
-    const currentBet = gameState.playerHands[0].bet;
-    gameState.playerHands = [{ cards: [], bet: currentBet, score: 0, isStanding: false, isBusted: false }];
 
     gameState.deck = createDeck();
     shuffleDeck(gameState.deck);
 
-    gameState.playerHands[0].cards.push(gameState.deck.pop(), gameState.deck.pop());
+    // AI places bets in solo mode
+    if (!appState.playerTeam) {
+        aiPlaceBets(gameState);
+    }
+
+    // Reset hands for all players, keeping their bets
+    for (const playerId in gameState.players) {
+        const player = gameState.players[playerId];
+
+        // Reset ready status for the new round
+        player.isReady = false;
+
+        const currentBet = player.hands[0]?.bet || 0;
+        if (currentBet === 0) {
+            showToast(`${player.name} has not placed a bet.`, 'info');
+            // In a real game, you might remove them from the round. For now, we'll let them sit out.
+            player.hands = [];
+            continue;
+        }
+        player.hands = [{ cards: [], bet: currentBet, score: 0, isStanding: false, isBusted: false }];
+        player.activeHandIndex = 0;
+    }
+
+    // Deal initial cards
+    for (let i = 0; i < 2; i++) {
+        for (const playerId in gameState.players) {
+            const player = gameState.players[playerId];
+            if (player.hands.length > 0) {
+                player.hands[0].cards.push(gameState.deck.pop());
+            }
+        }
+    }
+    debugLog(`[BJ_CLEAR] startHand: Clearing and dealing new dealer hand data.`);
     gameState.dealerHand = [gameState.deck.pop(), gameState.deck.pop()];
+
+    // Set turn to the first player with a hand
+    const firstPlayerId = Object.keys(gameState.players).find(pid => gameState.players[pid].hands.length > 0);
+    gameState.turnPlayerId = firstPlayerId;
 
     renderHands();
     renderActionButtons();
 
-    if (calculateHandValue(gameState.playerHands[0].cards) === 21) {
-        stand(); // Automatic stand on Blackjack
+    // Update UI for everyone
+    if (appState.playerTeam && appState.isInitiator) {
+        const update = { type: 'move-update', game: 'blackjack', gameState: gameState };
+        processUIUpdate(update); // Host updates self
+        dataChannels.forEach(dc => dc.send(JSON.stringify(update))); // Host broadcasts
     }
 }
 
 function renderDealerHand(hideFirstCard) {
-    const { dealerHand } = appState.soloGameState;
+    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam]?.gameState : appState.soloGameState;
+    const { dealerHand } = gameState;
     const dealerCardsContainer = dom.dealerHand.querySelector('.cards');
     const dealerScoreElement = document.getElementById('dealer-score');
 
@@ -287,12 +436,24 @@ function renderDealerHand(hideFirstCard) {
 }
 
 function renderActionButtons() {
-    const gameState = appState.soloGameState;
-    const activeHand = gameState.playerHands[gameState.activeHandIndex];
-    const canSplit = activeHand.cards.length === 2 && // Must be the first two cards
-                     activeHand.cards[0].value === activeHand.cards[1].value && // Cards must have the same rank (e.g., two 'K's)
-                     gameState.balance >= activeHand.bet &&
-                     Number.isInteger(activeHand.bet); // Prevent splitting on fractional bets (e.g., after a Blackjack payout)
+    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam]?.gameState : appState.soloGameState;
+    if (gameState.gameOver || gameState.turnPlayerId !== appState.playerId) {
+        dom.blackjackActions.innerHTML = ''; // Not my turn, no actions
+        // If the game is over and it's not our turn, check if we need to show the "Clear Cards" button
+        if (gameState.gameOver) {
+            const me = gameState.players[appState.playerId];
+            // Show clear button if the player has cards on the table
+            if (me && me.hands.some(h => h.cards.length > 0)) {
+                dom.blackjackActions.innerHTML = `<button id="clear-cards-btn" class="theme-button">Clear Cards</button>`;
+                document.getElementById('clear-cards-btn').onclick = clearPlayerCards;
+            }
+        }
+        return;
+    }
+
+    const me = gameState.players[appState.playerId];
+    const activeHand = me.hands[me.activeHandIndex];
+    const canSplit = activeHand.cards.length === 2 && activeHand.cards[0].value === activeHand.cards[1].value && me.balance >= activeHand.bet;
 
     dom.bettingControls.innerHTML = ''; // Clear betting buttons
     dom.blackjackActions.innerHTML = `
@@ -307,13 +468,42 @@ function renderActionButtons() {
     }
 }
 
+function clearPlayerCards() {
+    debugLog(`[BJ_CLEAR] clearPlayerCards: User ${appState.playerId} clicked 'Clear Cards'. Creating move.`);
+    const move = { type: 'move', game: 'blackjack', action: 'clear-cards', playerId: appState.playerId };
+    if (appState.playerTeam) {
+        if (appState.isInitiator) {
+            processMove(move);
+        } else {
+            // In multiplayer, non-hosts send their action to the host
+            dataChannels[0]?.send(JSON.stringify(move));
+        }
+    } else { // Solo play
+        processMove(move);
+    }
+}
+
+
 function hit() {
-    const gameState = appState.soloGameState;
-    if (gameState.gameOver) return;
+    if (appState.soloGameState?.turnPlayerId?.startsWith('AI-')) return; // Prevent player from hitting for AI
+    const move = { type: 'move', game: 'blackjack', action: 'hit', playerId: appState.playerId };
+    if (appState.playerTeam) {
+        if (appState.isInitiator) {
+            processMove(move);
+        } else {
+            dataChannels[0]?.send(JSON.stringify(move));
+        }
+    } else { // Solo play
+        processMove(move);
+    }
+}
 
-    const activeHand = gameState.playerHands[gameState.activeHandIndex];
-    checkPlayerMove('hit');
-
+function performHit(playerId) {
+    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam].gameState : appState.soloGameState;
+    const player = gameState.players[playerId];
+    if (!player) return;
+    const activeHand = player.hands[player.activeHandIndex];
+    
     activeHand.cards.push(gameState.deck.pop());
     renderHands();
 
@@ -324,23 +514,34 @@ function hit() {
         moveToNextHandOrEnd();
     } else if (newScore === 21) {
         // Automatically stand if the player hits to 21.
-        stand();
+        performStand(playerId);
     }
 }
 
 function stand() {
-    const gameState = appState.soloGameState;
-    if (gameState.gameOver) return;
-    checkPlayerMove('stand');
+    if (appState.soloGameState?.turnPlayerId?.startsWith('AI-')) return; // Prevent player from standing for AI
+    const move = { type: 'move', game: 'blackjack', action: 'stand', playerId: appState.playerId };
+    if (appState.playerTeam) {
+        if (appState.isInitiator) {
+            processMove(move);
+        } else {
+            dataChannels[0]?.send(JSON.stringify(move));
+        }
+    } else { // Solo play
+        processMove(move);
+    }
+}
 
-    gameState.playerHands[gameState.activeHandIndex].isStanding = true;
+function performStand(playerId) {
+    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam].gameState : appState.soloGameState;
+    gameState.players[playerId].hands[gameState.players[playerId].activeHandIndex].isStanding = true;
     moveToNextHandOrEnd();
 }
 
 function split() {
-    const gameState = appState.soloGameState;
-    if (gameState.gameOver) return;
-
+    // This is more complex in multiplayer and will be implemented later.
+    showToast("Split not yet available in multiplayer.", "info");
+    /*
     const handToSplit = gameState.playerHands[gameState.activeHandIndex];
     
     // Deduct bet for the new hand
@@ -361,23 +562,46 @@ function split() {
     if (calculateHandValue(gameState.playerHands[gameState.activeHandIndex].cards) === 21) {
         stand();
     }
+    */
 }
 
 function moveToNextHandOrEnd() {
-    const gameState = appState.soloGameState;
-    const nextHandIndex = gameState.activeHandIndex + 1;
+    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam].gameState : appState.soloGameState;
+    if (!gameState.turnPlayerId) return; // Game is over or dealer is playing
+    const currentPlayer = gameState.players[gameState.turnPlayerId];
+    const nextHandIndex = currentPlayer.activeHandIndex + 1;
 
-    if (nextHandIndex < gameState.playerHands.length) {
-        gameState.activeHandIndex = nextHandIndex;
+    if (nextHandIndex < currentPlayer.hands.length) {
+        // Move to the player's next hand (from a split)
+        currentPlayer.activeHandIndex = nextHandIndex;
+    } else {
+        // Move to the next player
+        const playerIds = Object.keys(gameState.players);
+        const currentPlayerIndex = playerIds.indexOf(gameState.turnPlayerId);
+        const nextPlayerIndex = currentPlayerIndex + 1;
+
+        if (nextPlayerIndex < playerIds.length) {
+            const nextPlayerId = playerIds[nextPlayerIndex];
+            gameState.turnPlayerId = nextPlayerId;
+            if (gameState.players[nextPlayerId].isAI) {
+                aiPlayTurn(nextPlayerId);
+            }
+        } else {
+            // All players have acted, play dealer's turn
+            gameState.turnPlayerId = null; // No player's turn
+            playDealerTurn();
+        }
+    }
+
+    // Update UI after move
+    if (appState.isInitiator || !appState.playerTeam) {
         renderHands();
         renderActionButtons();
-    } else {
-        playDealerTurn();
     }
 }
 
 function playDealerTurn() {
-    const gameState = appState.soloGameState;
+    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam].gameState : appState.soloGameState;
     gameState.gameOver = true;
     renderHands(); // Re-render to show dealer's card and remove active hand highlight
 
@@ -395,47 +619,303 @@ function playDealerTurn() {
 }
 
 function endHand() {
-    const gameState = appState.soloGameState;
+    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam].gameState : appState.soloGameState;
     const dealerScore = calculateHandValue(gameState.dealerHand);
-    let totalWinnings = 0;
 
-    gameState.playerHands.forEach((hand, index) => {
-        const playerScore = calculateHandValue(hand.cards);
-        let message = `Hand ${index + 1}: `;
+    for (const playerId in gameState.players) {
+        const player = gameState.players[playerId];
+        player.hands.forEach((hand, index) => {
+            const playerScore = calculateHandValue(hand.cards);
+            let message = `${player.name}'s Hand ${index + 1}: `;
 
-        if (playerScore > 21) {
-            message += "Bust! You lose.";
-        } else if (playerScore === 21 && hand.cards.length === 2 && gameState.playerHands.length === 1) {
-            message += "Blackjack! You win!";
-            gameState.balance += hand.bet * 2.5; // 3:2 payout
-        } else if (dealerScore > 21) {
-            message += "Dealer busts! You win!";
-            gameState.balance += hand.bet * 2;
-        } else if (playerScore > dealerScore) {
-            message += "You win!";
-            gameState.balance += hand.bet * 2;
-        } else if (dealerScore > playerScore) {
-            message += "Dealer wins.";
-        } else {
-            message += "Push (Tie).";
-            gameState.balance += hand.bet;
+            if (playerScore > 21) {
+                message += "Bust! You lose.";
+                // Bet is already lost
+            } else if (playerScore === 21 && hand.cards.length === 2 && player.hands.length === 1) {
+                message += "Blackjack! You win!";
+                player.balance += hand.bet * 2.5; // 3:2 payout
+            } else if (dealerScore > 21) {
+                message += "Dealer busts! You win!";
+                player.balance += hand.bet * 2;
+            } else if (playerScore > dealerScore) {
+                message += "You win!";
+                player.balance += hand.bet * 2;
+            } else if (dealerScore > playerScore) {
+                message += "Dealer wins.";
+            } else {
+                message += "Push (Tie).";
+                player.balance += hand.bet;
+            }
+            showToast(message);
+            hand.bet = 0; // Clear bet for this hand
+        });
+        // Automatically reset hands only for AI players. Human players will use the "Clear Cards" button.
+        if (player.isAI) {
+            debugLog(`[BJ_CLEAR] endHand: Automatically clearing cards for AI player: ${player.name}`);
+            player.hands = [{ cards: [], bet: 0, score: 0, isStanding: false, isBusted: false }];
         }
-        showToast(message);
-        hand.bet = 0; // Clear bet for this hand
-    });
-
-    gameState.playerHands[0].bet = 0; // Ensure main bet is cleared
+    }
 
     setTimeout(() => {
-        document.getElementById('player-balance').textContent = `Tokens: ${gameState.balance}`;
-        renderBettingControls();
-        // Clear hands for next round
-        dom.playerHand.innerHTML = '';
-        dom.dealerHand.querySelector('.cards').innerHTML = ''; // Clear dealer cards
-        document.getElementById('dealer-score').textContent = ''; // Clear dealer score
+        if (appState.playerTeam && appState.isInitiator) {
+            const update = { type: 'move-update', game: 'blackjack', gameState: gameState, newRound: true };
+            processUIUpdate(update); // Host updates self
+            dataChannels.forEach(dc => dc.send(JSON.stringify(update))); // Host broadcasts
+        } else if (!appState.playerTeam) {
+            // At the end of a hand, only show the "Clear Cards" button.
+            renderActionButtons();
+        }
     }, 2000);
 }
 
 // Team-based functions (placeholders)
-export function processMove(moveData) {}
-export function processUIUpdate(data) {}
+export function processMove(moveData) {
+    if (moveData.game !== 'blackjack') return;
+
+    // Handle solo play directly
+    if (!appState.playerTeam) {
+        processSoloMove(moveData);
+        return;
+    }
+
+    // --- Multiplayer Logic ---
+    if (!appState.isInitiator) return; // Only host processes multiplayer moves
+
+    const gameState = appState.teams[appState.playerTeam].gameState;
+    const playerId = moveData.playerId;
+    const player = gameState.players[playerId];
+
+    switch (moveData.action) {
+        case 'reset-bet':
+             if (gameState.gameOver && player) {
+                // This action is now handled by processSoloMove for both modes
+            }
+            break;
+        case 'bet':
+            if (gameState.gameOver) {
+                if (moveData.amount <= player.balance) {
+                    player.hands[0].bet += moveData.amount;
+                    player.balance -= moveData.amount;
+                } else {
+                    // Maybe send a toast back to the player? For now, just log.
+                    console.log(`${playerId} has insufficient funds.`);
+                }
+            }
+            break;
+        case 'ready':
+            if (gameState.gameOver && player) {
+                player.isReady = true;
+                // Check if all human players are ready
+                const allHumanPlayers = Object.values(gameState.players).filter(p => !p.isAI);
+                const allReady = allHumanPlayers.every(p => p.isReady);
+
+                if (allReady) {
+                    startHand(); // This will handle its own broadcast
+                    return; // Exit early to prevent double broadcast
+                } else {
+                    // Not everyone is ready, just broadcast the updated player state
+                    showWaitingMessage(gameState); // Update host's waiting message
+                }
+            }
+            break;
+        case 'hit':
+            if (!gameState.gameOver && gameState.turnPlayerId === playerId) {
+                performHit(playerId);
+            }
+            break;
+        case 'stand':
+            if (!gameState.gameOver && gameState.turnPlayerId === playerId) {
+                performStand(playerId);
+            }
+            break;
+        case 'clear-cards':
+            if (gameState.gameOver && player) {
+                debugLog(`[BJ_CLEAR] processMove (multiplayer): Clearing cards for player: ${playerId}`);
+                // Reset this player's hand
+                player.hands = [{ cards: [], bet: 0, score: 0, isStanding: false, isBusted: false }];
+            }
+            break;
+    }
+
+    // Broadcast the updated state after the move
+    const update = { type: 'move-update', game: 'blackjack', gameState: gameState };
+    processUIUpdate(update); // Host updates self
+    dataChannels.forEach(dc => dc.send(JSON.stringify(update)));
+}
+
+function processSoloMove(moveData) {
+    const gameState = appState.soloGameState;
+    const playerId = moveData.playerId;
+    const player = gameState.players[playerId];
+
+    switch (moveData.action) {
+        case 'bet':
+            if (gameState.gameOver) {
+                // Now process the bet
+                if (moveData.amount <= player.balance) {
+                    player.hands[0].bet += moveData.amount;
+                    player.balance -= moveData.amount;
+                    // Update UI immediately for solo play
+                    renderHands();
+                    renderBettingControls(); // Re-render controls to show the "Deal" button
+                } else {
+                    showToast("Not enough tokens!", "error");
+                }
+            }
+            break;
+        case 'reset-bet':
+            if (gameState.gameOver && player) {
+                const betAmount = player.hands[0]?.bet || 0;
+                player.balance += betAmount;
+                player.hands[0].bet = 0;
+                renderHands(); // Update UI immediately
+                    renderBettingControls(); // Re-check if Deal button should be shown/hidden
+            }
+            break;
+        case 'deal':
+            // This action is now handled by the "Deal" button's onclick event,
+            // which calls startHand() directly. This case is no longer needed.
+            break;
+        case 'hit':
+            if (!gameState.gameOver && gameState.turnPlayerId === playerId) {
+                performHit(playerId);
+            }
+            break;
+        case 'stand':
+            if (!gameState.gameOver && gameState.turnPlayerId === playerId) {
+                performStand(playerId);
+            }
+            break;
+        case 'clear-cards':
+            if (gameState.gameOver && player) {
+                debugLog(`[BJ_CLEAR] processSoloMove: Clearing cards for player: ${playerId}`);
+                // Reset this player's hand
+                player.hands = [{ cards: [], bet: 0, score: 0, isStanding: false, isBusted: false }];
+
+                // Clear the dealer's hand visually if all human players have cleared their cards
+                const humanPlayers = Object.values(gameState.players).filter(p => !p.isAI);
+                debugLog(`[BJ_CLEAR] processSoloMove: Checking if all ${humanPlayers.length} human players have cleared cards.`);
+                humanPlayers.forEach(p => {
+                    debugLog(`[BJ_CLEAR] ...Player ${p.name} has ${p.hands[0]?.cards.length || 0} cards.`);
+                });
+
+                const allHumansCleared = Object.values(gameState.players).filter(p => !p.isAI).every(p => p.hands.every(h => h.cards.length === 0));
+                
+                if (allHumansCleared) {
+                    debugLog('[BJ_CLEAR] processSoloMove: All humans cleared. Clearing dealer UI.');
+                    dom.dealerHand.querySelector('.cards').innerHTML = '';
+                    document.getElementById('dealer-score').textContent = '';
+                }
+                renderHands();
+                renderActionButtons(); // This will hide the "Clear Cards" button
+                renderBettingControls(); // This will render bet chips and the disabled Deal button
+            }
+            break;
+    }
+}
+
+export function processUIUpdate(data) {
+    if (data.game !== 'blackjack') return;
+    const teamName = appState.playerTeam;
+    if (!teamName) { // Handle solo play update
+        appState.soloGameState = data.gameState;
+    } else { // Handle team play update
+        appState.teams[teamName].gameState = data.gameState;
+    }
+
+    if (data.newRound) {
+        // It's a new round, reset UI for betting
+        renderHands();
+        renderBettingControls(); // This will re-enable the deal button
+
+        // Clear dealer cards if they haven't been already
+        const gameState = appState.teams[teamName].gameState;
+        const humanPlayers = Object.values(gameState.players).filter(p => !p.isAI);
+        debugLog(`[BJ_CLEAR] processUIUpdate (newRound): Checking if all ${humanPlayers.length} human players have cleared cards.`);
+        humanPlayers.forEach(p => {
+            debugLog(`[BJ_CLEAR] ...Player ${p.name} has ${p.hands[0]?.cards.length || 0} cards.`);
+        });
+        const allHumansCleared = humanPlayers.every(p => p.hands.every(h => h.cards.length === 0));
+
+        if (allHumansCleared) {
+            debugLog('[BJ_CLEAR] processUIUpdate (newRound): All humans cleared. Clearing dealer UI.');
+            dom.dealerHand.querySelector('.cards').innerHTML = '';
+            document.getElementById('dealer-score').textContent = '';
+        }
+    } else {
+        // It's a mid-round update
+        renderHands();
+        renderActionButtons();
+    }
+
+    // If it's a multiplayer game and the hand is over, show waiting message
+    if (appState.playerTeam && appState.teams[teamName].gameState.gameOver) {
+        showWaitingMessage(appState.teams[teamName].gameState);
+    }
+
+    // Scroll to the current player's box
+    const myPlayerBox = document.getElementById(`player-box-${appState.playerId}`);
+    if (myPlayerBox) {
+        myPlayerBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+function aiPlaceBets(gameState) {
+    for (const playerId in gameState.players) {
+        const player = gameState.players[playerId];
+        if (player.isAI) {
+            let betAmount = 5; // Standard bet
+            if (player.riskProfile === 'conservative') {
+                betAmount = Math.max(1, Math.floor(player.balance * 0.05)); // Bet 5% of balance, min 1
+            } else if (player.riskProfile === 'aggressive') {
+                betAmount = Math.max(1, Math.floor(player.balance * 0.20)); // Bet 20% of balance, min 1
+            } else { // standard
+                betAmount = Math.max(1, Math.floor(player.balance * 0.10)); // Bet 10% of balance, min 1
+            }
+            betAmount = Math.min(betAmount, player.balance); // Can't bet more than they have
+
+            player.hands[0].bet = betAmount;
+            player.balance -= betAmount;
+        }
+    }
+}
+
+function aiPlayTurn(aiPlayerId) {
+    const gameState = appState.soloGameState;
+    const aiPlayer = gameState.players[aiPlayerId];
+    const activeHand = aiPlayer.hands[aiPlayer.activeHandIndex];
+
+    // AI makes a decision based on basic strategy
+    const dealerUpCard = gameState.dealerHand[1]; // The visible card
+    const move = getBasicStrategyMove(activeHand.cards, dealerUpCard);
+
+    // Add a short delay to simulate thinking
+    aiTurnTimeout = setTimeout(() => {
+        showToast(`${aiPlayer.name} decides to ${move.toUpperCase()}.`, 'info');
+
+        if (move === 'hit') {
+            performHit(aiPlayerId);
+            // If the AI didn't bust, it might need to take another turn
+            if (!gameState.players[aiPlayerId].hands[aiPlayer.activeHandIndex].isBusted) {
+                aiPlayTurn(aiPlayerId);
+            }
+        } else { // stand or split (split defaults to stand for now)
+            performStand(aiPlayerId);
+        }
+    }, 1500); // 1.5 second delay
+}
+
+function showWaitingMessage(gameState) {
+    if (!gameState.gameOver) {
+        dom.bettingControls.innerHTML = ''; // Clear waiting message if game started
+        return;
+    }
+
+    const waitingOn = Object.values(gameState.players)
+        .filter(p => !p.isAI && !p.isReady)
+        .map(p => p.name);
+
+    if (waitingOn.length > 0) {
+        dom.bettingControls.innerHTML = `<p style="color: white; font-size: 1.2rem;">Waiting on: ${waitingOn.join(', ')}</p>`;
+    }
+}
