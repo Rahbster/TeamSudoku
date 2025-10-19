@@ -78,6 +78,10 @@ export function createGrid() {
     // Cache elements
     dom.dealerHand = document.getElementById('dealer-hand');
     dom.blackjackActions = document.getElementById('blackjack-actions');
+    // The Deal button is now part of the main actions, not just betting.
+    dom.blackjackActions.innerHTML = `<button id="start-hand-btn" class="theme-button">Deal</button>`;
+    document.getElementById('start-hand-btn').onclick = startHand;
+
     dom.bettingControls = document.getElementById('betting-controls');
     dom.playerAreaContainer = document.getElementById('player-area-container');
 
@@ -203,11 +207,13 @@ function renderHands() {
             const handScore = calculateHandValue(hand.cards);
             const handIsActive = playerId === gameState.turnPlayerId && index === player.activeHandIndex && !gameState.gameOver;
             const betOrResultText = hand.result ? hand.result : `Bet: ${hand.bet}`;
+            const scoreHTML = hand.cards.length > 0 ? `<div class="hand-status">Score: ${handScore}</div>` : '';
 
             handsHTML += `
-                <div class="hand-display ${handIsActive ? 'active-hand' : ''}">
-                    <h3>Score: ${handScore} | ${betOrResultText}</h3>
+                <div class="hand-display ${handIsActive ? 'active-hand' : ''}" data-hand-index="${index}">
+                    <h3>${betOrResultText}</h3>
                     <div class="cards">${cardsHTML}</div>
+                    ${scoreHTML}
                 </div>
             `;
         });
@@ -246,13 +252,9 @@ function renderBettingControls() {
     });
     const resetBtn = document.getElementById('reset-bet-btn');
     if (resetBtn) resetBtn.onclick = resetBet;
-
-    // Check if a bet has been placed to decide whether to show the "Deal" button.
     const hasBet = me && me.hands.some(h => h.bet > 0);    
-    // Always show the Deal button, but disable it if no bet has been placed.
-    dom.blackjackActions.innerHTML = `<button id="start-hand-btn" class="theme-button" ${!hasBet ? 'disabled' : ''}>Deal</button>`;
     const dealBtn = document.getElementById('start-hand-btn');
-    if (dealBtn) dealBtn.onclick = startHand;
+    if (dealBtn) dealBtn.disabled = !hasBet;
 }
 
 function createCardElement(card, hide = false) {
@@ -334,8 +336,12 @@ function getBasicStrategyMove(playerHand, dealerUpCard) {
  * @param {'hit' | 'stand'} playerMove - The move the player chose.
  */
 function checkPlayerMove(playerMove) {
-    const { playerHands, activeHandIndex, dealerHand } = appState.soloGameState;
-    const activeHand = playerHands[activeHandIndex];
+    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam].gameState : appState.soloGameState;
+    if (!gameState || !gameState.turnPlayerId) return;
+
+    const player = gameState.players[gameState.turnPlayerId];
+    const activeHand = player.hands[player.activeHandIndex];
+    const dealerHand = gameState.dealerHand;
     const correctMove = getBasicStrategyMove(activeHand.cards, dealerHand[1]); // dealerHand[1] is the up-card
     if (playerMove !== correctMove) {
         showToast(`Strategy Tip: The better move was to ${correctMove.toUpperCase()}.`, 'info');
@@ -426,7 +432,8 @@ function startHand() {
         const player = gameState.players[playerId];
         if (player.hands.length > 0 && calculateHandValue(player.hands[0].cards) === 21) {
             player.hands[0].isStanding = true;
-            showToast(`${player.name} has Blackjack!`, 'info');
+            const handElement = document.querySelector(`[id="player-box-${playerId}"] .hand-display[data-hand-index="0"]`);
+            showToast(`Blackjack!`, 'info', handElement);
         }
     }
 
@@ -485,6 +492,11 @@ function renderActionButtons() {
             if (me && me.hands.some(h => h.cards.length > 0)) {
                 dom.blackjackActions.innerHTML = `<button id="clear-cards-btn" class="theme-button">Clear Cards</button>`;
                 document.getElementById('clear-cards-btn').onclick = clearPlayerCards;
+            } else {
+                // If game is over and cards are cleared, show the Deal button again.
+                // It will be enabled/disabled by renderBettingControls.
+                dom.blackjackActions.innerHTML = `<button id="start-hand-btn" class="theme-button">Deal</button>`;
+                document.getElementById('start-hand-btn').onclick = startHand;
             }
         }
         return;
@@ -524,6 +536,11 @@ function clearPlayerCards() {
 
 function hit() {
     if (appState.soloGameState?.turnPlayerId?.startsWith('AI-')) return; // Prevent player from hitting for AI
+    // If in solo mode, check the move against basic strategy.
+    if (!appState.playerTeam) {
+        checkPlayerMove('hit');
+    }
+
     const move = { type: 'move', game: 'blackjack', action: 'hit', playerId: appState.playerId };
     if (appState.playerTeam) {
         if (appState.isInitiator) {
@@ -548,7 +565,9 @@ function performHit(playerId) {
     const newScore = calculateHandValue(activeHand.cards);
     if (newScore > 21) {
         activeHand.isBusted = true;
-        showToast("Bust!", "error");
+        // Use attribute selector to handle spaces in playerId, which would otherwise break the query
+        const handElement = document.querySelector(`[id="player-box-${playerId}"] .hand-display[data-hand-index="${player.activeHandIndex}"]`);
+        showToast("Bust!", "error", handElement);
         moveToNextHandOrEnd();
     } else if (newScore === 21) {
         // Automatically stand if the player hits to 21.
@@ -558,6 +577,11 @@ function performHit(playerId) {
 
 function stand() {
     if (appState.soloGameState?.turnPlayerId?.startsWith('AI-')) return; // Prevent player from standing for AI
+    // If in solo mode, check the move against basic strategy.
+    if (!appState.playerTeam) {
+        checkPlayerMove('stand');
+    }
+
     const move = { type: 'move', game: 'blackjack', action: 'stand', playerId: appState.playerId };
     if (appState.playerTeam) {
         if (appState.isInitiator) {
@@ -577,30 +601,42 @@ function performStand(playerId) {
 }
 
 function split() {
-    // This is more complex in multiplayer and will be implemented later.
-    showToast("Split not yet available in multiplayer.", "info");
-    /*
-    const handToSplit = gameState.playerHands[gameState.activeHandIndex];
-    
+    const gameState = appState.playerTeam ? appState.teams[appState.playerTeam].gameState : appState.soloGameState;
+    const playerId = gameState.turnPlayerId;
+    const player = gameState.players[playerId];
+    const activeHandIndex = player.activeHandIndex;
+    const handToSplit = player.hands[activeHandIndex];
+
+    // Validate the split
+    const canSplit = handToSplit.cards.length === 2 &&
+                     getCardValue(handToSplit.cards[0]) === getCardValue(handToSplit.cards[1]) &&
+                     player.balance >= handToSplit.bet;
+
+    if (!canSplit) {
+        showToast("Cannot split this hand.", "error");
+        return;
+    }
+
     // Deduct bet for the new hand
-    gameState.balance -= handToSplit.bet;
-    document.getElementById('player-balance').textContent = `Tokens: ${gameState.balance}`;
+    player.balance -= handToSplit.bet;
 
-    // Create two new hands from the split
-    const hand1 = { ...handToSplit, cards: [handToSplit.cards[0], gameState.deck.pop()] };
-    const hand2 = { ...handToSplit, cards: [handToSplit.cards[1], gameState.deck.pop()] };
+    // Create the new hand with the second card
+    const newHand = {
+        ...createHand(),
+        bet: handToSplit.bet,
+        cards: [handToSplit.cards.pop()] // Move the second card to the new hand
+    };
 
-    // Replace the original hand with the two new hands
-    gameState.playerHands.splice(gameState.activeHandIndex, 1, hand1, hand2);
+    // Deal a new card to each hand
+    handToSplit.cards.push(gameState.deck.pop());
+    newHand.cards.push(gameState.deck.pop());
 
+    // Inject the new hand after the current one
+    player.hands.splice(activeHandIndex + 1, 0, newHand);
+
+    // Re-render UI to show the new state
     renderHands();
     renderActionButtons();
-
-    // After a split, if the first new hand is 21, automatically stand.
-    if (calculateHandValue(gameState.playerHands[gameState.activeHandIndex].cards) === 21) {
-        stand();
-    }
-    */
 }
 
 function moveToNextHandOrEnd() {
@@ -665,12 +701,13 @@ function endHand() {
     for (const playerId in gameState.players) {
         const player = gameState.players[playerId];
         player.hands.forEach((hand, index) => {
+            const handElement = document.querySelector(`[id="player-box-${playerId}"] .hand-display[data-hand-index="${index}"]`);
             const playerScore = calculateHandValue(hand.cards);
             const bet = hand.bet;
 
             if (playerScore > 21) {
                 hand.result = `Bust! Lost ${bet}`;
-                // Bet is already lost
+                // The "Bust!" toast is already shown when it happens, so no need for another one here.
             } else if (playerScore === 21 && hand.cards.length === 2 && player.hands.length === 1) {
                 const winnings = Math.floor(bet * 1.5);
                 hand.result = `Win ${winnings} Blackjack!`;
@@ -678,9 +715,13 @@ function endHand() {
             } else if (dealerScore > 21) {
                 hand.result = `Win ${bet} (Dealer Busts!)`;
                 player.balance += bet * 2;
+                const winMessage = playerId === appState.playerId ? 'You Win!' : `${player.name} Wins!`;
+                showToast(winMessage, 'info', handElement);
             } else if (playerScore > dealerScore) {
                 hand.result = `Win ${bet}`;
                 player.balance += bet * 2;
+                const winMessage = playerId === appState.playerId ? 'You Win!' : `${player.name} Wins!`;
+                showToast(winMessage, 'info', handElement);
             } else if (dealerScore > playerScore) {
                 hand.result = `Lost ${bet}`;
             } else {
@@ -923,7 +964,8 @@ function aiPlayTurn(aiPlayerId) {
 
     // Add a short delay to simulate thinking
     aiTurnTimeout = setTimeout(() => {
-        showToast(`${aiPlayer.name} decides to ${move.toUpperCase()}.`, 'info');
+        const handElement = document.querySelector(`[id="player-box-${aiPlayerId}"] .hand-display[data-hand-index="${aiPlayer.activeHandIndex}"]`);
+        showToast(move.toUpperCase(), 'info', handElement);
 
         if (move === 'hit') {
             performHit(aiPlayerId);

@@ -1144,6 +1144,36 @@ body.forerunner .modal-content {
     transform: translateY(0);
 }
 
+.contextual-toast {
+    position: absolute;
+    z-index: 1001; /* Above game elements but below modals */
+    background-color: var(--primary-cyan);
+    color: var(--text-dark);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: var(--font-main);
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 0 0 20px var(--primary-cyan-glow);
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.contextual-toast.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.contextual-toast.error {
+    background-color: var(--error-red, #CC3333);
+    color: #FFFFFF;
+    box-shadow: 0 0 20px rgba(204, 51, 51, 0.5);
+}
+
 .toast-notification.error {
     background-color: var(--error-red, #CC3333);
     color: #FFFFFF;

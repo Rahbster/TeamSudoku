@@ -249,7 +249,13 @@ export function createTimerHTML() {
  * @param {string} message - The message to display in the toast.
  * @param {'info' | 'error'} [type='info'] - The type of toast to display.
  */
-export function showToast(message, type = 'info') {    
+export function showToast(message, type = 'info', targetElement = null) {
+    // If a target element is provided, create a contextual toast instead.
+    if (targetElement) {
+        createContextualToast(message, type, targetElement);
+        return;
+    }
+
     const container = document.getElementById('toast-container') || createToastContainer();
 
     // Check if an identical toast already exists
@@ -314,6 +320,34 @@ function createNewToast(container, message, type) {
     toast.classList.add('show');
     resetToastTimer(toast); // Set its initial removal timer
 }
+
+function createContextualToast(message, type, targetElement) {
+    const toast = document.createElement('div');
+    toast.className = `contextual-toast ${type}`;
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    // Position the toast over the target element
+    const targetRect = targetElement.getBoundingClientRect();
+    const toastLeft = targetRect.left + (targetRect.width / 2);
+    const toastTop = targetRect.top + (targetRect.height / 2);
+
+    toast.style.left = `${toastLeft}px`;
+    toast.style.top = `${toastTop}px`;
+
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+
+    // Animate out and remove after a delay
+    setTimeout(() => {
+        toast.classList.remove('show');
+        toast.addEventListener('transitionend', () => toast.remove());
+    }, 2000); // Keep it on screen for 2 seconds
+}
+
 
 /**
  * Displays a themed confirmation modal.

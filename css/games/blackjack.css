@@ -20,8 +20,12 @@
 
 .hand-area {
     width: 100%;
-    text-align: center;
     min-height: 150px;
+    /* Make this a vertical flex container to group the score and cards */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Align items to the left */
+    gap: 10px; /* Add a small gap between the score and the cards */
 }
 
 .hand-display {
@@ -41,10 +45,19 @@
     text-shadow: 1px 1px 2px black;
 }
 
-.hand-area .cards {
+.hand-status {
+    color: white;
+    text-shadow: 1px 1px 2px black;
+    font-weight: bold;
+    margin-top: 10px; /* Add space between cards and status */
+}
+
+.cards {
     display: flex;
-    justify-content: center;
-    gap: -20px; /* Overlap cards slightly */
+    justify-content: flex-start; /* Justify cards to the left */
+    flex-wrap: wrap; /* Allow cards to wrap to the next line */
+    gap: -20px; /* Overlap cards slightly for a stacked look */
+    max-width: 280px; /* Constrain the width to force wrapping */
 }
 
 .playing-card {
@@ -56,7 +69,7 @@
     box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: center; /* Center the suit vertically */
     padding: 5px;
     font-size: 1.5rem;
     font-weight: bold;
@@ -193,6 +206,8 @@ body.blackjack-active #game-board-area {
 
 .player-hands-container {
     display: flex;
+    flex-direction: column; /* Stack hands vertically after a split */
+    width: 100%; /* Ensure the container takes full width to allow cards to wrap correctly */
     gap: 15px;
 }
 
@@ -201,4 +216,3 @@ body.blackjack-active #game-board-area {
     background-color: #6c757d; /* A neutral grey */
     border-color: #5a6268;
 }
-
