@@ -20,6 +20,11 @@
     --font-main: 'Orbitron', sans-serif;
 }
 
+html, body {
+    /* Prevent pull-to-refresh on mobile browsers */
+    overscroll-behavior-y: none;
+}
+
 /*==============================
 � Core Sudoku Game Styles
 ==============================*/

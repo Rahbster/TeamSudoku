@@ -759,6 +759,11 @@ export function initializeEventListeners() {
         initializeSoloGame();
     });
 
+    // Event listener for the difficulty selector
+    dom.difficultySelector.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuDifficulty', event.target.value);
+    });
+
     // Event listener for the theme selector in the config/hamburger menu
     dom.themeSelectorConfig.addEventListener('change', handleThemeChange);
 
@@ -780,6 +785,11 @@ export function initializeEventListeners() {
     });
     dom.cbAiPlayerCountSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuCbAiPlayerCount', event.target.value);
+    });
+
+    // Event listener for the word count input
+    dom.wordCountInput.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuWordSearchCount', event.target.value);
     });
 
     // Event listener for the voice selector
