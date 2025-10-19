@@ -227,6 +227,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Game-Specific Config Containers
     dom.connect4ModeContainer = document.getElementById('connect4-mode-container');
     dom.connect4ModeSelect = document.getElementById('connect4-mode-select');
+    // Word Games Containers
+    dom.wordGamesConfigContainer = document.getElementById('wordgames-config-container');
+    dom.wordGamesModeSelect = document.getElementById('wordgames-mode-select');
     dom.wordsearchConfigWordList = document.getElementById('wordsearch-config-wordlist');
     dom.wordsearchConfigWordCount = document.getElementById('wordsearch-config-wordcount');
     dom.customWordListInput = document.getElementById('custom-word-list-input');
@@ -282,6 +285,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedConnect4Mode = localStorage.getItem('sudokuConnect4Mode');
     if (savedConnect4Mode) {
         dom.connect4ModeSelect.value = savedConnect4Mode;
+    }
+
+    // Load saved word game mode
+    const savedWordGameMode = localStorage.getItem('sudokuWordGameMode');
+    if (savedWordGameMode) {
+        dom.wordGamesModeSelect.value = savedWordGameMode;
     }
 
     // Load saved difficulty

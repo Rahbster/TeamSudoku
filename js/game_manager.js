@@ -21,6 +21,12 @@ let activeGameModule = null;
  * @param {string} gameType - The type of game to load ('sudoku', 'connect4', etc.).
  */
 export async function loadGame(gameType) {
+    // If the main category is 'wordgames', determine the actual game from the sub-menu.
+    if (gameType === 'wordgames') {
+        const wordGameType = dom.wordGamesModeSelect.value;
+        gameType = wordGameType; // e.g., 'wordsearch'
+    }
+
     // debugLog(`[GM] loadGame: Called for game type '${gameType}'.`);
     // If there's an active game module, run its cleanup function first.
     if (activeGameModule && typeof activeGameModule.cleanup === 'function') {
@@ -48,7 +54,10 @@ export async function loadGame(gameType) {
         activeGameModule = module;
         // debugLog(`[GM] loadGame: Module for '${gameType}' loaded. Calling initialize().`);
         activeGameModule.initialize();
-        startTimer(); // Start the timer after the game UI is initialized.
+        // Only start the timer if the newly created game grid includes a timer display.
+        if (document.getElementById('timer-display')) {
+            startTimer();
+        }
     } catch (error) {
         console.error(`[GM] Failed to load game module for: ${gameType}`, error);
     }

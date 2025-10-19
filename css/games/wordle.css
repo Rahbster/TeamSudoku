@@ -1,0 +1,202 @@
+/*==============================
+  Wordle Game Styles
+==============================*/
+
+#wordle-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Center the content vertically */
+    height: 100%;
+    width: 100%;
+    gap: 20px; /* Add a gap between the grid and the keyboard */
+    max-width: 500px; /* Max width for the game area */
+    margin: 0 auto;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+#wordle-sidebar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px; /* Give it a fixed width like the wordsearch sidebar */
+    max-height: 80dvh; /* Limit its height */
+    overflow-y: auto; /* Allow scrolling */
+    display: flex; /* Use flex to manage internal content */
+    flex-direction: column; /* Stack header and list vertically */
+    gap: 1rem;
+}
+
+#wordle-grid {
+    display: grid;
+    grid-template-rows: repeat(6, 1fr);
+    grid-gap: 5px;
+    width: 100%;
+    max-width: 350px;
+}
+
+#wordle-sidebar h4 {
+    margin-top: 0;
+    text-align: center;
+}
+
+#wordle-sidebar #wordle-possible-words-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    font-size: 1.2rem;
+    overflow-y: auto;
+}
+
+/* Ensure list items are block-level for correct column layout */
+#wordle-possible-words-list li {
+    display: block;
+}
+
+.wordle-row.shake {
+    animation: shake 0.5s;
+}
+
+.wordle-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-gap: 5px;
+}
+
+.wordle-tile {
+    width: 100%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    border: 2px solid #d3d6da;
+    color: var(--text-light);
+    aspect-ratio: 1 / 1;
+    transition: transform 0.6s, background-color 0.6s, border-color 0.6s;
+    transform-style: preserve-3d;
+}
+
+.wordle-tile.flip {
+    transform: rotateX(180deg);
+}
+
+.wordle-tile .front, .wordle-tile .back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.wordle-tile .back {
+    transform: rotateX(180deg);
+}
+
+.wordle-tile.filled {
+    border-color: #878a8c;
+}
+
+/* Tile states */
+.wordle-tile.correct {
+    background-color: #6aaa64; /* Green */
+    border-color: #6aaa64;
+    color: white;
+}
+
+.wordle-tile.present {
+    background-color: #c9b458; /* Yellow */
+    border-color: #c9b458;
+    color: white;
+}
+
+.wordle-tile.absent {
+    background-color: #787c7e; /* Gray */
+    border-color: #787c7e;
+    color: white;
+}
+
+/* Keyboard Styles */
+#wordle-keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+}
+
+.key {
+    font-family: inherit;
+    font-weight: bold;
+    border: 0;
+    padding: 0;
+    height: 58px;
+    flex-grow: 1;
+    border-radius: 4px;
+    background-color: #d3d6da;
+    color: #1a1a1b;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 1rem;
+    transition: background-color 0.2s ease;
+}
+
+.key.wide {
+    flex-grow: 1.5;
+}
+
+/* Keyboard key states */
+.key.correct {
+    background-color: #6aaa64;
+    color: white;
+}
+.key.present {
+    background-color: #c9b458;
+    color: white;
+}
+.key.absent {
+    background-color: #787c7e;
+    color: white;
+}
+
+/* Style for when the Enter key is invalid */
+.key.invalid {
+    background-color: var(--error-red, #CC3333);
+    color: white;
+}
+
+/* Blinking animation for the Enter key */
+.key.blinking {
+    animation: blink-enter 1.2s infinite;
+}
+
+@keyframes shake {
+    10%, 90% {
+        transform: translateX(-1px);
+    }
+    20%, 80% {
+        transform: translateX(2px);
+    }
+    30%, 50%, 70% {
+        transform: translateX(-4px);
+    }
+    40%, 60% {
+        transform: translateX(4px);
+    }
+}
+
+@keyframes blink-enter {
+    50% {
+        opacity: 0.6;
+    }
+}

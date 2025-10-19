@@ -31,12 +31,33 @@ export function startTimer() {
 
     seconds = 0; // Reset the timer
     const timerDisplay = document.getElementById('timer-display');
-    timerDisplay.textContent = formatTime(seconds);
+    if (!timerDisplay) return; // Guard against games without a timer
 
-    timerInterval = setInterval(() => {
-        seconds++;
+    // Use an IntersectionObserver to start the timer only when it's visible.
+    const observer = new IntersectionObserver((entries) => {
+        const timerEntry = entries[0];
+        if (timerEntry.isIntersecting) {
+            // Timer is visible, start the interval.
+            if (!timerInterval) {
+                timerDisplay.textContent = formatTime(seconds);
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    timerDisplay.textContent = formatTime(seconds);
+                }, 1000);
+            }
+            // Once it's visible and started, we don't need to observe anymore.
+            observer.unobserve(timerDisplay);
+        }
+    }, { threshold: 0.1 });
+
+    // If the timer is already visible, the callback will fire immediately.
+    // If not, it will wait until it becomes visible.
+    observer.observe(timerDisplay);
+
+    // Set initial display, which will be updated once visible.
+    if (timerDisplay) {
         timerDisplay.textContent = formatTime(seconds);
-    }, 1000);
+    }
 }
 
 /**

@@ -4,6 +4,7 @@
 
 import { startTimer } from '../timer.js';
 import { dom, appState, dataChannels } from '../scripts.js';
+import { speakWord } from './spellingbee.js'; // Import the speakWord function
 import { showWinnerScreen, createTimerHTML } from '../ui.js';
 import { playRemoteMoveSound, debugLog } from '../misc.js';
 
@@ -216,6 +217,7 @@ function updateWordListUI() {
     gameState.words.forEach(wordObj => {
         const li = document.createElement('li');
         li.textContent = wordObj.word;
+        li.onclick = () => speakWord(wordObj.word); // Make the word speakable
         if (wordObj.found) {
             li.classList.add('found');
         }

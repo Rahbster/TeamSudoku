@@ -34,6 +34,7 @@ export function showScreen(screenName) {
             menu.appendChild(dom.gameSelector.parentElement.parentElement);
             menu.appendChild(dom.difficultySelector.parentElement.parentElement);
             menu.appendChild(dom.connect4ModeContainer);
+            menu.appendChild(dom.wordGamesConfigContainer);
             menu.appendChild(dom.wordsearchConfigWordList);
             menu.appendChild(dom.wordsearchConfigWordCount);
             menu.appendChild(dom.spellingbeeConfigMode);
@@ -769,11 +770,15 @@ export function initializeEventListeners() {
     dom.gameSelector.addEventListener('change', (event) => {
         const selectedGame = event.target.value;
         localStorage.setItem('sudokuGameType', selectedGame);
-        showToast(`Game changed to: ${event.target.options[event.target.selectedIndex].text}`);
+        const selectedOption = event.target.options[event.target.selectedIndex];
+        const selectedGameText = selectedOption ? selectedOption.text : selectedGame;
+        showToast(`Game changed to: ${selectedGameText}`);
         debugLog(`Game selection changed to: ${selectedGame}. Re-initializing solo game view.`);
         // Show the Connect 4 mode selector only when Connect 4 is chosen
         const isConnect4 = selectedGame === 'connect4';
-        const isWordSearch = selectedGame === 'wordsearch';
+        const isWordGames = selectedGame === 'wordgames';
+        const isWordle = isWordGames && dom.wordGamesModeSelect.value === 'wordle';
+        const isWordSearch = isWordGames && dom.wordGamesModeSelect.value === 'wordsearch';
         const isBlackjack = selectedGame === 'blackjack';
         const isMemoryMatch = selectedGame === 'memorymatch';
         const isSpellingBee = selectedGame === 'spellingbee';
@@ -781,6 +786,7 @@ export function initializeEventListeners() {
         dom.connect4ModeContainer.style.display = isConnect4 ? '' : 'none';
         dom.wordsearchConfigWordList.style.display = isWordSearch ? '' : 'none';
         dom.wordsearchConfigWordCount.style.display = isWordSearch ? '' : 'none';
+        dom.wordGamesConfigContainer.style.display = isWordGames ? '' : 'none';
         dom.spellingbeeConfigMode.style.display = isSpellingBee ? '' : 'none';
         dom.spellingbeeConfigWordList.style.display = isSpellingBee ? '' : 'none';
         dom.spellingbeeConfigVoice.style.display = isSpellingBee ? '' : 'none';
@@ -788,6 +794,16 @@ export function initializeEventListeners() {
         dom.blackjackConfigContainerAICount.style.display = isBlackjack ? '' : 'none';
         dom.memorymatchConfigContainer.style.display = isMemoryMatch ? '' : 'none';
         dom.cosmicbalanceConfigContainer.style.display = isCosmicBalance ? '' : 'none';
+
+        // Handle Wordle-specific UI based on difficulty
+        if (isWordle) {
+            const difficulty = dom.difficultySelector.value;
+            const possibleWordsContainer = document.getElementById('wordle-possible-words-container');
+            const hintButton = document.getElementById('wordle-hint-btn');
+            if (possibleWordsContainer) possibleWordsContainer.style.display = (difficulty === 'very-easy' || difficulty === 'easy') ? '' : 'none';
+            if (hintButton) hintButton.style.display = (difficulty === 'easy' || difficulty === 'hard') ? '' : 'none';
+        }
+
 
         // Re-initialize the solo game view to reflect the new game choice immediately.
         initializeSoloGame();
@@ -804,6 +820,19 @@ export function initializeEventListeners() {
     // Event listeners for sub-game mode selectors
     dom.connect4ModeSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuConnect4Mode', event.target.value);
+    });
+    dom.wordGamesModeSelect.addEventListener('change', (event) => {
+        const selectedWordGame = event.target.value;
+        localStorage.setItem('sudokuWordGameMode', selectedWordGame);
+        showToast(`Word Game changed to: ${event.target.options[event.target.selectedIndex].text}`);
+
+        // Show/hide Word Search specific controls
+        const isWordSearch = selectedWordGame === 'wordsearch';
+        dom.wordsearchConfigWordList.style.display = isWordSearch ? '' : 'none';
+        dom.wordsearchConfigWordCount.style.display = isWordSearch ? '' : 'none';
+
+        // Re-initialize to load the new sub-game
+        initializeSoloGame();
     });
     dom.spellingbeeModeSelect.addEventListener('change', (event) => {
         localStorage.setItem('sudokuSpellingBeeMode', event.target.value);

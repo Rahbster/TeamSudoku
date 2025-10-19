@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/games/wordsearch.css">
     <link rel="stylesheet" href="css/games/spellingbee.css">
     <link rel="stylesheet" href="css/games/memorymatch.css">
+    <link rel="stylesheet" href="css/games/wordle.css">
     <link rel="stylesheet" href="css/games/blackjack.css">
     <link rel="stylesheet" href="css/games/cosmicbalance.css">
     <link rel="icon" href="assets/SudokuIcon.png" type="image/png">
@@ -134,12 +135,21 @@
                         <div class="select-wrapper">
                             <select id="game-select">
                                 <option value="sudoku">Sudoku</option>
+                                <option value="wordgames">Word Games</option>
                                 <option value="connect4">Connect 4</option>
-                                <option value="wordsearch">Word Search</option>
                                 <option value="spellingbee">Spelling Bee</option>
                                 <option value="memorymatch">Memory Match</option>
                                 <option value="blackjack">Black Jack</option>
                                 <option value="cosmicbalance">Cosmic Balance 🚧</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="selector-container host-only" id="wordgames-config-container" style="display: none;">
+                        <label for="wordgames-mode-select">Word Game Mode</label>
+                        <div class="select-wrapper">
+                            <select id="wordgames-mode-select">
+                                <option value="wordsearch">Word Search</option>
+                                <option value="wordle">Wordle</option>
                             </select>
                         </div>
                     </div>
