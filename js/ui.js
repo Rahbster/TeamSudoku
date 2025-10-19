@@ -31,23 +31,24 @@ export function showScreen(screenName) {
         // Move controls into the hamburger menu
         const menu = dom.hamburgerMenu;
         if (menu.children.length <= 1) { // Only move them once
-            menu.appendChild(dom.gameSelector.parentElement.parentElement);
-            menu.appendChild(dom.difficultySelector.parentElement.parentElement);
-            menu.appendChild(dom.connect4ModeContainer);
-            menu.appendChild(dom.wordGamesConfigContainer);
-            menu.appendChild(dom.wordsearchConfigWordList);
-            menu.appendChild(dom.wordsearchConfigWordCount);
-            menu.appendChild(dom.spellingbeeConfigMode);
-            menu.appendChild(dom.spellingbeeConfigWordList);
-            menu.appendChild(dom.spellingbeeConfigVoice);
-            menu.appendChild(dom.memorymatchConfigContainer);
-            menu.appendChild(dom.blackjackConfigContainerDecks);
-            menu.appendChild(dom.blackjackConfigContainerAICount);
-            menu.appendChild(dom.cosmicbalanceConfigContainer);
-            menu.appendChild(dom.themeSelectorConfig.parentElement.parentElement);
-            menu.appendChild(dom.newPuzzleButton.parentElement);
-            menu.appendChild(dom.configBtn.parentElement);
-            menu.appendChild(dom.teamDisplayArea);
+            if (dom.gameSelector?.parentElement?.parentElement) menu.appendChild(dom.gameSelector.parentElement.parentElement);
+            if (dom.difficultySelector?.parentElement?.parentElement) menu.appendChild(dom.difficultySelector.parentElement.parentElement);
+            if (dom.connect4ModeContainer) menu.appendChild(dom.connect4ModeContainer);
+            if (dom.wordGamesConfigContainer) menu.appendChild(dom.wordGamesConfigContainer);
+            if (dom.crosswordCreatorBtnContainer) menu.appendChild(dom.crosswordCreatorBtnContainer);
+            if (dom.wordsearchConfigWordList) menu.appendChild(dom.wordsearchConfigWordList);
+            if (dom.wordsearchConfigWordCount) menu.appendChild(dom.wordsearchConfigWordCount);
+            if (dom.spellingbeeConfigMode) menu.appendChild(dom.spellingbeeConfigMode);
+            if (dom.spellingbeeConfigWordList) menu.appendChild(dom.spellingbeeConfigWordList);
+            if (dom.spellingbeeConfigVoice) menu.appendChild(dom.spellingbeeConfigVoice);
+            if (dom.memorymatchConfigContainer) menu.appendChild(dom.memorymatchConfigContainer);
+            if (dom.blackjackConfigContainerDecks) menu.appendChild(dom.blackjackConfigContainerDecks);
+            if (dom.blackjackConfigContainerAICount) menu.appendChild(dom.blackjackConfigContainerAICount);
+            if (dom.cosmicbalanceConfigContainer) menu.appendChild(dom.cosmicbalanceConfigContainer);
+            if (dom.themeSelectorConfig?.parentElement?.parentElement) menu.appendChild(dom.themeSelectorConfig.parentElement.parentElement);
+            if (dom.newPuzzleButton?.parentElement) menu.appendChild(dom.newPuzzleButton.parentElement);
+            if (dom.configBtn?.parentElement) menu.appendChild(dom.configBtn.parentElement);
+            if (dom.teamDisplayArea) menu.appendChild(dom.teamDisplayArea);
         }
         showInstructions(); // Show instructions every time the game screen is shown.
     }
@@ -780,6 +781,7 @@ export function initializeEventListeners() {
         const isWordle = isWordGames && dom.wordGamesModeSelect.value === 'wordle';
         const isWordSearch = isWordGames && dom.wordGamesModeSelect.value === 'wordsearch';
         const isBlackjack = selectedGame === 'blackjack';
+        const isCrossword = isWordGames && dom.wordGamesModeSelect.value === 'crossword'; // This was line 1005
         const isMemoryMatch = selectedGame === 'memorymatch';
         const isSpellingBee = selectedGame === 'spellingbee';
         const isCosmicBalance = selectedGame === 'cosmicbalance';
@@ -793,7 +795,8 @@ export function initializeEventListeners() {
         dom.blackjackConfigContainerDecks.style.display = isBlackjack ? '' : 'none';
         dom.blackjackConfigContainerAICount.style.display = isBlackjack ? '' : 'none';
         dom.memorymatchConfigContainer.style.display = isMemoryMatch ? '' : 'none';
-        dom.cosmicbalanceConfigContainer.style.display = isCosmicBalance ? '' : 'none';
+        //dom.crosswordCreatorBtnContainer.style.display = isCrossword ? '' : 'none';
+        if (dom.crosswordCreatorBtnContainer) dom.crosswordCreatorBtnContainer.style.display = isCrossword ? '' : 'none';
 
         // Handle Wordle-specific UI based on difficulty
         if (isWordle) {
@@ -830,6 +833,9 @@ export function initializeEventListeners() {
         const isWordSearch = selectedWordGame === 'wordsearch';
         dom.wordsearchConfigWordList.style.display = isWordSearch ? '' : 'none';
         dom.wordsearchConfigWordCount.style.display = isWordSearch ? '' : 'none';
+        // Show/hide Crossword specific controls
+        const isCrossword = selectedWordGame === 'crossword'; // This was line 1005
+        if (dom.crosswordCreatorBtnContainer) dom.crosswordCreatorBtnContainer.style.display = isCrossword ? '' : 'none'; // This was line 1005
 
         // Re-initialize to load the new sub-game
         initializeSoloGame();
@@ -997,6 +1003,12 @@ export function initializeEventListeners() {
 
     // Wire the main "New Game" button to the game manager's loadPuzzle function.
     dom.newPuzzleButton.addEventListener('click', loadPuzzle);
+
+    // Event listener for the Crossword Puzzle Creator button
+    dom.crosswordCreatorBtn.addEventListener('click', async () => {
+        const { showPuzzleCreator } = await import('./games/crossword.js');
+        showPuzzleCreator();
+    });
 
     // Event listeners for team selection
     dom.createTeamBtn.addEventListener('click', () => {

@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="css/games/spellingbee.css">
     <link rel="stylesheet" href="css/games/memorymatch.css">
     <link rel="stylesheet" href="css/games/wordle.css">
+    <link rel="stylesheet" href="css/games/crossword.css">
     <link rel="stylesheet" href="css/games/blackjack.css">
     <link rel="stylesheet" href="css/games/cosmicbalance.css">
     <link rel="icon" href="assets/SudokuIcon.png" type="image/png">
@@ -150,8 +151,12 @@
                             <select id="wordgames-mode-select">
                                 <option value="wordsearch">Word Search</option>
                                 <option value="wordle">Wordle</option>
+                                <option value="crossword">Crossword</option>
                             </select>
                         </div>
+                    </div>
+                    <div class="selector-container host-only" id="crossword-creator-btn-container" style="display: none;">
+                        <button id="crossword-creator-btn" class="theme-button">Puzzle Creator</button>
                     </div>
                     <div class="selector-container host-only" id="wordsearch-config-wordlist" style="display: none;">
                         <label for="custom-word-list-input">Word List</label>

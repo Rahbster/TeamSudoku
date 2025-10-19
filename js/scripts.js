@@ -230,6 +230,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Word Games Containers
     dom.wordGamesConfigContainer = document.getElementById('wordgames-config-container');
     dom.wordGamesModeSelect = document.getElementById('wordgames-mode-select');
+    dom.crosswordCreatorBtnContainer = document.getElementById('crossword-creator-btn-container');
+    dom.crosswordCreatorBtn = document.getElementById('crossword-creator-btn');
     dom.wordsearchConfigWordList = document.getElementById('wordsearch-config-wordlist');
     dom.wordsearchConfigWordCount = document.getElementById('wordsearch-config-wordcount');
     dom.customWordListInput = document.getElementById('custom-word-list-input');

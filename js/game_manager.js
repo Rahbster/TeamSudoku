@@ -40,17 +40,6 @@ export async function loadGame(gameType) {
     try {
         const module = await import(`./games/${gameType}.js`);
 
-        // If this is a solo game, create its initial state now that the module is initialized.
-        if (appState.isInitiator && !appState.playerTeam) {
-            if (typeof module.getInitialState === 'function') {
-                // debugLog(`[GM] loadGame: Found getInitialState for '${gameType}'. Calling it.`);
-                appState.soloGameState = module.getInitialState();
-                // debugLog(`[GM] loadGame: Received initial state from module:`, JSON.parse(JSON.stringify(appState.soloGameState)));
-            } else {
-                // debugLog(`[GM] loadGame: No getInitialState function found for '${gameType}'.`);
-            }
-        }
-
         activeGameModule = module;
         // debugLog(`[GM] loadGame: Module for '${gameType}' loaded. Calling initialize().`);
         activeGameModule.initialize();
