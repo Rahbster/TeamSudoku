@@ -44,6 +44,7 @@ export function showScreen(screenName) {
             if (dom.memorymatchConfigContainer) menu.appendChild(dom.memorymatchConfigContainer);
             if (dom.blackjackConfigContainerDecks) menu.appendChild(dom.blackjackConfigContainerDecks);
             if (dom.blackjackConfigContainerAICount) menu.appendChild(dom.blackjackConfigContainerAICount);
+            if (dom.adventureConfigContainer) menu.appendChild(dom.adventureConfigContainer);
             if (dom.cosmicbalanceConfigContainer) menu.appendChild(dom.cosmicbalanceConfigContainer);
             if (dom.themeSelectorConfig?.parentElement?.parentElement) menu.appendChild(dom.themeSelectorConfig.parentElement.parentElement);
             if (dom.newPuzzleButton?.parentElement) menu.appendChild(dom.newPuzzleButton.parentElement);
@@ -785,6 +786,7 @@ export function initializeEventListeners() {
         const isMemoryMatch = selectedGame === 'memorymatch';
         const isSpellingBee = selectedGame === 'spellingbee';
         const isCosmicBalance = selectedGame === 'cosmicbalance';
+        const isAdventure = selectedGame === 'adventure';
         dom.connect4ModeContainer.style.display = isConnect4 ? '' : 'none';
         dom.wordsearchConfigWordList.style.display = isWordSearch ? '' : 'none';
         dom.wordsearchConfigWordCount.style.display = isWordSearch ? '' : 'none';
@@ -795,7 +797,7 @@ export function initializeEventListeners() {
         dom.blackjackConfigContainerDecks.style.display = isBlackjack ? '' : 'none';
         dom.blackjackConfigContainerAICount.style.display = isBlackjack ? '' : 'none';
         dom.memorymatchConfigContainer.style.display = isMemoryMatch ? '' : 'none';
-        //dom.crosswordCreatorBtnContainer.style.display = isCrossword ? '' : 'none';
+        dom.adventureConfigContainer.style.display = isAdventure ? '' : 'none';
         if (dom.crosswordCreatorBtnContainer) dom.crosswordCreatorBtnContainer.style.display = isCrossword ? '' : 'none';
 
         // Handle Wordle-specific UI based on difficulty
@@ -821,78 +823,90 @@ export function initializeEventListeners() {
     dom.themeSelectorConfig.addEventListener('change', handleThemeChange);
 
     // Event listeners for sub-game mode selectors
-    dom.connect4ModeSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuConnect4Mode', event.target.value);
-    });
-    dom.wordGamesModeSelect.addEventListener('change', (event) => {
-        const selectedWordGame = event.target.value;
-        localStorage.setItem('sudokuWordGameMode', selectedWordGame);
-        showToast(`Word Game changed to: ${event.target.options[event.target.selectedIndex].text}`);
+    if (dom.connect4ModeSelect) {
+        dom.connect4ModeSelect.addEventListener('change', (event) => {
+            localStorage.setItem('sudokuConnect4Mode', event.target.value);
+        });
+    }
+    if (dom.wordGamesModeSelect) {
+        dom.wordGamesModeSelect.addEventListener('change', (event) => {
+            const selectedWordGame = event.target.value;
+            localStorage.setItem('sudokuWordGameMode', selectedWordGame);
+            showToast(`Word Game changed to: ${event.target.options[event.target.selectedIndex].text}`);
 
-        // Show/hide Word Search specific controls
-        const isWordSearch = selectedWordGame === 'wordsearch';
-        dom.wordsearchConfigWordList.style.display = isWordSearch ? '' : 'none';
-        dom.wordsearchConfigWordCount.style.display = isWordSearch ? '' : 'none';
-        // Show/hide Crossword specific controls
-        const isCrossword = selectedWordGame === 'crossword'; // This was line 1005
-        if (dom.crosswordCreatorBtnContainer) dom.crosswordCreatorBtnContainer.style.display = isCrossword ? '' : 'none'; // This was line 1005
+            // Show/hide Word Search specific controls
+            const isWordSearch = selectedWordGame === 'wordsearch';
+            dom.wordsearchConfigWordList.style.display = isWordSearch ? '' : 'none';
+            dom.wordsearchConfigWordCount.style.display = isWordSearch ? '' : 'none';
+            // Show/hide Crossword specific controls
+            const isCrossword = selectedWordGame === 'crossword'; // This was line 1005
+            if (dom.crosswordCreatorBtnContainer) dom.crosswordCreatorBtnContainer.style.display = isCrossword ? '' : 'none'; // This was line 1005
 
-        // Re-initialize to load the new sub-game
-        initializeSoloGame();
-    });
-    dom.spellingbeeModeSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuSpellingBeeMode', event.target.value);
-    });
-    dom.memorymatchModeSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuMemoryMatchMode', event.target.value);
-    });
-    dom.deckCountSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuDeckCount', event.target.value);
-    });
-    dom.aiPlayerCountSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuAiPlayerCount', event.target.value);
-    });
-    dom.cbAiPlayerCountSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuCbAiPlayerCount', event.target.value);
-    });
+            // Re-initialize to load the new sub-game
+            initializeSoloGame();
+        });
+    }
+    if (dom.spellingbeeModeSelect) {
+        dom.spellingbeeModeSelect.addEventListener('change', (event) => {
+            localStorage.setItem('sudokuSpellingBeeMode', event.target.value);
+        });
+    }
+    if (dom.memorymatchModeSelect) {
+        dom.memorymatchModeSelect.addEventListener('change', (event) => {
+            localStorage.setItem('sudokuMemoryMatchMode', event.target.value);
+        });
+    }
+    if (dom.deckCountSelect) {
+        dom.deckCountSelect.addEventListener('change', (event) => {
+            localStorage.setItem('sudokuDeckCount', event.target.value);
+        });
+    }
+    if (dom.aiPlayerCountSelect) {
+        dom.aiPlayerCountSelect.addEventListener('change', (event) => {
+            localStorage.setItem('sudokuAiPlayerCount', event.target.value);
+        });
+    }
+    if (dom.cbAiPlayerCountSelect) {
+        dom.cbAiPlayerCountSelect.addEventListener('change', (event) => {
+            localStorage.setItem('sudokuCbAiPlayerCount', event.target.value);
+        });
+    }
 
     // Event listener for the word count input
-    dom.wordCountInput.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuWordSearchCount', event.target.value);
-    });
+    if (dom.wordCountInput) {
+        dom.wordCountInput.addEventListener('change', (event) => {
+            localStorage.setItem('sudokuWordSearchCount', event.target.value);
+        });
+    }
 
     // Event listener for the voice selector
-    dom.voiceSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuVoice', event.target.value);
-    });
+    if (dom.voiceSelect) {
+        dom.voiceSelect.addEventListener('change', (event) => {
+            localStorage.setItem('sudokuVoice', event.target.value);
+        });
+    }
 
     // Event listener for the word search word list to auto-format on blur
-    dom.customWordListInput.addEventListener('blur', () => {
-        const input = dom.customWordListInput;
-        const words = input.value.trim()
-            .split(/[\n, ]+/) // Split by newlines, commas, or spaces
-            .map(word => word.trim().toUpperCase()) // Trim and convert to uppercase
-            .filter(word => word.length > 0); // Filter out any empty strings
-
-        // Sort alphabetically and join back with newlines for readability
-        words.sort();
-        input.value = '\n' + words.join('\n');
-        localStorage.setItem('sudokuWordSearchWordList', input.value);
-    });
+    if (dom.customWordListInput) {
+        dom.customWordListInput.addEventListener('blur', () => {
+            const input = dom.customWordListInput;
+            const words = input.value.trim().split(/[\n, ]+/).map(word => word.trim().toUpperCase()).filter(word => word.length > 0);
+            words.sort();
+            input.value = '\n' + words.join('\n');
+            localStorage.setItem('sudokuWordSearchWordList', input.value);
+        });
+    }
 
     // Event listener for the spelling bee word list to auto-format on blur
-    dom.spellingBeeWordListInput.addEventListener('blur', () => {
-        const input = dom.spellingBeeWordListInput;
-        const words = input.value.trim()
-            .split(/[\n, ]+/) // Split by newlines, commas, or spaces
-            .map(word => word.trim().toUpperCase()) // Trim and convert to uppercase
-            .filter(word => word.length > 0); // Filter out any empty strings
-
-        // Sort alphabetically and join back with newlines for readability
-        words.sort();
-        input.value = '\n' + words.join('\n');
-        localStorage.setItem('sudokuSpellingBeeWordList', input.value);
-    });
+    if (dom.spellingBeeWordListInput) {
+        dom.spellingBeeWordListInput.addEventListener('blur', () => {
+            const input = dom.spellingBeeWordListInput;
+            const words = input.value.trim().split(/[\n, ]+/).map(word => word.trim().toUpperCase()).filter(word => word.length > 0);
+            words.sort();
+            input.value = '\n' + words.join('\n');
+            localStorage.setItem('sudokuSpellingBeeWordList', input.value);
+        });
+    }
 
 
     // Event listener for the player name input
@@ -1008,6 +1022,12 @@ export function initializeEventListeners() {
     dom.crosswordCreatorBtn.addEventListener('click', async () => {
         const { showPuzzleCreator } = await import('./games/crossword.js');
         showPuzzleCreator();
+    });
+
+    // Event listener for the Adventure Creator button
+    if (dom.adventureCreatorBtn) dom.adventureCreatorBtn.addEventListener('click', async () => {
+        const { showAdventureCreator } = await import('./games/adventure.js');
+        showAdventureCreator();
     });
 
     // Event listeners for team selection

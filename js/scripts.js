@@ -251,6 +251,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.cbAiPlayerCountSelect = document.getElementById('cb-ai-player-count-select');
     dom.memorymatchConfigContainer = document.getElementById('memorymatch-config-container');
     dom.memorymatchModeSelect = document.getElementById('memorymatch-mode-select');
+    dom.adventureConfigContainer = document.getElementById('adventure-config-container');
+    dom.adventureCreatorBtn = document.getElementById('adventure-creator-btn');
 
     // Set initial button states
     dom.prevQrBtn.disabled = true;
