@@ -151,17 +151,19 @@ export function showPuzzleCreator() {
         </div>
         <!-- Column 2: Editor -->
         <div class="designer-column">
-            <h4>Puzzle Editor</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h4>Puzzle Editor</h4>
+                <button id="creator-save-btn" class="theme-button">Save</button>
+            </div>
             <input type="text" id="puzzle-name-input" placeholder="Puzzle Name" class="designer-input">
             <textarea id="creator-input" rows="10" placeholder="Enter words and clues...\nWORD,A clue for the word"></textarea>
-            <div class="button-row" style="justify-content: center;">
-                <button id="creator-generate-btn" class="theme-button">Preview</button>
-                <button id="creator-save-btn" class="theme-button">Save</button>
+            <div class="button-row" style="justify-content: center; gap: 10px; margin-top: 10px;">
+                <!-- AI Button was here -->
             </div>
         </div>
         <!-- Column 3: Preview -->
         <div class="designer-column">
-            <h4>Preview</h4>
+            <button id="creator-generate-btn" class="theme-button" style="width: 100%; margin-bottom: 10px;">Preview</button>
             <div id="creator-preview">Click 'Preview' to see your puzzle.</div>
         </div>
     </div>
