@@ -20,6 +20,7 @@ export const COMPONENTS = {
     tractors: [{ id: 'tr1', name: 'Tractor Beam', space: 4, cost: 15 }],
     marines: [{ id: 'mr1', name: 'Marines', space: 1, cost: 5 }],
     transporters: [{ id: 'tp1', name: 'Transporter', space: 1, cost: 10 }],
+    hull: [{ id: 'hu1', name: 'Hull Space', space: 1, cost: 1 }],
     armor: [{ id: 'ar1', name: 'Armor', space: 1, cost: 2 }],
     belts: [{ id: 'be1', name: 'Belt', space: 1, cost: 3 }],
     racks: [{ id: 'rk1', name: 'Seeker Rack', space: 2, cost: 4 }],

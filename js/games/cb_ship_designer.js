@@ -305,14 +305,30 @@ function updateShipStats(design) {
     });
     const spaceLeft = totalSpace - spaceUsed;
 
+    const driveCount = design.components.filter(c => c.category === 'drives').reduce((sum, c) => sum + c.count, 0);
+    const maxAccel = driveCount * 2;
+    const maxSpeed = maxAccel * 2;
+
+    const hullSpace = design.components.filter(c => c.category === 'hull').reduce((sum, c) => sum + c.count, 0);
+    const minHullSpace = hull.mass / 2;
+    let efficiency = 1;
+    if (hullSpace >= minHullSpace * 2) {
+        efficiency = 3;
+    } else if (hullSpace >= minHullSpace * 1.5) {
+        efficiency = 2;
+    }
+
     const power = design.components.filter(c => c.category === 'engines').reduce((sum, c) => sum + (COMPONENTS.engines.find(e => e.id === c.id)?.power || 0) * c.count, 0);
     const mass = hull.mass;
 
     statsGrid.innerHTML = `
         <div class="stat-item"><strong>SPACE LEFT:</strong> ${spaceLeft.toFixed(2)}</div>
-        <div class="stat-item"><strong>POWER:</strong> ${power}</div>
         <div class="stat-item"><strong>MASS:</strong> ${mass}</div>
         <div class="stat-item"><strong>TECH LEVEL:</strong> ${techLevel}</div>
+        <div class="stat-item"><strong>POWER:</strong> ${power}</div>
+        <div class="stat-item"><strong>MAX ACCEL:</strong> ${maxAccel}</div>
+        <div class="stat-item"><strong>MAX SPEED:</strong> ${maxSpeed}</div>
+        <div class="stat-item"><strong>EFFICIENCY:</strong> ${efficiency}</div>
     `;
 }
 

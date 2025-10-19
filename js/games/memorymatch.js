@@ -15,8 +15,6 @@ export function initialize() {
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Game';
     dom.newPuzzleButton.style.display = '';
-    const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
-    if (newGameBtnText) newGameBtnText.textContent = 'Game';
 
     // If we are initializing for a solo game, draw the grid.
     if (appState.isInitiator && !appState.playerTeam) {

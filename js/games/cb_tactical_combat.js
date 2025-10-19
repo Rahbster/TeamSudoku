@@ -1,56 +1,62 @@
 import { dom, appState, dataChannels } from '../scripts.js';
 import { showToast } from '../ui.js';
-import { COMPONENTS, DEFAULT_SHIP_DESIGNS, MAP_WIDTH, MAP_HEIGHT } from './cb_constants.js';
+import { HULLS, COMPONENTS, DEFAULT_SHIP_DESIGNS, MAP_WIDTH, MAP_HEIGHT } from './cb_constants.js';
 
 let currentZoom = 1.0; // Start with a default zoom level
 
-export function startCombat(system) {
+export function startCombat(attackingFleet, defendingFleet) {
     const gameState = appState.soloGameState;
     gameState.combat.active = true;
+    gameState.combat.attackingFleetId = attackingFleet.id;
+    gameState.combat.defendingFleetId = defendingFleet.id;
+    gameState.combat.ships = [];
 
     const playerXBase = 200;
     const playerYBase = 500;
     const enemyXBase = 800;
     const enemyYBase = 500;
     const positionVariance = 50;
-
     const playerHeading = Math.random() * 45;
     const enemyHeading = 180 - (Math.random() * 45);
 
-    gameState.combat.ships = [];
+    // --- Add Attacking Fleet Ships ---
+    attackingFleet.ships.forEach((shipInfo, index) => {
+        const design = findDesignById(shipInfo.designId);
+        if (design) {
+            const shipStats = calculateShipStatsFromDesign(design);
+            gameState.combat.ships.push({
+                id: `player-${index + 1}`,
+                ...createShipFromDesign(design, 'player1', true),
+                aiAssisted: false,
+                ...shipStats,
+                x: playerXBase + (Math.random() * positionVariance * 2) - positionVariance,
+                y: (playerYBase - 50) + (index * 100) + (Math.random() * positionVariance) - (positionVariance / 2),
+                heading: playerHeading, speed: 0, orders: { targetSpeed: 0, targetHeading: playerHeading }, destroyed: false
+            });
+        }
+    });
 
-    gameState.combat.ships.push({ id: 'player-1', ...createShipFromDesign(DEFAULT_SHIP_DESIGNS[0], 'player1', true), aiAssisted: false, acceleration: 4, x: playerXBase + (Math.random() * positionVariance * 2) - positionVariance, y: playerYBase - 50 + (Math.random() * positionVariance) - (positionVariance/2), heading: playerHeading, speed: 0, orders: { targetSpeed: 0, targetHeading: playerHeading }, hp: 16, maxHp: 16, power: 32, maxPower: 32, destroyed: false });
-    gameState.combat.ships.push({ id: 'player-2', ...createShipFromDesign(DEFAULT_SHIP_DESIGNS[1], 'player1', true), aiAssisted: false, acceleration: 4, x: playerXBase + (Math.random() * positionVariance * 2) - positionVariance, y: playerYBase + 50 + (Math.random() * positionVariance) - (positionVariance/2), heading: playerHeading, speed: 0, orders: { targetSpeed: 0, targetHeading: playerHeading }, hp: 16, maxHp: 16, power: 32, maxPower: 32, destroyed: false });
-
-    const aiCount = parseInt(dom.cbAiPlayerCountSelect.value, 10) || 1;
+    // --- Add Defending Fleet Ships ---
     const difficulty = dom.difficultySelector.value;
-
-    for (let i = 0; i < aiCount; i++) {
-        const aiPlayerId = `AI-${i + 1}`;
-        const shipDesignTemplate = DEFAULT_SHIP_DESIGNS[i % DEFAULT_SHIP_DESIGNS.length];
-        
-        let powerBonus = 0;
-        if (difficulty === 'medium') powerBonus = 1;
-        if (difficulty === 'hard') powerBonus = 3;
-
-        const totalPower = (shipDesignTemplate.components.find(c => c.category === 'engines')?.count || 0) * (8 + powerBonus);
-
-        gameState.combat.ships.push({
-            id: `enemy-${i + 1}`,
-            ...createShipFromDesign(shipDesignTemplate, aiPlayerId, false),
-            aiAssisted: true, // Full AI control for enemy ships
-            acceleration: 4, // Add the missing acceleration property
-            name: `AI Ship ${i + 1}`,
-            x: enemyXBase + (Math.random() * positionVariance * 2) - positionVariance,
-            y: enemyYBase + (i * 100) - ((aiCount - 1) * 50),
-            heading: enemyHeading,
-            speed: 0,
-            orders: { targetSpeed: 50, targetHeading: enemyHeading },
-            hp: 16, maxHp: 16,
-            power: totalPower, maxPower: totalPower,
-            destroyed: false
-        });
-    }
+    defendingFleet.ships.forEach((shipInfo, index) => {
+        const design = findDesignById(shipInfo.designId);
+        if (design) {
+            const shipStats = calculateShipStatsFromDesign(design, difficulty);
+            gameState.combat.ships.push({
+                id: `enemy-${index + 1}`,
+                ...createShipFromDesign(design, defendingFleet.ownerId, false),
+                aiAssisted: true,
+                ...shipStats,
+                name: `${defendingFleet.ownerId} Ship ${index + 1}`,
+                x: enemyXBase + (Math.random() * positionVariance * 2) - positionVariance,
+                y: enemyYBase + (index * 100) - ((defendingFleet.ships.length - 1) * 50),
+                heading: enemyHeading,
+                speed: 0,
+                orders: { targetSpeed: 50, targetHeading: enemyHeading },
+                destroyed: false
+            });
+        }
+    });
 
     gameState.combat.turn = 1;
 
@@ -72,14 +78,64 @@ export function startCombat(system) {
     renderCombatInfoPanel();
 }
 
+function findDesignById(designId) {
+    const allDesigns = [...DEFAULT_SHIP_DESIGNS, ...appState.soloGameState.shipDesigns];
+    return allDesigns.find(d => d.id === designId);
+}
+
+/**
+ * Calculates the core combat stats for a ship based on its design.
+ * @param {object} design - The ship design object.
+ * @param {string} [difficulty='easy'] - AI difficulty for stat bonuses.
+ * @returns {object} An object containing the calculated stats.
+ */
+function calculateShipStatsFromDesign(design, difficulty = 'easy') {
+    const hull = HULLS.find(h => h.id === design.hull);
+    const driveCount = design.components.filter(c => c.category === 'drives').reduce((sum, c) => sum + c.count, 0);
+    const maxAccel = driveCount * 2;
+
+    let powerBonus = 0;
+    if (difficulty === 'medium') powerBonus = 1;
+    if (difficulty === 'hard') powerBonus = 3;
+    const powerPerEngine = 8 + powerBonus;
+    const totalPower = design.components.filter(c => c.category === 'engines').reduce((sum, c) => sum + c.count, 0) * powerPerEngine;
+
+    const hullSpace = design.components.filter(c => c.category === 'hull').reduce((sum, c) => sum + c.count, 0);
+    const minHullSpace = hull.mass / 2;
+    let efficiency = 1;
+    if (hullSpace >= minHullSpace * 2) {
+        efficiency = 3;
+    } else if (hullSpace >= minHullSpace * 1.5) {
+        efficiency = 2;
+    }
+
+    return {
+        hp: hull.mass,
+        maxHp: hull.mass,
+        hullIntegrity: hull.mass, // Initial hull integrity is also based on mass
+        maxHullIntegrity: hull.mass,
+        acceleration: maxAccel,
+        maxSpeed: maxAccel * 2,
+        efficiency: efficiency,
+        power: totalPower,
+        maxPower: totalPower
+    };
+}
+
 function createShipFromDesign(design, owner, isPlayerFlag) {
     const ship = { ...design };
     ship.weapons = [];
+    ship.systems = []; // Use a new array for combat-specific component data
     ship.components.forEach(comp => {
         if (comp.category === 'weapons') {
             const weaponTemplate = COMPONENTS.weapons.find(w => w.id === comp.id);
-            for (let i = 0; i < comp.count; i++) {
-                ship.weapons.push({ ...weaponTemplate, cooldownRemaining: 0, targetId: null, arcs: comp.arcs });
+            // Create a single weapon entry with a count, rather than multiple individual weapons
+            ship.weapons.push({ ...weaponTemplate, count: comp.count, cooldownRemaining: 0, targetId: null, arcs: comp.arcs });
+        } else {
+            // Add other components with a status for damage tracking
+            const componentTemplate = COMPONENTS[comp.category].find(c => c.id === comp.id);
+            if (componentTemplate) {
+                ship.systems.push({ ...componentTemplate, status: 'active', ...comp });
             }
         }
     });
@@ -89,12 +145,43 @@ function createShipFromDesign(design, owner, isPlayerFlag) {
 }
 
 export function endCombat() {
+    const gameState = appState.soloGameState;
+    const attackingFleet = gameState.fleets.find(f => f.id === gameState.combat.attackingFleetId);
+    const defendingFleet = gameState.fleets.find(f => f.id === gameState.combat.defendingFleetId);
+    const combatSystem = gameState.systems.find(s => s.id === defendingFleet.locationId);
+
+    // Update fleets with surviving ships
+    const survivingAttackers = gameState.combat.ships.filter(s => s.owner === attackingFleet.ownerId && !s.destroyed);
+    const survivingDefenders = gameState.combat.ships.filter(s => s.owner === defendingFleet.ownerId && !s.destroyed);
+
+    attackingFleet.ships = survivingAttackers.map(s => ({ designId: s.designId }));
+    defendingFleet.ships = survivingDefenders.map(s => ({ designId: s.designId }));
+
+    // Handle combat outcome
+    if (survivingDefenders.length === 0 && survivingAttackers.length > 0) {
+        // Attacker wins, takes control of the system
+        showToast(`${attackingFleet.ownerId} has conquered ${combatSystem.name}!`, 'info');
+        combatSystem.ownerId = attackingFleet.ownerId;
+        combatSystem.color = gameState.players.find(p => p.id === attackingFleet.ownerId).color;
+        attackingFleet.locationId = combatSystem.id; // Move the victorious fleet
+    } else if (survivingAttackers.length === 0) {
+        showToast(`The attack on ${combatSystem.name} was repelled!`, 'info');
+        // Attacker is destroyed, defender holds.
+    } else {
+        showToast(`The battle for ${combatSystem.name} ends in a stalemate.`, 'info');
+        // Both sides have survivors, attacker retreats to original location.
+    }
+
+    // Clean up destroyed fleets
+    appState.soloGameState.fleets = gameState.fleets.filter(f => f.ships.length > 0);
+
+    // Reset combat state
+    gameState.combat.active = false;
+
     document.getElementById('combat-map-view').classList.add('hidden');
     document.getElementById('ship-designer-view').classList.add('hidden');
     document.getElementById('starmap-view').classList.remove('hidden');
-    // Restore the main ship designer button after combat
     document.getElementById('ship-designer-btn-main').classList.remove('hidden');
-
     document.getElementById('info-panel-content').innerHTML = '<h3>Sector Status</h3><p>Select a system to view details.</p>';
 }
 
@@ -332,7 +419,8 @@ function renderCombatInfoPanel() {
             <input type="checkbox" id="ai-assist-checkbox" ${selectedShip.aiAssisted ? 'checked' : ''}>
         </div>
         <h4>Ship: ${selectedShip.name}</h4>
-        <p>Hull: ${selectedShip.hp} / ${selectedShip.maxHp}</p>
+        <p>Critical Hits: ${selectedShip.criticalHits || 0} / ${selectedShip.maxHp}</p>
+        <p>Hull Integrity: ${selectedShip.hullIntegrity.toFixed(0)} / ${selectedShip.maxHullIntegrity}</p>
         <p>Speed: ${selectedShip.speed.toFixed(0)} | Heading: ${selectedShip.heading.toFixed(0)}&deg;</p>
         <div class="shields-display">
             ${selectedShip.shields.map((s, i) => `<div class="shield-arc" title="Shield ${i+1}">${s}</div>`).join('')}
@@ -340,7 +428,7 @@ function renderCombatInfoPanel() {
         ${isMyShip ? `
         <div>
             <label for="speed-order">Set Speed:</label>
-            <input type="number" id="speed-order" value="${selectedShip.orders.targetSpeed}" min="0" max="700">
+            <input type="number" id="speed-order" value="${selectedShip.orders.targetSpeed}" min="0" max="${selectedShip.maxSpeed}">
         </div>
         <div>
             <label for="heading-order">Set Heading:</label>
@@ -450,6 +538,8 @@ function executeTurn() {
         if (speedDiff !== 0) {
             const accelAmount = Math.min(ship.acceleration, Math.abs(speedDiff));
             ship.speed += Math.sign(speedDiff) * accelAmount;
+            // Enforce the ship's maximum speed
+            ship.speed = Math.max(0, Math.min(ship.speed, ship.maxSpeed));
         }
 
         const radians = (ship.heading - 90) * (Math.PI / 180);
@@ -546,13 +636,50 @@ function applyDamage(attacker, target, weapon) {
     }
 
     if (damage > 0) {
-        target.hp -= damage;
-        showToast(`${target.name} hull hit for ${damage} damage!`, 'error');
+        // Armor reduces incoming hull damage
+        const armorLayers = target.components.find(c => c.category === 'armor')?.count || 0;
+        const damageAfterArmor = Math.max(0, damage - armorLayers);
+
+        if (damageAfterArmor > 0) {
+            // Damage is first applied to hull integrity
+            if (target.hullIntegrity > 0) {
+                const integrityDamage = Math.min(target.hullIntegrity, damageAfterArmor);
+                target.hullIntegrity -= integrityDamage;
+                showToast(`${target.name} hull integrity damaged for ${integrityDamage.toFixed(0)}!`, 'error');
+            }
+
+            // Any remaining damage causes system hits
+            const systemDamage = damageAfterArmor - (target.hullIntegrity > 0 ? 0 : target.hullIntegrity);
+            if (systemDamage > 0) {
+                // For every 5 points of system damage, a component is hit
+                const hits = Math.floor(systemDamage / 5) + 1;
+                for (let i = 0; i < hits; i++) {
+                    applySystemHit(target);
+                }
+            }
+        } else {
+            showToast(`${target.name}'s armor absorbed the hit!`, 'info');
+        }
     }
 
-    if (target.hp <= 0) {
+    if ((target.criticalHits || 0) >= target.maxHp) {
         target.destroyed = true;
         showToast(`${target.name} has been destroyed!`, 'error');
+    }
+}
+
+function applySystemHit(target) {
+    const activeComponents = target.components.filter(c => c.status !== 'destroyed');
+    if (activeComponents.length === 0) return;
+
+    const hitComponent = activeComponents[Math.floor(Math.random() * activeComponents.length)];
+    hitComponent.status = 'destroyed'; // For now, all hits are destructive
+    showToast(`${target.name} takes a component hit! ${hitComponent.name} destroyed!`, 'error');
+
+    // Check if it was a critical component
+    if (['drives', 'engines', 'warp'].includes(hitComponent.category)) {
+        target.criticalHits = (target.criticalHits || 0) + 1;
+        showToast(`${target.name} suffers a Critical Hit!`, 'error');
     }
 }
 
