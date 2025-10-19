@@ -10,28 +10,19 @@ const SAVED_ADVENTURES_KEY = 'cyoaAdventures';
 let activeAdventure = null; // Holds the adventure object being edited
 let activeNodeId = null; // Holds the ID of the node currently in the editor
 
-const defaultAdventure = {
-    id: 'default-adv',
-    name: 'Default Adventure',
-    startNodeId: 'start',
-    nodes: {
-        'start': {
-            id: 'start',
-            title: 'A Fork in the Road',
-            text: 'You awaken in a forest clearing with a pounding headache. Before you, a path splits in two. To the left, a dark and spooky trail disappears into the woods. To the right, the path leads toward a sun-drenched meadow.',
-            choices: [{ text: 'Take the spooky trail.', targetNodeId: 'spooky_path' }, { text: 'Head towards the meadow.', targetNodeId: 'meadow_path' }]
-        },
-        'spooky_path': { id: 'spooky_path', title: 'The Spooky Trail', text: 'You venture down the dark path. The air grows cold, and you hear a twig snap behind you. The adventure continues...', choices: [] },
-        'meadow_path': { id: 'meadow_path', title: 'The Sunny Meadow', text: 'You walk into a beautiful, sunny meadow filled with flowers. You feel a sense of peace. The adventure continues...', choices: [] }
+export async function initialize() {
+    // One-time cleanup to ensure everyone gets the new default adventure.
+    // This can be removed in a future version.
+    if (!localStorage.getItem('adventure_cleanup_done')) {
+        localStorage.removeItem(SAVED_ADVENTURES_KEY);
+        localStorage.setItem('adventure_cleanup_done', 'true');
     }
-};
 
-export function initialize() {
     document.body.classList.add('adventure-active');
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Adventure';
     dom.newPuzzleButton.style.display = '';
-    loadPuzzle();
+    await loadPuzzle();
 }
 
 export function cleanup() {
@@ -56,7 +47,7 @@ export function getInitialState() {
     };
 }
 
-export function loadPuzzle() {
+export async function loadPuzzle() {
     appState.soloGameState = getInitialState();
     const savedAdventures = appState.soloGameState.adventures;
     if (savedAdventures.length > 0) {
@@ -64,8 +55,20 @@ export function loadPuzzle() {
         appState.soloGameState.currentAdventure = randomAdventure;
         showToast(`Playing: ${randomAdventure.name}`, 'info');
     } else {
-        appState.soloGameState.currentAdventure = defaultAdventure;
-        showToast(`Playing: Default Adventure`, 'info');
+        try {
+            const response = await fetch('./assets/default_adventure.json');
+            if (!response.ok) {
+                throw new Error('Failed to load default adventure.');
+            }
+            const defaultAdv = await response.json();
+            appState.soloGameState.currentAdventure = defaultAdv;
+            showToast(`Playing: ${defaultAdv.name}`, 'info');
+        } catch (error) {
+            console.error(error);
+            showToast(error.message, 'error');
+            // Fallback to a minimal adventure if fetch fails
+            appState.soloGameState.currentAdventure = { id: 'fallback', name: 'Fallback', startNodeId: 'start', nodes: { 'start': { id: 'start', title: 'Error', text: 'Could not load adventure.', choices: [] } } };
+        }
     }
     appState.soloGameState.currentNodeId = appState.soloGameState.currentAdventure.startNodeId;
     createGrid();
@@ -188,11 +191,59 @@ function renderCurrentNode() {
     } else {
         choicesArea.innerHTML = '<p><em>The story concludes here.</em></p>';
     }
+
+    // Adjust font size AFTER all other elements are rendered and have taken up their space.
+    // We use requestAnimationFrame to ensure the browser has completed its layout reflow
+    // before we try to measure element heights. This prevents race conditions.
+    requestAnimationFrame(adjustStoryTextFontSize);
 }
 
 function handleChoiceClick(choice) {
     appState.soloGameState.currentNodeId = choice.targetNodeId;
     renderCurrentNode();
+}
+
+/**
+ * Dynamically adjusts the font size of the story text to best fit the container.
+ */
+function adjustStoryTextFontSize() {
+    const gameBoardArea = dom.gameBoardArea; // Use cached element
+    const playerView = document.getElementById('adventure-player-view');
+    const statsArea = document.getElementById('adventure-player-stats');
+    const storyArea = document.getElementById('adventure-story-area');
+    const choicesArea = document.getElementById('adventure-choices-area');
+    const titleElement = document.getElementById('adventure-node-title');
+    const textElement = document.getElementById('adventure-node-text');
+
+    if (!storyArea || !textElement || !titleElement) {
+        return;
+    }
+
+    // We must subtract the height of the title element from the available space inside the storyArea.
+    const titleHeight = titleElement.offsetHeight;
+    const containerPadding = 40; // 20px top + 20px bottom
+    const availableHeight = storyArea.clientHeight - titleHeight - containerPadding;
+
+    let minFontSize = 12; // Minimum font size in pixels
+    let maxFontSize = 100; // Maximum font size in pixels
+    let optimalSize = minFontSize;
+
+    // Use a binary search to find the best font size efficiently
+    while (minFontSize <= maxFontSize) {
+        let midFontSize = Math.floor((minFontSize + maxFontSize) / 2);
+        textElement.style.fontSize = `${midFontSize}px`;
+
+        // Check if the text's scroll height exceeds the container's actual available height
+        if (textElement.scrollHeight > availableHeight) {
+            maxFontSize = midFontSize - 1; // Too big, try smaller
+        } else {
+            optimalSize = midFontSize; // It fits, try larger
+            minFontSize = midFontSize + 1;
+        }
+    }
+
+    // Apply the largest size that fit
+    textElement.style.fontSize = `${optimalSize}px`;
 }
 
 function loadAdventuresFromStorage() {
@@ -256,7 +307,7 @@ function createNewAdventure() {
                 id: 'start',
                 title: 'The Beginning',
                 color: '#00A0C0', // Default color
-                text: 'You stand at a crossroads. The path to the left leads into a dark forest, while the path to the right heads towards a distant mountain.',
+                text: 'The adventure begins here. Edit this text to start your story.',
                 choices: []
             }
         },
@@ -343,7 +394,7 @@ function renderNodeEditor() {
             <input type="text" class="designer-input" data-node-key="title" value="${node.title}" placeholder="Node Title">
             <input type="color" data-node-key="color" value="${node.color || '#00A0C0'}" title="Set Node Color">
         </div>
-        <textarea class="adventure-node-text" data-node-key="text" placeholder="Enter story text for this node...">${node.text}</textarea>
+        <textarea class="adventure-creator-node-text" data-node-key="text" placeholder="Enter story text for this node...">${node.text}</textarea>
         <h5>Choices:</h5>
         <div id="choices-container">
             ${node.choices.map((choice, index) => `

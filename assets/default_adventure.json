@@ -1,0 +1,56 @@
+{
+  "id": "dragon_lair_1",
+  "name": "The Dragon's Lair",
+  "startNodeId": "start",
+  "nodes": {
+    "start": {
+      "id": "start",
+      "title": "The Cave Entrance",
+      "color": "#5a8a4a",
+      "text": "You stand at the mouth of a dark cave, rumored to hold an ancient dragon and its treasure. A chilling wind blows from within. To the side, a treacherous-looking path seems to lead up the mountain.",
+      "choices": [
+        { "text": "Bravely enter the cave.", "targetNodeId": "cave_darkness" },
+        { "text": "Try the mountain path.", "targetNodeId": "mountain_path" }
+      ]
+    },
+    "cave_darkness": {
+      "id": "cave_darkness",
+      "title": "Into the Dark",
+      "color": "#333333",
+      "text": "The cave is pitch black. You can hear the faint sound of dripping water and something... large... breathing in the distance. You have a torch and flint in your pack.",
+      "choices": [
+        { "text": "Light the torch.", "targetNodeId": "torch_lit" },
+        { "text": "Proceed in the darkness.", "targetNodeId": "dark_pit" }
+      ]
+    },
+    "mountain_path": {
+      "id": "mountain_path",
+      "title": "A Treacherous Climb",
+      "color": "#8B4513",
+      "text": "You begin to climb the steep mountain path. The rocks are loose under your feet. You slip!",
+      "choices": [
+        { "text": "Grab for a nearby thorny vine.", "targetNodeId": "vine_grab" },
+        { "text": "Try to roll into the fall.", "targetNodeId": "tumble_fail" }
+      ]
+    },
+    "torch_lit": {
+      "id": "torch_lit",
+      "title": "The Dragon's Hoard",
+      "color": "#EFB82A",
+      "text": "The torchlight illuminates a vast cavern filled with glittering piles of gold and jewels. In the center of the hoard, a massive red dragon sleeps.",
+      "choices": [
+        { "text": "Attempt to sneak past the dragon.", "targetNodeId": "sneak_success" },
+        { "text": "Grab a handful of gold and run.", "targetNodeId": "dragon_wakes" }
+      ]
+    },
+    "dark_pit": { "id": "dark_pit", "title": "The Pit", "color": "#000000", "text": "Creeping forward in the dark, your foot finds only empty air. You tumble into a deep pit. Your adventure ends here.", "choices": [] },
+    "vine_grab": { "id": "vine_grab", "title": "A Thorny Success", "color": "#208060", "text": "Your hands are scratched, but the vine holds! You pull yourself onto a hidden ledge that reveals a secret, well-lit entrance into the side of the cavern. You can see the dragon's hoard from here.", "choices": [{ "text": "Enter the secret passage.", "targetNodeId": "torch_lit" }] },
+    "tumble_fail": { "id": "tumble_fail", "title": "A Nasty Fall", "color": "#6c757d", "text": "You tumble down the rocky slope, injuring your leg. You are in no condition to continue. Your adventure ends here.", "choices": [] },
+    "sneak_success": { "id": "sneak_success", "title": "Freedom!", "color": "#28a745", "text": "You hold your breath and creep silently around the edge of the cavern. You find a passage on the other side and emerge into the sunlight, victorious!", "choices": [] },
+    "dragon_wakes": { "id": "dragon_wakes", "title": "A Grave Mistake", "color": "#CC3333", "text": "The clinking of coins echoes in the cavern. A massive golden eye snaps open. The dragon is awake, and it is not happy. Your adventure ends here, in a cloud of fire.", "choices": [] }
+  },
+  "_ui": {
+    "pan": { "x": 0, "y": 0 },
+    "zoom": 1
+  }
+}
