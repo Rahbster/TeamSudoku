@@ -175,7 +175,6 @@ export function getInitialState() {
 export function loadPuzzle() {
     appState.winner = null;
     canFlip = true;
-    startTimer();
     appState.soloGameState = getInitialState();
     createGrid();
 }

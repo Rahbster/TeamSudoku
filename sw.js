@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sudoku-pwa-cache-v1';
+const CACHE_NAME = 'sudoku-pwa-cache-v2'; // Increment cache version to force update
 const localUrlsToCache = [
     './',
     './index.html',

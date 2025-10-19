@@ -307,6 +307,39 @@ function createNewToast(container, message, type) {
 }
 
 /**
+ * Displays a themed confirmation modal.
+ * @param {string} message - The confirmation message to display.
+ * @param {function} onConfirm - The callback function to execute if the user clicks "Yes".
+ */
+export function showConfirmationModal(message, onConfirm) {
+    // Remove any existing confirmation modal first
+    document.querySelector('.confirmation-modal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.className = 'confirmation-modal';
+
+    modal.innerHTML = `
+        <p>${message}</p>
+        <div class="button-row" style="justify-content: center;">
+            <button id="confirm-yes-btn" class="theme-button">Yes</button>
+            <button id="confirm-no-btn" class="theme-button">No</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('confirm-yes-btn').onclick = () => {
+        modal.remove();
+        onConfirm(); // Execute the callback function
+    };
+
+    document.getElementById('confirm-no-btn').onclick = () => {
+        modal.remove();
+        // Do nothing on "No"
+    };
+}
+
+/**
  * Displays a single QR code chunk from an array of chunks and updates the navigation button states.
  * @param {string[]} chunks - The array of QR code data chunks.
  * @param {number} index - The index of the chunk to display.
@@ -874,10 +907,7 @@ export function initializeEventListeners() {
 
     dom.showChannelsBtn.addEventListener('click', toggleChannelList);
     dom.channelList.addEventListener('click', disconnectChannel);
-    dom.hardResetBtn.addEventListener('click', () => dom.resetModal.classList.remove('hidden'));
-    dom.fullResetBtn.addEventListener('click', performHardReset);
-    dom.preserveConfigResetBtn.addEventListener('click', performSoftReset);
-    dom.cancelResetBtn.addEventListener('click', () => dom.resetModal.classList.add('hidden'));
+    dom.hardResetBtn.addEventListener('click', showResetConfirmation);
 
 
     // Wire the main "New Game" button to the game manager's loadPuzzle function.
@@ -1089,33 +1119,68 @@ function showInstructions() {
  * and clearing caches, but preserving localStorage before reloading the page.
  */
 async function performSoftReset() {
-    if (!confirm('Are you sure you want to reset? This will clear caches and service workers but preserve your settings.')) {
-        return;
-    }
-
-    try {
-        // 1. Unregister all service workers
-        if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (const registration of registrations) {
-                await registration.unregister();
-                console.log('Service Worker unregistered:', registration);
+    const doReset = async () => {
+        try {
+            // 1. Unregister all service workers
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                    console.log('Service Worker unregistered:', registration);
+                }
             }
-        }
 
-        // 2. Clear all caches
-        if ('caches' in window) {
-            const keys = await caches.keys();
-            await Promise.all(keys.map(key => caches.delete(key)));
-            console.log('All caches cleared.');
-        }
+            // 2. Clear all caches
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(key => caches.delete(key)));
+                console.log('All caches cleared.');
+            }
 
-        alert('Application has been reset. The page will now reload.');
-        window.location.reload();
-    } catch (error) {
-        console.error('Error during soft reset:', error);
-        alert('An error occurred during the reset. Please try clearing your browser cache manually.');
-    }
+            window.location.reload();
+        } catch (error) {
+            console.error('Error during soft reset:', error);
+            alert('An error occurred during the reset. Please try clearing your browser cache manually.');
+        }
+    };
+
+    showConfirmationModal('This will clear caches and service workers but preserve your settings. Continue?', doReset);
+}
+
+/**
+ * Shows a single, unified modal for both reset options.
+ */
+function showResetConfirmation() {
+    // Remove any existing confirmation modal first
+    document.querySelector('.confirmation-modal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.className = 'confirmation-modal';
+
+    modal.innerHTML = `
+        <h3 style="margin-top: 0;">Reset Application</h3>
+        <p style="font-size: 0.9rem; text-align: left;">
+            <b>Preserve Config:</b> Clears service workers and cache but keeps your saved settings (theme, name, etc.).<br><br>
+            <b>Full Reset:</b> Clears ALL data including saved settings, service workers, and cache.
+        </p>
+        <div class="button-row" style="justify-content: center; gap: 15px;">
+            <button id="confirm-preserve-btn" class="theme-button">Preserve Config</button>
+            <button id="confirm-full-btn" class="theme-button" style="background-color: var(--error-red);">Full Reset</button>
+        </div>
+        <button id="confirm-cancel-btn" class="theme-button" style="margin-top: 20px; background-color: #6c757d;">Cancel</button>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('confirm-preserve-btn').onclick = () => {
+        modal.remove();
+        performSoftReset();
+    };
+    document.getElementById('confirm-full-btn').onclick = () => {
+        modal.remove();
+        performHardReset();
+    };
+    document.getElementById('confirm-cancel-btn').onclick = () => modal.remove();
 }
 
 /**
@@ -1141,38 +1206,37 @@ function toggleChannelList() {
  * clearing caches, and clearing local storage before reloading the page.
  */
 async function performHardReset() {
-    if (!confirm('Are you sure you want to perform a hard reset? This will clear all saved data and reload the application.')) {
-        return;
-    }
-
-    try {
-        // 1. Unregister all service workers
-        if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (const registration of registrations) {
-                await registration.unregister();
-                console.log('Service Worker unregistered:', registration);
+    const doReset = async () => {
+        try {
+            // 1. Unregister all service workers
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                    console.log('Service Worker unregistered:', registration);
+                }
             }
+
+            // 2. Clear all caches
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(key => caches.delete(key)));
+                console.log('All caches cleared.');
+            }
+
+            // 3. Clear localStorage for this site
+            localStorage.clear();
+            console.log('localStorage cleared.');
+
+            // 4. Reload the page
+            window.location.reload();
+        } catch (error) {
+            console.error('Error during hard reset:', error);
+            alert('An error occurred during the reset. Please try clearing your browser cache manually.');
         }
+    };
 
-        // 2. Clear all caches
-        if ('caches' in window) {
-            const keys = await caches.keys();
-            await Promise.all(keys.map(key => caches.delete(key)));
-            console.log('All caches cleared.');
-        }
-
-        // 3. Clear localStorage for this site
-        localStorage.clear();
-        console.log('localStorage cleared.');
-
-        // 4. Inform the user and reload
-        alert('Application has been reset. The page will now reload.');
-        window.location.reload();
-    } catch (error) {
-        console.error('Error during hard reset:', error);
-        alert('An error occurred during the reset. Please try clearing your browser cache manually.');
-    }
+    showConfirmationModal('Are you sure you want to perform a hard reset? This will clear ALL saved data.', doReset);
 }
 
 /**

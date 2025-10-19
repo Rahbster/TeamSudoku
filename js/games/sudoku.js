@@ -306,20 +306,13 @@ export function highlightConflictingCells(row, col, value) {
     }
 }
 
-export async function loadPuzzle() {
+export async function loadPuzzle(difficulty, puzzleData, resetTeams = false) {
     createGrid();
-    let puzzle = puzzleData;
-    if (!puzzleData) {
-        puzzle = generatePuzzle(difficulty);
-        appState.initialSudokuState = JSON.parse(JSON.stringify(puzzle));
-        if (resetTeams) appState.teams = {};
-        for (const teamName in appState.teams) {
-            if (appState.teams[teamName].gameType === 'sudoku') {
-                appState.teams[teamName].gameState = JSON.parse(JSON.stringify(puzzle));
-            }
-        }
-        appState.winner = null;
-    }
+    const puzzle = puzzleData || generatePuzzle(dom.difficultySelector.value);
+    
+    // This function is now primarily for generating a new puzzle for solo or host.
+    // Team state updates should be handled separately.
+    appState.winner = null;
     appState.initialSudokuState = JSON.parse(JSON.stringify(puzzle));
 
     for (let row = 0; row < 9; row++) {
@@ -330,7 +323,6 @@ export async function loadPuzzle() {
             if (value !== 0) cell.classList.add('preloaded-cell');
         }
     }
-    startTimer();
     return puzzle;
 }
 

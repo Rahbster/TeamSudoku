@@ -131,7 +131,6 @@ export function loadPuzzle() {
         appState.soloGameState = getInitialState();
     }
     createGrid(); // This will render based on the new state
-    startTimer(); // Start timer for the session
     renderBettingControls(); // Render initial betting controls on load
 }
 

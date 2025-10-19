@@ -138,5 +138,4 @@ export function getInitialState() {
 export function loadPuzzle() {
     appState.soloGameState = getInitialState();
     createGrid();
-    startTimer();
 }

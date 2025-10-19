@@ -6,6 +6,7 @@
 import { dom, appState,
          dataChannels
 } from './scripts.js';
+import { startTimer } from './timer.js';
 
 import {
     broadcastCellSelection
@@ -47,6 +48,7 @@ export async function loadGame(gameType) {
         activeGameModule = module;
         // debugLog(`[GM] loadGame: Module for '${gameType}' loaded. Calling initialize().`);
         activeGameModule.initialize();
+        startTimer(); // Start the timer after the game UI is initialized.
     } catch (error) {
         console.error(`[GM] Failed to load game module for: ${gameType}`, error);
     }

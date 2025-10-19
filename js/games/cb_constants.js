@@ -67,6 +67,76 @@ export const DEFAULT_SHIP_DESIGNS = [
             { category: 'weapons', id: 'w_hp', count: 4, arcs: [1, 2, 3, 4, 5, 6, 7, 8] } // Heavy Phasers
         ],
         shields: [25, 25, 25, 25, 25, 25, 25, 25]
+    },
+    // --- Community Archetype Designs ---
+    {
+        id: 'default-wasp',
+        name: 'Wasp Interceptor',
+        description: 'A "Phaser Boat". A small, fast frigate packed with light phasers, designed to swarm and overwhelm larger targets.',
+        hull: 'sz2', // Frigate
+        components: [
+            { category: 'drives', id: 'dr1', count: 6 },
+            { category: 'engines', id: 'en1', count: 2 },
+            { category: 'weapons', id: 'w_lp', count: 6, arcs: [1, 8] }
+        ],
+        shields: [10, 10, 5, 5, 5, 5, 10, 10]
+    },
+    {
+        id: 'default-longbow',
+        name: 'Longbow Destroyer',
+        description: 'A "Missile Boat". This ship stays at range, using its large seeker racks to launch volleys of guided missiles.',
+        hull: 'sz3', // Destroyer
+        components: [
+            { category: 'drives', id: 'dr1', count: 2 },
+            { category: 'engines', id: 'en1', count: 4 },
+            { category: 'warp', id: 'wd1', count: 1 },
+            { category: 'racks', id: 'rk1', count: 10 },
+            { category: 'seekers', id: 'sk1', count: 20 },
+            { category: 'belts', id: 'be1', count: 4 }
+        ],
+        shields: [5, 5, 5, 5, 5, 5, 5, 5]
+    },
+    // --- Halo Universe Inspired Designs ---
+    {
+        id: 'default-unsc-paris',
+        name: 'UNSC Paris Frigate',
+        description: 'A tough, versatile frigate favoring armor and a mix of phasers and seekers. A reliable UNSC workhorse.',
+        hull: 'sz2', // Frigate
+        components: [
+            { category: 'drives', id: 'dr1', count: 4 },
+            { category: 'engines', id: 'en1', count: 2 },
+            { category: 'armor', id: 'ar1', count: 4 },
+            { category: 'racks', id: 'rk1', count: 4 },
+            { category: 'seekers', id: 'sk1', count: 8 },
+            { category: 'weapons', id: 'w_lp', count: 4, arcs: [1, 2, 7, 8] }
+        ],
+        shields: [15, 12, 10, 8, 8, 10, 12, 15]
+    },
+    {
+        id: 'default-banished-marauder',
+        name: 'Banished Marauder',
+        description: 'An aggressive corvette built for brute-force raids. It closes the distance quickly to deliver a devastating plasma torpedo.',
+        hull: 'sz1', // Corvette
+        components: [
+            { category: 'drives', id: 'dr1', count: 5 },
+            { category: 'engines', id: 'en1', count: 3 },
+            { category: 'armor', id: 'ar1', count: 2 },
+            { category: 'weapons', id: 'w_plt', count: 1, arcs: [1] } // Single Plasma Torpedo
+        ],
+        shields: [10, 8, 5, 5, 5, 5, 8, 10]
+    },
+    {
+        id: 'default-forerunner-bastion',
+        name: 'Forerunner Bastion',
+        description: 'A powerful Dreadnought reflecting superior Forerunner technology, featuring powerful weapons and strong shields.',
+        hull: 'sz5', // Dreadnought
+        components: [
+            { category: 'drives', id: 'dr1', count: 8 },
+            { category: 'engines', id: 'en1', count: 8 },
+            { category: 'warp', id: 'wd1', count: 4 },
+            { category: 'weapons', id: 'w_sp', count: 6, arcs: [1, 2, 3, 4, 5, 6, 7, 8] } // Siege Phasers
+        ],
+        shields: [30, 30, 30, 30, 30, 30, 30, 30]
     }
 ];
 

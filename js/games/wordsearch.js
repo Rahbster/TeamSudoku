@@ -310,7 +310,6 @@ export function getInitialState() {
 export function loadPuzzle() {
     debugLog('WordSearch loadPuzzle called.');
     appState.winner = null;
-    startTimer();
     const newState = getInitialState();
     if (appState.playerTeam) {
         const team = appState.teams[appState.playerTeam];
