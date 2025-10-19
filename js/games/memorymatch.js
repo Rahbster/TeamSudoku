@@ -11,11 +11,10 @@ let flippedCards = [];
 let canFlip = true;
 
 export function initialize() {
-    document.querySelectorAll('.host-only').forEach(el => {
-        if (el.id === 'new-puzzle-btn') {
-            el.style.display = ''; // Show the button
-        }
-    });
+    // Set the button text and ensure it's visible for the host
+    const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
+    if (newGameBtnText) newGameBtnText.textContent = 'Game';
+    dom.newPuzzleButton.style.display = '';
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Game';
 

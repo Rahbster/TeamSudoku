@@ -13,6 +13,11 @@ const NUM_SYSTEMS = 50;
 const MIN_STAR_DISTANCE = 80;
 
 export function initialize() {
+    // Set the button text and ensure it's visible for the host
+    const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
+    if (newGameBtnText) newGameBtnText.textContent = 'Game';
+    dom.newPuzzleButton.style.display = '';
+
     loadPuzzle();
 }
 

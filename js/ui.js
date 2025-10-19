@@ -33,9 +33,18 @@ export function showScreen(screenName) {
         if (menu.children.length <= 1) { // Only move them once
             menu.appendChild(dom.gameSelector.parentElement.parentElement);
             menu.appendChild(dom.difficultySelector.parentElement.parentElement);
+            menu.appendChild(dom.connect4ModeContainer);
+            menu.appendChild(dom.wordsearchConfigWordList);
+            menu.appendChild(dom.wordsearchConfigWordCount);
+            menu.appendChild(dom.spellingbeeConfigMode);
+            menu.appendChild(dom.spellingbeeConfigWordList);
+            menu.appendChild(dom.spellingbeeConfigVoice);
+            menu.appendChild(dom.memorymatchConfigContainer);
+            menu.appendChild(dom.blackjackConfigContainerDecks);
+            menu.appendChild(dom.blackjackConfigContainerAICount);
+            menu.appendChild(dom.cosmicbalanceConfigContainer);
             menu.appendChild(dom.themeSelectorConfig.parentElement.parentElement);
             menu.appendChild(dom.newPuzzleButton.parentElement);
-            menu.appendChild(dom.cosmicbalanceConfigContainer);
             menu.appendChild(dom.configBtn.parentElement);
             menu.appendChild(dom.teamDisplayArea);
         }
@@ -735,11 +744,14 @@ export function initializeEventListeners() {
         const isMemoryMatch = selectedGame === 'memorymatch';
         const isSpellingBee = selectedGame === 'spellingbee';
         const isCosmicBalance = selectedGame === 'cosmicbalance';
-        const isSudoku = selectedGame === 'sudoku';
         dom.connect4ModeContainer.style.display = isConnect4 ? '' : 'none';
-        dom.wordsearchConfigContainer.style.display = isWordSearch ? '' : 'none';
-        dom.spellingbeeConfigContainer.style.display = isSpellingBee ? '' : 'none';
-        dom.blackjackConfigContainer.style.display = isBlackjack ? '' : 'none';
+        dom.wordsearchConfigWordList.style.display = isWordSearch ? '' : 'none';
+        dom.wordsearchConfigWordCount.style.display = isWordSearch ? '' : 'none';
+        dom.spellingbeeConfigMode.style.display = isSpellingBee ? '' : 'none';
+        dom.spellingbeeConfigWordList.style.display = isSpellingBee ? '' : 'none';
+        dom.spellingbeeConfigVoice.style.display = isSpellingBee ? '' : 'none';
+        dom.blackjackConfigContainerDecks.style.display = isBlackjack ? '' : 'none';
+        dom.blackjackConfigContainerAICount.style.display = isBlackjack ? '' : 'none';
         dom.memorymatchConfigContainer.style.display = isMemoryMatch ? '' : 'none';
         dom.cosmicbalanceConfigContainer.style.display = isCosmicBalance ? '' : 'none';
 

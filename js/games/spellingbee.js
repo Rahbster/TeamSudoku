@@ -9,6 +9,11 @@ import { showWinnerScreen, showToast, createTimerHTML } from '../ui.js';
 const WORD_LIST = ["COOPERATIVE", "ASSISTANT", "ENGINEERING", "JAVASCRIPT", "SYNTHESIS", "BROWSER", "OFFLINE", "CHALLENGE"];
 
 export function initialize() {
+    // Set the button text and ensure it's visible for the host
+    const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
+    if (newGameBtnText) newGameBtnText.textContent = 'Challenge';
+    dom.newPuzzleButton.style.display = '';
+
     // If we are initializing for a solo game, draw the grid.
     loadPuzzle();
 }

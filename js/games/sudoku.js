@@ -12,11 +12,8 @@ import { playBeepSound } from '../misc.js';
 export function initialize() {
     console.log("Sudoku Initialized");
     document.body.classList.add('sudoku-layout-active');
-    document.querySelectorAll('.host-only').forEach(el => {
-        if (el.id === 'difficulty-select' || el.id === 'new-puzzle-btn') {
-            el.style.display = '';
-        }
-    });
+    dom.difficultySelector.parentElement.parentElement.style.display = '';
+    dom.newPuzzleButton.style.display = '';
     // Set the button text for Sudoku
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Puzzle';
@@ -33,11 +30,8 @@ export function cleanup() {
     console.log("Sudoku Cleanup");
     document.body.classList.remove('sudoku-layout-active');
     // Also hide the host-only controls that Sudoku shows
-    document.querySelectorAll('.host-only').forEach(el => {
-        if (el.id === 'difficulty-select' || el.id === 'new-puzzle-btn') {
-            el.style.display = 'none';
-        }
-    });
+    dom.difficultySelector.parentElement.parentElement.style.display = 'none';
+    dom.newPuzzleButton.style.display = 'none';
 }
 
 export function createGrid() {

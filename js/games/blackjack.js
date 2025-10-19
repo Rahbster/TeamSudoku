@@ -25,6 +25,10 @@ function getShuffledAiPersonalities() {
 
 export function initialize() {
     document.body.classList.add('blackjack-active');
+    // Set the button text and ensure it's visible for the host
+    const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
+    if (newGameBtnText) newGameBtnText.textContent = 'Game';
+    dom.newPuzzleButton.style.display = '';
     loadPuzzle();
 }
 

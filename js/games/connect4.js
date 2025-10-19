@@ -33,10 +33,11 @@ export function initialize() {
     debugLog("Connect 4 Initialized");
     document.body.classList.add('connect4-active');
 
-    // Set the button text for Connect 4
+    // Set the button text and ensure it's visible for the host
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Game';
-
+    dom.newPuzzleButton.style.display = '';
+    dom.difficultySelector.parentElement.parentElement.style.display = '';
     // If we are initializing for a solo game, draw the grid.
     loadPuzzle();
 

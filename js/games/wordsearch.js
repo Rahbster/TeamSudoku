@@ -14,9 +14,10 @@ let selectionPath = [];
 export function initialize() {
     debugLog("Word Search Initialized");
 
+    // Set the button text and ensure it's visible for the host
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
-    if (newGameBtnText) newGameBtnText.textContent = 'Game';
-
+    if (newGameBtnText) newGameBtnText.textContent = 'Puzzle';
+    dom.newPuzzleButton.style.display = '';
     // If we are initializing for a solo game, draw the grid.
     loadPuzzle();
 }

@@ -344,6 +344,14 @@ button:hover, select:hover, .number-btn:hover {
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* Add a global style for disabled buttons to ensure they look inactive */
+button:disabled, select:disabled, .number-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 .button-row {
     display: flex;
     align-items: center;
