@@ -13,7 +13,8 @@ import {
     toggleSignalingUI,
     initializeEventListeners,
     handleLongPress,
-    showScreen,    
+    showScreen,
+    populateVoiceList,
     initializeSoloGame
 } from './ui.js';
 
@@ -57,65 +58,6 @@ export const appState = {
     winner: null, // Which team won?
     soloGameState: null // Holds the game state when the host is playing alone.
 };
-
-// Copies the offer or answer to the clipboard
-export async function copyToClipboard(elementId) {
-    const textToCopy = document.getElementById(elementId).value;
-    try {
-        await navigator.clipboard.writeText(textToCopy);
-        console.log('Content copied to clipboard!');
-        alert('Text copied to clipboard!'); // Provide user feedback
-    } catch (err) {
-        console.error('Failed to copy text: ', err);
-        // Fallback for older browsers
-        const textarea = document.createElement('textarea');
-        textarea.value = textToCopy;
-        textarea.style.position = 'fixed'; // Prevents scrolling
-        document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        try {
-            document.execCommand('copy');
-            alert('Text copied to clipboard!');
-        } catch (execErr) {
-            console.error('Fallback copy failed: ', execErr);
-            alert('Failed to copy. Please copy manually.');
-        } finally {
-            document.body.removeChild(textarea);
-        }
-    }
-}
-
-/**
- * Populates the voice selection dropdown for the Spelling Bee game.
- * This function is designed to handle the asynchronous nature of the Web Speech API.
- */
-function populateVoiceList() {
-    const voices = window.speechSynthesis.getVoices();
-    dom.voiceSelect.innerHTML = ''; // Clear existing options
-
-    if (voices.length > 0) {
-        const badge = document.getElementById('voice-count-badge');
-        if (badge) {
-            badge.textContent = voices.length;
-        }
-
-        voices.forEach(voice => {
-            const option = document.createElement('option');
-            option.textContent = `${voice.name} (${voice.lang})`;
-            option.setAttribute('data-lang', voice.lang);
-            option.value = voice.name; // Use the unique name as the value
-            option.setAttribute('data-name', voice.name);
-            dom.voiceSelect.appendChild(option);
-        });
-
-        // Load and apply the saved voice preference
-        const savedVoice = localStorage.getItem('sudokuVoice');
-        if (savedVoice) {
-            dom.voiceSelect.value = savedVoice;
-        }
-    }
-}
 
 //==============================
 // Initial Setup

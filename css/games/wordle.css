@@ -58,6 +58,12 @@
     animation: shake 0.5s;
 }
 
+.wordle-row.invalid .wordle-tile {
+    border-color: var(--error-red);
+    background-color: var(--error-red-light);
+    color: var(--text-dark);
+}
+
 .wordle-row {
     display: grid;
     grid-template-columns: repeat(5, 1fr);

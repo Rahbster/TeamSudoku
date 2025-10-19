@@ -2,9 +2,8 @@
 // Wordle Game Logic
 //==============================
 
-import { dom, appState } from '../scripts.js';
-import { showWinnerScreen, showToast, createTimerHTML } from '../ui.js';
-import { speakWord } from './spellingbee.js'; // Import the speakWord function
+import { dom, appState } from '../scripts.js'; // Import speakText from ui.js
+import { showWinnerScreen, showToast, createTimerHTML, speakText } from '../ui.js';
 import { stopTimer } from '../timer.js';
 
 // A small, curated list of possible answers.
@@ -243,8 +242,10 @@ function shakeRow(rowIndex) {
     // When shaking, also remove the invalid class from the enter key after a delay
     // so the user knows they can try again.
     setTimeout(() => document.querySelector('.key[data-key="Enter"]')?.classList.remove('invalid'), 500);
-    rowEl.classList.add('shake');
-    rowEl.addEventListener('animationend', () => rowEl.classList.remove('shake'), { once: true });
+    rowEl.classList.add('shake', 'invalid');
+    rowEl.addEventListener('animationend', () => {
+        rowEl.classList.remove('shake', 'invalid');
+    }, { once: true });
 }
 
 function checkGuess(guess) {
@@ -346,7 +347,7 @@ function updatePossibleWords() {
     possibleWords.forEach(word => {
         const li = document.createElement('li');
         li.textContent = word;
-        li.onclick = () => speakWord(word);
+        li.onclick = () => speakText(word);
         list.appendChild(li);
     });
     container.classList.remove('hidden');
@@ -401,7 +402,7 @@ function showHint() {
         possibleWords.forEach(word => {
             const li = document.createElement('li');
             li.textContent = word;
-            li.onclick = () => speakWord(word);
+            li.onclick = () => speakText(word);
             list.appendChild(li);
         });
         document.getElementById('wordle-sidebar').classList.remove('hidden');

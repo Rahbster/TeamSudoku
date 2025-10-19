@@ -2,10 +2,9 @@
 // Word Search Game Logic
 //==============================
 
-import { startTimer } from '../timer.js';
+import { startTimer } from '../timer.js'; // Import speakText from ui.js
 import { dom, appState, dataChannels } from '../scripts.js';
-import { speakWord } from './spellingbee.js'; // Import the speakWord function
-import { showWinnerScreen, createTimerHTML } from '../ui.js';
+import { showWinnerScreen, createTimerHTML, speakText } from '../ui.js';
 import { playRemoteMoveSound, debugLog } from '../misc.js';
 
 const GRID_SIZE = 15;
@@ -216,8 +215,8 @@ function updateWordListUI() {
     dom.wordList.innerHTML = '';
     gameState.words.forEach(wordObj => {
         const li = document.createElement('li');
-        li.textContent = wordObj.word;
-        li.onclick = () => speakWord(wordObj.word); // Make the word speakable
+        li.textContent = wordObj.word; // Make the word speakable
+        li.onclick = () => speakText(wordObj.word);
         if (wordObj.found) {
             li.classList.add('found');
         }

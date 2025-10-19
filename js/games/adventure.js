@@ -3,7 +3,7 @@
 //==============================
 
 import { dom, appState } from '../scripts.js';
-import { showToast, showConfirmationModal } from '../ui.js';
+import { showToast, showConfirmationModal, speakText } from '../ui.js';
 
 const SAVED_ADVENTURES_KEY = 'cyoaAdventures';
 
@@ -174,19 +174,66 @@ function renderCurrentNode() {
     // Update UI elements
     document.getElementById('player-health').textContent = gameState.player.health;
     document.getElementById('player-mana').textContent = gameState.player.mana;
-    document.getElementById('adventure-node-title').textContent = node.title;
-    document.getElementById('adventure-node-text').textContent = node.text;
+
+    // Make the title speakable
+    const titleElement = document.getElementById('adventure-node-title');
+    titleElement.innerHTML = node.title.split(/\s+/).map(word => {
+        const cleanedWord = word.replace(/[.,!?;:]/g, '');
+        return `<span class="speakable-word" data-word="${cleanedWord}">${word}</span>`;
+    }).join(' ');
+    titleElement.querySelectorAll('.speakable-word').forEach(span => {
+        span.onclick = (e) => {
+            e.stopPropagation();
+            speakText(span.dataset.word);
+        };
+    });
+
+    // Make individual words in the story text clickable for speaking
+    const storyTextElement = document.getElementById('adventure-node-text');
+    storyTextElement.innerHTML = node.text.split(/\s+/).map(word => {
+        // Remove punctuation for speaking, but keep it in the display
+        const cleanedWord = word.replace(/[.,!?;:]/g, '');
+        return `<span class="speakable-word" data-word="${cleanedWord}">${word}</span>`;
+    }).join(' ');
+    storyTextElement.querySelectorAll('.speakable-word').forEach(span => {
+        span.onclick = (e) => {
+            e.stopPropagation(); // Prevent triggering parent clicks
+            speakText(span.dataset.word);
+        };
+    });
 
     const choicesArea = document.getElementById('adventure-choices-area');
     choicesArea.innerHTML = '';
 
     if (node.choices && node.choices.length > 0) {
         node.choices.forEach(choice => {
-            const choiceButton = document.createElement('button');
-            choiceButton.className = 'theme-button adventure-choice-btn';
-            choiceButton.textContent = choice.text;
-            choiceButton.onclick = () => handleChoiceClick(choice);
-            choicesArea.appendChild(choiceButton);
+            const choiceContainer = document.createElement('div');
+            choiceContainer.className = 'adventure-choice-container';
+
+            // Make individual words in the choice text clickable for speaking
+            const choiceTextSpan = document.createElement('span');
+            choiceTextSpan.className = 'adventure-choice-text';
+            choiceTextSpan.innerHTML = choice.text.split(/\s+/).map(word => {
+                const cleanedWord = word.replace(/[.,!?;:]/g, '');
+                return `<span class="speakable-word" data-word="${cleanedWord}">${word}</span>`;
+            }).join(' ');
+            choiceTextSpan.querySelectorAll('.speakable-word').forEach(span => {
+                span.onclick = (e) => {
+                    e.stopPropagation();
+                    speakText(span.dataset.word);
+                };
+            });
+
+            const chooseButton = document.createElement('button');
+            chooseButton.className = 'theme-button adventure-choose-btn';
+            chooseButton.textContent = 'Choose';
+            chooseButton.onclick = () => handleChoiceClick(choice);
+
+            // Append the button first, then the text, to change the visual order.
+            choiceContainer.appendChild(chooseButton);
+            choiceContainer.appendChild(choiceTextSpan);
+
+            choicesArea.appendChild(choiceContainer);
         });
     } else {
         choicesArea.innerHTML = '<p><em>The story concludes here.</em></p>';

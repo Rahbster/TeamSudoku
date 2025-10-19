@@ -2,13 +2,12 @@
 //UI Logic
 //==============================
 // This module handles all user interface interactions, from button clicks to dynamic UI updates.
-import { appState, dom, dataChannels, copyToClipboard } from './scripts.js';
+import { appState, dom, dataChannels } from './scripts.js';
 import { loadGame, updateGridForTeam, loadPuzzle, createGrid } from './game_manager.js';
-import { stopTimer } from './timer.js';
-import { clearTextbox, createQrCodeChunks, playBeepSound, playRemoteMoveSound, debugLog } from './misc.js';
+import { stopTimer, startTimer } from './timer.js';
+import { clearTextbox, createQrCodeChunks, playBeepSound, debugLog } from './misc.js';
 import { SUDOKU_SERVICE_PEER_PREFIX, initializePeerJs, connectToPeerJS, sendOffer, sendAnswer } from './peer.js';
 import { createOffer, createAnswer, processAndBroadcastMove } from './webrtc.js';
-import { checkGridState, clearAllHighlights, highlightConflictingCells, highlightMatchingCells, isMoveValid, validatePuzzle } from './games/sudoku.js';
 
 
 /**
@@ -247,6 +246,78 @@ export function createTimerHTML() {
             </div>`;
 }
 
+/**
+ * Speaks the given text using the Web Speech Synthesis API.
+ * @param {string} text The text to speak.
+ */
+export function speakText(text) {
+    if (!('speechSynthesis' in window) || !text) {
+        // showToast("Sorry, your browser does not support text-to-speech, or there is no text to speak.", 'error');
+        return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Find the selected voice from the dropdown
+    const voices = window.speechSynthesis.getVoices();
+    const selectedVoiceName = dom.voiceSelect.value;
+    const selectedVoice = voices.find(v => v.name === selectedVoiceName);
+
+    if (selectedVoice) {
+        utterance.voice = selectedVoice;
+    }
+
+    utterance.pitch = 1;
+    utterance.rate = 0.8; // Speak a bit slower for clarity
+    window.speechSynthesis.speak(utterance);
+}
+
+/**
+ * Populates the voice selection dropdown for the Spelling Bee game.
+ * This function is designed to handle the asynchronous nature of the Web Speech API.
+ */
+export function populateVoiceList() {
+    const voices = window.speechSynthesis.getVoices();
+    if (!dom.voiceSelect) return;
+    dom.voiceSelect.innerHTML = ''; // Clear existing options
+
+    if (voices.length > 0) {
+        const badge = document.getElementById('voice-count-badge');
+        if (badge) {
+            badge.textContent = voices.length;
+        }
+
+        voices.forEach(voice => {
+            const option = document.createElement('option');
+            option.textContent = `${voice.name} (${voice.lang})`;
+            option.setAttribute('data-lang', voice.lang);
+            option.value = voice.name; // Use the unique name as the value
+            option.setAttribute('data-name', voice.name);
+            dom.voiceSelect.appendChild(option);
+        });
+
+        // Load and apply the saved voice preference
+        const savedVoice = localStorage.getItem('sudokuVoice');
+        if (savedVoice) {
+            dom.voiceSelect.value = savedVoice;
+        }
+    }
+}
+
+/**
+ * Copies the text content of a given element to the clipboard.
+ * @param {string} elementId The ID of the element to copy from.
+ */
+export async function copyToClipboard(elementId) {
+    const textToCopy = document.getElementById(elementId).value;
+    try {
+        await navigator.clipboard.writeText(textToCopy);
+        showToast('Content copied to clipboard!');
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+        showToast('Failed to copy text.', 'error');
+    }
+}
 /**
  * Displays a short-lived toast notification at the bottom of the screen.
  * @param {string} message - The message to display in the toast.
@@ -797,6 +868,7 @@ export function initializeEventListeners() {
         dom.blackjackConfigContainerDecks.style.display = isBlackjack ? '' : 'none';
         dom.blackjackConfigContainerAICount.style.display = isBlackjack ? '' : 'none';
         dom.memorymatchConfigContainer.style.display = isMemoryMatch ? '' : 'none';
+        //dom.crosswordCreatorBtnContainer.style.display = isCrossword ? '' : 'none';
         dom.adventureConfigContainer.style.display = isAdventure ? '' : 'none';
         if (dom.crosswordCreatorBtnContainer) dom.crosswordCreatorBtnContainer.style.display = isCrossword ? '' : 'none';
 
@@ -822,91 +894,81 @@ export function initializeEventListeners() {
     // Event listener for the theme selector in the config/hamburger menu
     dom.themeSelectorConfig.addEventListener('change', handleThemeChange);
 
-    // Event listeners for sub-game mode selectors
-    if (dom.connect4ModeSelect) {
-        dom.connect4ModeSelect.addEventListener('change', (event) => {
-            localStorage.setItem('sudokuConnect4Mode', event.target.value);
-        });
-    }
-    if (dom.wordGamesModeSelect) {
-        dom.wordGamesModeSelect.addEventListener('change', (event) => {
-            const selectedWordGame = event.target.value;
-            localStorage.setItem('sudokuWordGameMode', selectedWordGame);
-            showToast(`Word Game changed to: ${event.target.options[event.target.selectedIndex].text}`);
-
-            // Show/hide Word Search specific controls
-            const isWordSearch = selectedWordGame === 'wordsearch';
-            dom.wordsearchConfigWordList.style.display = isWordSearch ? '' : 'none';
-            dom.wordsearchConfigWordCount.style.display = isWordSearch ? '' : 'none';
-            // Show/hide Crossword specific controls
-            const isCrossword = selectedWordGame === 'crossword'; // This was line 1005
-            if (dom.crosswordCreatorBtnContainer) dom.crosswordCreatorBtnContainer.style.display = isCrossword ? '' : 'none'; // This was line 1005
-
-            // Re-initialize to load the new sub-game
-            initializeSoloGame();
-        });
-    }
-    if (dom.spellingbeeModeSelect) {
-        dom.spellingbeeModeSelect.addEventListener('change', (event) => {
-            localStorage.setItem('sudokuSpellingBeeMode', event.target.value);
-        });
-    }
-    if (dom.memorymatchModeSelect) {
-        dom.memorymatchModeSelect.addEventListener('change', (event) => {
-            localStorage.setItem('sudokuMemoryMatchMode', event.target.value);
-        });
-    }
-    if (dom.deckCountSelect) {
-        dom.deckCountSelect.addEventListener('change', (event) => {
-            localStorage.setItem('sudokuDeckCount', event.target.value);
-        });
-    }
-    if (dom.aiPlayerCountSelect) {
-        dom.aiPlayerCountSelect.addEventListener('change', (event) => {
-            localStorage.setItem('sudokuAiPlayerCount', event.target.value);
-        });
-    }
-    if (dom.cbAiPlayerCountSelect) {
-        dom.cbAiPlayerCountSelect.addEventListener('change', (event) => {
-            localStorage.setItem('sudokuCbAiPlayerCount', event.target.value);
-        });
-    }
+    // Use event delegation for dynamically added game config elements
+    document.body.addEventListener('change', (event) => {
+        const target = event.target;
+        switch (target.id) {
+            case 'connect4-mode-select':
+                localStorage.setItem('sudokuConnect4Mode', target.value);
+                break;
+            case 'wordgames-mode-select':
+                {
+                    const selectedWordGame = target.value;
+                    localStorage.setItem('sudokuWordGameMode', selectedWordGame);
+                    showToast(`Word Game changed to: ${target.options[target.selectedIndex].text}`);
+                    const isWordSearch = selectedWordGame === 'wordsearch';
+                    const isCrossword = selectedWordGame === 'crossword';
+                    if (dom.wordsearchConfigWordList) dom.wordsearchConfigWordList.style.display = isWordSearch ? '' : 'none';
+                    if (dom.wordsearchConfigWordCount) dom.wordsearchConfigWordCount.style.display = isWordSearch ? '' : 'none';
+                    if (dom.crosswordCreatorBtnContainer) dom.crosswordCreatorBtnContainer.style.display = isCrossword ? '' : 'none';
+                    initializeSoloGame();
+                }
+                break;
+            case 'spellingbee-mode-select':
+                localStorage.setItem('sudokuSpellingBeeMode', target.value);
+                break;
+            case 'memorymatch-mode-select':
+                localStorage.setItem('sudokuMemoryMatchMode', target.value);
+                break;
+            case 'deck-count-select':
+                localStorage.setItem('sudokuDeckCount', target.value);
+                break;
+            case 'ai-player-count-select':
+                localStorage.setItem('sudokuAiPlayerCount', target.value);
+                break;
+            case 'cb-ai-player-count-select':
+                localStorage.setItem('sudokuCbAiPlayerCount', target.value);
+                break;
+        }
+    });
 
     // Event listener for the word count input
-    if (dom.wordCountInput) {
-        dom.wordCountInput.addEventListener('change', (event) => {
-            localStorage.setItem('sudokuWordSearchCount', event.target.value);
-        });
-    }
+    dom.wordCountInput.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuWordSearchCount', event.target.value);
+    });
 
     // Event listener for the voice selector
-    if (dom.voiceSelect) {
-        dom.voiceSelect.addEventListener('change', (event) => {
-            localStorage.setItem('sudokuVoice', event.target.value);
-        });
-    }
+    dom.voiceSelect.addEventListener('change', (event) => {
+        localStorage.setItem('sudokuVoice', event.target.value);
+    });
 
     // Event listener for the word search word list to auto-format on blur
-    if (dom.customWordListInput) {
-        dom.customWordListInput.addEventListener('blur', () => {
-            const input = dom.customWordListInput;
-            const words = input.value.trim().split(/[\n, ]+/).map(word => word.trim().toUpperCase()).filter(word => word.length > 0);
-            words.sort();
-            input.value = '\n' + words.join('\n');
-            localStorage.setItem('sudokuWordSearchWordList', input.value);
-        });
-    }
+    dom.customWordListInput.addEventListener('blur', () => {
+        const input = dom.customWordListInput;
+        const words = input.value.trim()
+            .split(/[\n, ]+/) // Split by newlines, commas, or spaces
+            .map(word => word.trim().toUpperCase()) // Trim and convert to uppercase
+            .filter(word => word.length > 0); // Filter out any empty strings
+
+        // Sort alphabetically and join back with newlines for readability
+        words.sort();
+        input.value = '\n' + words.join('\n');
+        localStorage.setItem('sudokuWordSearchWordList', input.value);
+    });
 
     // Event listener for the spelling bee word list to auto-format on blur
-    if (dom.spellingBeeWordListInput) {
-        dom.spellingBeeWordListInput.addEventListener('blur', () => {
-            const input = dom.spellingBeeWordListInput;
-            const words = input.value.trim().split(/[\n, ]+/).map(word => word.trim().toUpperCase()).filter(word => word.length > 0);
-            words.sort();
-            input.value = '\n' + words.join('\n');
-            localStorage.setItem('sudokuSpellingBeeWordList', input.value);
-        });
-    }
+    dom.spellingBeeWordListInput.addEventListener('blur', () => {
+        const input = dom.spellingBeeWordListInput;
+        const words = input.value.trim()
+            .split(/[\n, ]+/) // Split by newlines, commas, or spaces
+            .map(word => word.trim().toUpperCase()) // Trim and convert to uppercase
+            .filter(word => word.length > 0); // Filter out any empty strings
+
+        // Sort alphabetically and join back with newlines for readability
+        words.sort();
+        input.value = '\n' + words.join('\n');
+        localStorage.setItem('sudokuSpellingBeeWordList', input.value);
+    });
 
 
     // Event listener for the player name input
@@ -1025,7 +1087,7 @@ export function initializeEventListeners() {
     });
 
     // Event listener for the Adventure Creator button
-    if (dom.adventureCreatorBtn) dom.adventureCreatorBtn.addEventListener('click', async () => {
+    dom.adventureCreatorBtn.addEventListener('click', async () => {
         const { showAdventureCreator } = await import('./games/adventure.js');
         showAdventureCreator();
     });

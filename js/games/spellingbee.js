@@ -2,9 +2,9 @@
 // Spelling Bee Game Logic
 //==============================
 
-import { startTimer, stopTimer } from '../timer.js';
+import { startTimer, stopTimer } from '../timer.js'; // Import speakText from ui.js
 import { dom, appState } from '../scripts.js';
-import { showWinnerScreen, showToast, createTimerHTML } from '../ui.js';
+import { showWinnerScreen, showToast, createTimerHTML, speakText } from '../ui.js';
 
 const WORD_LIST = ["COOPERATIVE", "ASSISTANT", "ENGINEERING", "JAVASCRIPT", "SYNTHESIS", "BROWSER", "OFFLINE", "CHALLENGE"];
 
@@ -82,7 +82,7 @@ function setupQuestion() {
 
     gameState.currentWord = gameState.words[gameState.currentWordIndex];
     // Wire up the speak button now that it exists.
-    document.getElementById('speak-word-btn').onclick = () => speakWord(gameState.currentWord);
+    document.getElementById('speak-word-btn').onclick = () => speakText(gameState.currentWord);
 
     const feedbackEl = document.getElementById('spelling-bee-feedback');
     feedbackEl.textContent = `Word ${gameState.currentWordIndex + 1} of ${gameState.words.length}. Score: ${gameState.score}`;
@@ -95,7 +95,7 @@ function setupQuestion() {
     }
 
     // Automatically speak the first word
-    setTimeout(() => speakWord(gameState.currentWord), 500);
+    setTimeout(() => speakText(gameState.currentWord), 500);
 }
 
 function setupMultipleChoice() {
@@ -311,6 +311,12 @@ function checkAnswer(answer) {
         if (correctButton) correctButton.classList.add('correct');
         showToast('Correct!', 'info');
     } else {
+        const inputEl = document.getElementById('spelling-input');
+        if (inputEl) {
+            inputEl.classList.add('incorrect');
+            // Remove the class after the animation so it can be applied again
+            setTimeout(() => inputEl.classList.remove('incorrect'), 600);
+        }
         showToast(`Incorrect. The correct spelling is ${gameState.currentWord}.`, 'error');
     }
 
@@ -318,28 +324,6 @@ function checkAnswer(answer) {
     setTimeout(() => {
         setupQuestion();
     }, 2000); // Wait 2 seconds before the next question
-}
-
-export function speakWord(word) {
-    if (!('speechSynthesis' in window) || !word) {
-        alert("Sorry, your browser does not support text-to-speech, or there is no word to speak.");
-        return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(word);
-    
-    // Find the selected voice from the dropdown
-    const voices = window.speechSynthesis.getVoices();
-    const selectedVoiceName = dom.voiceSelect.value;
-    const selectedVoice = voices.find(v => v.name === selectedVoiceName);
-
-    if (selectedVoice) {
-        utterance.voice = selectedVoice;
-    }
-
-    utterance.pitch = 1;
-    utterance.rate = 0.8; // Speak a bit slower for clarity
-    window.speechSynthesis.speak(utterance);
 }
 
 /**
