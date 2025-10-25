@@ -457,6 +457,93 @@ export function showConfirmationModal(message, onConfirm) {
 }
 
 /**
+ * Displays a themed informational modal with a title and content.
+ * @param {string} title - The title to display in the modal header.
+ * @param {string} contentHTML - The HTML content to display in the modal body.
+ */
+export function showInfoModal(title, contentHTML) {
+    // Remove any existing modal first
+    document.querySelector('.info-modal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.className = 'confirmation-modal info-modal'; // Reuse styles, add specific class
+
+    modal.innerHTML = `
+        <h3 style="margin-top: 0;">${title}</h3>
+        <div class="info-modal-content">
+            ${contentHTML}
+        </div>
+        <div class="button-row" style="justify-content: center;">
+            <button id="info-modal-close-btn" class="theme-button">Close</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('info-modal-close-btn').onclick = () => modal.remove();
+}
+
+/**
+ * Displays a generic, themeable modal for listing items.
+ * @param {object} config - The configuration object for the modal.
+ * @param {string} config.title - The title of the modal.
+ * @param {Array<object>} config.items - An array of item objects to display. Each object should have `name` and other `data-*` properties.
+ * @param {function(object): string} config.renderItem - A function that takes an item and returns its HTML string.
+ * @param {function(Event): void} config.onItemClick - The callback function to execute when an item is clicked.
+ */
+export function showListModal(config) {
+    // Remove any existing modal first
+    const existingModal = document.getElementById('generic-list-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    const modal = document.createElement('div');
+    modal.id = 'generic-list-modal';
+    modal.className = 'confirmation-modal'; // Reuse styles
+    modal.style.maxWidth = '700px';
+
+    let listHTML = '';
+    if (!config.items || config.items.length === 0) {
+        listHTML = '<p>No items found.</p>';
+    } else {
+        listHTML = config.items.map(config.renderItem).join('');
+    }
+
+    modal.innerHTML = `
+        <h3 style="margin-top: 0;">${config.title}</h3>
+        <div class="list-modal-content" style="max-height: 60vh; overflow-y: auto; margin-bottom: 20px;">
+            ${listHTML}
+        </div>
+        <button id="list-modal-close-btn" class="theme-button">Cancel</button>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal.querySelector('#list-modal-close-btn').onclick = () => modal.remove();
+
+    modal.addEventListener('click', (event) => {
+        config.onItemClick(event);
+        // The onItemClick handler is responsible for closing the modal if needed.
+    });
+}
+
+/**
+ * Plays a sound effect from the assets/sounds/ directory.
+ * @param {string} soundName - The name of the sound file (e.g., 'click.wav').
+ */
+export function playSoundEffect(soundName) {
+    if (!soundName) return;
+    try {
+        // We assume sound files are located in 'assets/sounds/'
+        const audio = new Audio(`./assets/sounds/${soundName}`);
+        audio.play().catch(e => console.error(`Could not play sound: ${soundName}`, e));
+    } catch (error) {
+        console.error(`Error creating audio for sound: ${soundName}`, error);
+    }
+}
+
+/**
  * Displays a single QR code chunk from an array of chunks and updates the navigation button states.
  * @param {string[]} chunks - The array of QR code data chunks.
  * @param {number} index - The index of the chunk to display.
@@ -910,7 +997,7 @@ export function initializeEventListeners() {
                     const isCrossword = selectedWordGame === 'crossword';
                     if (dom.wordsearchConfigWordList) dom.wordsearchConfigWordList.style.display = isWordSearch ? '' : 'none';
                     if (dom.wordsearchConfigWordCount) dom.wordsearchConfigWordCount.style.display = isWordSearch ? '' : 'none';
-                    if (dom.crosswordCreatorBtnContainer) dom.crosswordCreatorBtnContainer.style.display = isCrossword ? '' : 'none';
+                    if (dom.crosswordCreatorBtnContainer) dom.crosswordCreatorBtnContainer.style.display = isCrossword ? '' : 'none'; // This was line 1081
                     initializeSoloGame();
                 }
                 break;
@@ -1077,8 +1164,16 @@ export function initializeEventListeners() {
     dom.hardResetBtn.addEventListener('click', showResetConfirmation);
 
 
-    // Wire the main "New Game" button to the game manager's loadPuzzle function.
-    dom.newPuzzleButton.addEventListener('click', loadPuzzle);
+    // Wire the main "New Game" button. It has different behavior for the Adventure game.
+    dom.newPuzzleButton.addEventListener('click', async () => {
+        if (dom.gameSelector.value === 'adventure') {
+            // For adventures, this button opens the "New Adventure" template selector.
+            const { showNewAdventureModal } = await import('./games/adventure.js');
+            showNewAdventureModal(false); // false: not in creator context
+        } else {
+            loadPuzzle(); // For all other games, it loads a new puzzle/game.
+        }
+    });
 
     // Event listener for the Crossword Puzzle Creator button
     dom.crosswordCreatorBtn.addEventListener('click', async () => {
@@ -1088,8 +1183,8 @@ export function initializeEventListeners() {
 
     // Event listener for the Adventure Creator button
     dom.adventureCreatorBtn.addEventListener('click', async () => {
-        const { showAdventureCreator } = await import('./games/adventure.js');
-        showAdventureCreator();
+        const { showAdventureCreator, showNewAdventureModal } = await import('./games/adventure.js');
+        showAdventureCreator(true); // true: in creator context
     });
 
     // Event listeners for team selection

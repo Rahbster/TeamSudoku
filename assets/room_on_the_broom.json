@@ -1,0 +1,202 @@
+{
+  "id": "room_on_the_broom",
+  "name": "Room on the Broom",
+  "startNodeId": "start",
+  "attributes": [
+    { "id": "health", "name": "Health", "icon": "❤️", "value": 10, "max": 10, "type": "pool" }
+  ],
+  "masterItems": [
+    { "id": "witch_hat", "name": "Witch's Hat", "description": "A tall, black, pointed hat." },
+    { "id": "ginger_bow", "name": "Ginger Bow", "description": "A bow from a long ginger plait." },
+    { "id": "starry_wand", "name": "Starry Wand", "description": "A wand that makes a 'whoosh!' sound." },
+    { "id": "cauldron", "name": "Cauldron", "description": "A bubbling cauldron." },
+    { "id": "white_lily", "name": "White Lily", "description": "A beautiful white flower." }
+  ],
+  "inventory": [
+    { "id": "witch_hat", "name": "Witch's Hat", "quantity": 1 },
+    { "id": "ginger_bow", "name": "Ginger Bow", "quantity": 1 },
+    { "id": "starry_wand", "name": "Starry Wand", "quantity": 1 }
+  ],
+  "nodes": {
+    "start": {
+      "id": "start",
+      "title": "A Witch and Her Cat",
+      "color": "#5a8a4a",
+      "text": "The witch had a cat and a very tall hat, and long ginger hair which she wore in a plait. How the cat purred and how the witch grinned, as they sat on their broomstick and flew through the wind. But how the witch wailed and how the cat spat, when the wind blew so wildly it blew off the hat.",
+      "choices": [
+        {
+          "text": "'Down!' cried the witch, and they flew to the ground.",
+          "targetNodeId": "search_for_hat",
+          "effects": [
+            { "type": "item", "action": "remove", "id": "witch_hat", "quantity": 1 }
+          ]
+        },
+        {
+          "text": "Try to catch the hat in mid-air.",
+          "targetNodeId": "catch_hat_fail"
+        }
+      ]
+    },
+    "search_for_hat": {
+      "id": "search_for_hat",
+      "title": "Searching the Ground",
+      "text": "They searched and they searched but no hat could be found. Then out of the bushes on thundering paws, there bounded a dog with the hat in his jaws.",
+      "choices": [{ "text": "The dog approaches...", "targetNodeId": "dog_asks" }]
+    },
+    "dog_asks": {
+      "id": "dog_asks",
+      "title": "A Keen Dog",
+      "text": "The dog dropped the hat politely, then said eagerly, 'I am a dog, as keen as can be. Is there room on the broom for a dog like me?'",
+      "choices": [
+        {
+          "text": "'Yes!' cried the witch, and the dog clambered on.",
+          "targetNodeId": "flying_with_dog",
+          "effects": [
+            { "type": "item", "action": "add", "id": "witch_hat", "quantity": 1 }
+          ]
+        }
+      ]
+    },
+    "flying_with_dog": {
+      "id": "flying_with_dog",
+      "title": "Flying with Friends",
+      "text": "Over the fields and the forests they flew. The dog wagged his tail and the stormy wind blew. The witch laughed aloud and held onto her hat, but away blew the bow from her long ginger plait!",
+      "choices": [
+        {
+          "text": "'Down!' cried the witch, and they flew to the ground.",
+          "targetNodeId": "search_for_bow",
+          "effects": [
+            { "type": "item", "action": "remove", "id": "ginger_bow", "quantity": 1 }
+          ]
+        }
+      ]
+    },
+    "bird_asks": {
+      "id": "bird_asks",
+      "title": "A Green Bird",
+      "text": "The bird dropped the bow and then said with a squeak, 'I am a bird, as green as can be. Is there room on the broom for a bird like me?'",
+      "choices": [
+        {
+          "text": "'Yes!' cried the witch, so the bird fluttered on.",
+          "targetNodeId": "flying_with_bird",
+          "effects": [
+            { "type": "item", "action": "add", "id": "ginger_bow", "quantity": 1 }
+          ]
+        }
+      ]
+    },
+    "search_for_bow": {
+      "id": "search_for_bow",
+      "title": "Searching Again",
+      "text": "They searched and they searched but no bow could be found. Then out from a tree, with an ear-splitting shriek, there flapped a green bird with the bow in her beak.",
+      "choices": [{ "text": "The bird flies closer...", "targetNodeId": "bird_asks" }]
+    },
+    "flying_with_bird": {
+      "id": "flying_with_bird",
+      "title": "Over the Reeds",
+      "text": "Over the reeds and the rivers they flew. The bird shrieked with glee and the stormy wind blew. They shot through the sky to the back of beyond, the witch clutched her bow but let go of her wand!",
+      "choices": [
+        {
+          "text": "'Down!' cried the witch, and they flew to the ground.",
+          "targetNodeId": "search_for_wand",
+          "effects": [
+            { "type": "item", "action": "remove", "id": "starry_wand", "quantity": 1 }
+          ]
+        }
+      ]
+    },
+    "frog_asks": {
+      "id": "frog_asks",
+      "title": "A Clean Frog",
+      "text": "The frog dropped the wand, then said with a croak, 'I am a frog, as clean as can be. Is there room on the broom for a frog like me?'",
+      "choices": [
+        {
+          "text": "'Yes!' said the witch, so the frog bounded on.",
+          "targetNodeId": "broom_snaps",
+          "effects": [
+            { "type": "item", "action": "add", "id": "starry_wand", "quantity": 1 }
+          ]
+        }
+      ]
+    },
+    "search_for_wand": {
+      "id": "search_for_wand",
+      "title": "Searching by the Pond",
+      "text": "They searched and they searched but no wand could be found. Then all of a sudden, from out of a pond, leaped a dripping wet frog with the wand in his paw.",
+      "choices": [{ "text": "The frog hops over...", "targetNodeId": "frog_asks" }]
+    },
+    "broom_snaps": {
+      "id": "broom_snaps",
+      "title": "SNAP!",
+      "color": "#CC3333",
+      "text": "The witch tapped the broomstick and whoosh! they were gone. But the broomstick snapped in two! Down fell the cat and the dog and the frog. Down they went, tumbling into a bog.",
+      "choices": [
+        { "text": "A terrible roar sounds from the bog...", "targetNodeId": "dragon_appears" }
+      ]
+    },
+    "dragon_appears": {
+      "id": "dragon_appears",
+      "title": "The Dragon",
+      "color": "#CC3333",
+      "text": "The witch's half-broomstick flew into a cloud, and the witch heard a roar that was scary and loud. 'I am a dragon, as mean as can be, and I'm planning to have WITCH AND CHIPS for my tea!'",
+      "choices": [
+        { "text": "'No!' cried the witch, flying higher and higher.", "targetNodeId": "monster_appears" },
+        {
+          "text": "Try to cast a spell with your wand.",
+          "targetNodeId": "dragon_laughs",
+          "requirements": [
+            { "type": "item", "id": "starry_wand", "quantity": 1 }
+          ]
+        },
+        {
+          "text": "Offer the dragon your hat instead.",
+          "targetNodeId": "dragon_eats_hat"
+        }
+      ]
+    },
+    "monster_appears": {
+      "id": "monster_appears",
+      "title": "A Terrible Monster",
+      "text": "But the dragon flew after her, breathing out fire. 'Help!' cried the witch. Just then, from out of a ditch rose a horrible monster, all sticky and black. It dripped and it squelched as it strode down the track. It had four frightful heads, it had wings like a bat, and it said to the dragon, 'Buzzz-off! THAT'S MY WITCH!'",
+      "choices": [
+        { "text": "The dragon drew back, and he started to shake.", "targetNodeId": "dragon_flees" }
+      ]
+    },
+    "dragon_flees": {
+      "id": "dragon_flees",
+      "title": "The Dragon Flees",
+      "text": "'I'm sorry!' he spluttered. 'I made a mistake.' And he spread his wings out and was off through the air. Down flew the bird, and down jumped the frog. Down climbed the cat, and 'Phew!' said the dog. 'Thank you, oh, thank you!' the grateful witch cried.",
+      "choices": [
+        { "text": "The witch fills her cauldron and mutters a spell...", "targetNodeId": "new_broom" }
+      ]
+    },
+    "new_broom": {
+      "id": "new_broom",
+      "title": "A Magnificent Broom",
+      "color": "#28a745",
+      "text": "Then she got out her cauldron and said with a grin, 'Find something, everyone, throw something in!' So the frog found a lily, the cat found a cone, the bird found a twig and the dog found a bone. They threw them all in and the witch stirred them well, and while she was stirring she muttered a spell: 'Iggety, ziggety, zaggety, ZOOM!' Then out rose... A truly magnificent broom!",
+      "choices": []
+    },
+    "catch_hat_fail": {
+      "id": "catch_hat_fail",
+      "title": "A Clumsy Attempt",
+      "text": "The witch swerves the broom, trying to snatch the hat from the air. She misses, and the sudden movement sends her and the cat tumbling to the ground with a bump! You are a bit bruised.",
+      "effects": [{ "type": "attribute", "id": "health", "operator": "-", "value": 1 }],
+      "choices": [{ "text": "Dust yourselves off and look for the hat.", "targetNodeId": "search_for_hat" }]
+    },
+    "dragon_laughs": {
+      "id": "dragon_laughs",
+      "title": "A Failed Spell",
+      "text": "You wave your wand, but in your panic, you can't remember a single spell! The dragon just laughs, a puff of smoke coming from his nose. 'Silly witch! You're coming with me!'",
+      "choices": [{ "text": "The dragon flies closer...", "targetNodeId": "monster_appears" }]
+    },
+    "dragon_eats_hat": {
+      "id": "dragon_eats_hat",
+      "title": "A Strange Meal",
+      "text": "You throw your hat at the dragon. He catches it in his mouth, chews thoughtfully, and swallows. 'Hmm, crunchy,' he says. 'But not as good as witch and chips!' He still looks hungry.",
+      "effects": [{ "type": "item", "action": "remove", "id": "witch_hat", "quantity": 1 }],
+      "choices": [{ "text": "The dragon licks his lips...", "targetNodeId": "monster_appears" }]
+    }
+  },
+  "_ui": { "pan": { "x": 0, "y": 0 }, "zoom": 1 }
+}

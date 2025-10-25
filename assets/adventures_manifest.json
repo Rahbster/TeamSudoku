@@ -1,0 +1,10 @@
+[
+  {
+    "name": "The Dragon's Lair",
+    "path": "./assets/dragons_lair.json"
+  },
+  {
+    "name": "Room on the Broom",
+    "path": "./assets/room_on_the_broom.json"
+  }
+]

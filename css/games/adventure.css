@@ -15,16 +15,45 @@
     gap: 15px;
 }
 
+#adventure-inventory-container {
+    /* This container will hold the inventory button */
+    grid-row: 1; /* Place it in the first row with the stats */
+    justify-self: start; /* Align to the left */
+    align-self: center; /* Center vertically */
+}
+
 #adventure-player-stats {
     display: flex;
     justify-content: space-around;
     padding: 10px;
-    font-size: 1.2em;
+    font-size: 1.4em; /* Slightly larger for better icon visibility */
+    text-shadow: 0 0 5px rgba(0,0,0,0.7); /* Add a subtle shadow to make icons pop */
+    grid-row: 1; /* Also in the first row */
+    flex-grow: 1; /* Allow it to take up space next to the inventory button */
+}
+
+.attribute-icon {
+    display: inline-block;
 }
 
 #adventure-story-area {
     padding: 20px;
+    grid-row: 2; /* Explicitly place in the second row */
     min-height: 0; /* Prevents flex item from overflowing its container */
+}
+
+#adventure-items-area {
+    padding: 15px;
+}
+
+#adventure-items-area h4 {
+    margin: 0 0 10px 0;
+}
+
+.node-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 /* Style for the story text paragraph in the player view */
@@ -70,20 +99,159 @@
     margin: 10px 0;
 }
 
+.choice-main-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
 .adventure-choice-editor {
+    background-color: rgba(0,0,0,0.2);
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.adventure-choice-editor .designer-input,
+.logic-row .designer-input {
+    flex-grow: 1;
+}
+
+.choice-main-controls button {
+    flex-shrink: 0;
+    padding: 5px 10px;
+}
+
+.inventory-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.inventory-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0,0,0,0.2);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.inventory-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.choice-logic-editor {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+    display: grid;
+    gap: 15px;
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
+    max-height: 500px; /* Or some large enough value */
+    overflow: hidden;
+}
+
+.choice-logic-editor.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    margin-top: 0;
+    border-top: none;
+}
+
+.logic-section h5 {
+    margin: 0 0 5px 0;
+    color: var(--primary-cyan);
+}
+
+.logic-row {
     display: flex;
     gap: 5px;
     align-items: center;
     margin-bottom: 5px;
 }
 
-.adventure-choice-editor .designer-input {
-    flex-grow: 1;
+.node-item-row .designer-input[readonly] {
+    background-color: var(--cell-bg);
+    font-style: italic;
 }
 
-.adventure-choice-editor button {
-    flex-shrink: 0;
-    padding: 5px 10px;
+.designer-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.remove-logic-btn {
+    background: none;
+    border: none;
+    color: var(--error-red);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.attribute-editor-row {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.attribute-editor-row .designer-input {
+    flex: 1;
+}
+
+.attribute-icon-group {
+    display: flex;
+    flex: 0 0 100px; /* Adjust group size */
+    gap: 5px;
+}
+
+.attribute-editor-row .attribute-icon-input {
+    flex: 1;
+    text-align: center;
+    font-size: 1.2rem;
+    cursor: pointer; /* Make it look clickable */
+}
+
+.attribute-editor-row .attribute-color-input {
+    flex: 0 0 40px;
+    padding: 2px;
+}
+
+.attribute-editor-row .remove-attribute-btn {
+    background: none;
+    border: none;
+    color: var(--error-red);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.symbol-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+}
+
+.symbol-item {
+    font-size: 1.8rem;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.symbol-item:hover {
+    background-color: var(--primary-cyan);
 }
 
 .node-title-editor {
@@ -98,11 +266,35 @@
     width: 30px;
 }
 
+/* Styles for collapsible sections in the creator */
+.collapsible-header {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease;
+}
+
+.collapsible-header:hover {
+    color: var(--primary-cyan);
+}
+.collapsible-header + .collapsed {
+    max-height: 0 !important; /* Animate to zero height */
+    overflow: hidden !important; /* Hide content when collapsed */
+    padding-top: 0 !important; /* Remove padding when collapsed */
+    padding-bottom: 0 !important;
+    margin-top: 0 !important; /* Remove margin when collapsed */
+    margin-bottom: 0 !important;
+    border: none !important; /* Remove border when collapsed */
+}
+
 /* Style for the node map container */
 #node-map-preview {
-    flex-grow: 1; /* Ensure it fills the available space in the column */
+    flex-grow: 1; /* Allow it to grow, but the flex-basis and max-height will control it */
+    flex-basis: 400px; /* Suggest a starting height */
+    max-height: 60vh; /* Prevent it from becoming excessively tall */
+    min-height: 300px; /* Ensure it has a usable minimum height */
     border-radius: 5px;
     animation: pulse-background 5s infinite ease-in-out;
+    overflow: hidden; /* Hide SVG overflow; pan/zoom will be used for navigation */
 }
 
 @keyframes pulse-background {
@@ -160,8 +352,32 @@
     fill: none;
 }
 
+.adventure-bg-star {
+    fill: #ffffff;
+    /* No pointer events so they don't interfere with dragging/panning */
+    pointer-events: none; 
+}
+
 .adventure-edge ~ text {
     fill: var(--text-light);
     font-size: 0.7rem;
     font-style: italic;
+}
+
+/* --- Info Icon Styles --- */
+.info-icon {
+    display: inline-block;
+    margin-left: 8px;
+    font-weight: bold;
+    color: var(--text-medium);
+    cursor: pointer;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.info-icon:hover {
+    color: var(--primary-cyan);
+    text-shadow: 0 0 5px var(--primary-cyan-glow);
+}
+.info-modal-content {
+    text-align: left;
 }
