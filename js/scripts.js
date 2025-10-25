@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.spellingbeeConfigVoice = document.getElementById('spellingbee-config-voice');
     dom.spellingbeeModeSelect = document.getElementById('spellingbee-mode-select');
     dom.spellingBeeWordListInput = document.getElementById('spelling-bee-word-list-input');
-    dom.voiceSelect = document.getElementById('voice-select');
+    dom.voiceSelect = document.getElementById('spellingbee-voice-select'); // This is now specifically for spelling bee
     dom.spellingBeeArea = document.getElementById('spelling-bee-area');
     dom.aiPlayerCountSelect = document.getElementById('ai-player-count-select');
     dom.blackjackConfigContainerDecks = document.getElementById('blackjack-config-container-decks');
@@ -194,6 +194,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     dom.memorymatchConfigContainer = document.getElementById('memorymatch-config-container');
     dom.memorymatchModeSelect = document.getElementById('memorymatch-mode-select');
     dom.adventureConfigContainer = document.getElementById('adventure-config-container');
+    dom.adventureConfigVoice = document.getElementById('adventure-config-voice');
+    dom.adventureVoiceSelect = document.getElementById('adventure-voice-select');
     dom.adventureCreatorBtn = document.getElementById('adventure-creator-btn');
 
     // Set initial button states

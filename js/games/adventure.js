@@ -6,8 +6,31 @@ import { showToast, showConfirmationModal, speakText, showInfoModal, showListMod
 
 const SAVED_ADVENTURES_KEY = 'cyoaAdventures';
 
+// This will be populated by fetching the JSON file.
+let HETERONYMS = {};
+
 let activeAdventure = null; // Holds the adventure object being edited
 let activeNodeId = null; // Holds the ID of the node currently in the editor
+
+/**
+ * Fetches the heteronyms data from a JSON file.
+ * Caches the result to avoid multiple fetches.
+ */
+async function loadHeteronyms() {
+    if (Object.keys(HETERONYMS).length > 0) {
+        return; // Already loaded
+    }
+    try {
+        const response = await fetch('./assets/heteronyms.json');
+        if (!response.ok) {
+            throw new Error('Failed to load heteronyms data.');
+        }
+        HETERONYMS = await response.json();
+    } catch (error) {
+        console.error(error);
+        showToast('Could not load pronunciation guide.', 'error');
+    }
+}
 
 export async function initialize() {
     // One-time cleanup to ensure everyone gets the new default adventure.
@@ -21,6 +44,7 @@ export async function initialize() {
     const newGameBtnText = dom.newPuzzleButton.querySelector('.text');
     if (newGameBtnText) newGameBtnText.textContent = 'Adventure';
     dom.newPuzzleButton.style.display = '';
+    await loadHeteronyms(); // Load the data when the game initializes
     await loadPuzzle();
 }
 
@@ -111,6 +135,8 @@ export function showAdventureCreator(isCreatorContext = false) {
             <div id="attribute-editor-area"></div>
             <h5 style="margin-top: 20px;">Items <span class="info-icon" data-info="items">ⓘ</span></h5>
             <div id="item-editor-area"></div>
+            <h5 style="margin-top: 20px;">Pronunciations <span class="info-icon" data-info="pronunciations">ⓘ</span></h5>
+            <div id="pronunciation-editor-area"></div>
             <h5 style="margin-top: 20px;">Starting Inventory <span class="info-icon" data-info="startinventory">ⓘ</span></h5>
             <div id="start-inventory-editor-area"></div>
             <div id="node-editor-area">
@@ -133,9 +159,9 @@ export function showAdventureCreator(isCreatorContext = false) {
     document.body.appendChild(modal);
 
     document.getElementById('creator-close-btn').onclick = closeAdventureCreator;
-
-    // Wire up the new header buttons using addEventListener for proper scoping
-    document.getElementById('creator-new-btn').addEventListener('click', showNewAdventureModal);
+    
+    // Wire up the new header buttons using addEventListener for proper scoping    
+    document.getElementById('creator-new-btn').addEventListener('click', showNewAdventureCreatorModal);
     document.getElementById('creator-load-btn').addEventListener('click', showLoadAdventureModal);
     document.getElementById('creator-save-btn').addEventListener('click', saveActiveAdventure);
     document.getElementById('creator-save-as-btn').addEventListener('click', saveAdventureAs);
@@ -151,6 +177,7 @@ export function showAdventureCreator(isCreatorContext = false) {
         activeNodeId = appState.soloGameState.currentNodeId;
         document.getElementById('adventure-name-input').value = activeAdventure.name;
         renderStartInventoryEditor();
+        renderPronunciationEditor();
         renderItemEditor();
         renderAttributeEditor();
         renderNodeEditor();
@@ -162,6 +189,7 @@ export function showAdventureCreator(isCreatorContext = false) {
         e.currentTarget.closest('.designer-column').querySelector('#attribute-editor-area').classList.toggle('collapsed');
         e.currentTarget.closest('.designer-column').querySelector('#node-editor-area').classList.toggle('collapsed');
         e.currentTarget.closest('.designer-column').querySelector('#item-editor-area').classList.toggle('collapsed');
+        e.currentTarget.closest('.designer-column').querySelector('#pronunciation-editor-area').classList.toggle('collapsed');
         e.currentTarget.closest('.designer-column').querySelector('#start-inventory-editor-area').classList.toggle('collapsed');
     };
     document.getElementById('node-map-header').onclick = (e) => {
@@ -205,6 +233,10 @@ function handleInfoClick(infoKey) {
         case 'startinventory':
             title = 'Player Starting Inventory';
             content = `<p>Use this section to give the player items at the very beginning of the adventure.</p><ul><li>Select an <b>Item ID</b> from the dropdown (populated by your Master Item List).</li><li>Set the starting <b>Quantity</b>.</li></ul>`;
+            break;
+        case 'pronunciations':
+            title = 'Pronunciation Guide';
+            content = `<p>This section allows you to fix words the text-to-speech engine says incorrectly (like 'read' vs 'red').</p><ul><li><b>Word:</b> The word in your story that is mispronounced.</li><li><b>Sounds Like:</b> A "sounds-like" spelling that forces the correct pronunciation (e.g., for "winds" that rhymes with "finds", you could enter "wynds").</li></ul>`;
             break;
     }
 
@@ -278,11 +310,11 @@ function renderCurrentNode() {
 
     // Make the title speakable
     const titleElement = document.getElementById('adventure-node-title');
-    makeWordsSpeakable(titleElement, node.title);
+    makeElementSpeakable(titleElement, node.title);
 
     // Make individual words in the story text clickable for speaking
     const storyTextElement = document.getElementById('adventure-node-text');
-    makeWordsSpeakable(storyTextElement, node.text);
+    makeElementSpeakable(storyTextElement, node.text);
 
     // Render items in the current node
     const nodeItemsList = document.getElementById('node-items-list');
@@ -324,10 +356,10 @@ function renderCurrentNode() {
             const choiceContainer = document.createElement('div');
             choiceContainer.className = 'adventure-choice-container';
 
-            // Make individual words in the choice text clickable for speaking
+            // Make individual words in the choice text speakable
             const choiceTextSpan = document.createElement('span');
             choiceTextSpan.className = 'adventure-choice-text';
-            makeWordsSpeakable(choiceTextSpan, choice.text);
+            makeElementSpeakable(choiceTextSpan, choice.text);
 
             const chooseButton = document.createElement('button');
             chooseButton.className = 'theme-button adventure-choose-btn';
@@ -371,20 +403,140 @@ function renderCurrentNode() {
  * @param {HTMLElement} element - The container element to populate.
  * @param {string} text - The text to process.
  */
-function makeWordsSpeakable(element, text) {
-    element.innerHTML = text.split(/\s+/).map(word => {
-        // Remove punctuation for speaking, but keep it in the display
-        const cleanedWord = word.replace(/[.,!?;:]/g, '');
-        return `<span class="speakable-word" data-word="${cleanedWord}">${word}</span>`;
-    }).join(' ');
-    element.querySelectorAll('.speakable-word').forEach(span => {
-        span.onclick = (e) => {
-            e.stopPropagation(); // Prevent triggering parent clicks
-            speakText(span.dataset.word);
-        };
-    });
+function makeElementSpeakable(element, text) {
+    // Split by spaces but keep the spaces in the array to preserve formatting.
+    element.innerHTML = text.split(/(\s+)/).map(word => {
+        if (word.trim().length > 0) {
+            return `<span class="speakable-word">${word}</span>`;
+        } else {
+            return word; // Return whitespace as is
+        }
+    }).join('');
+
+    // Add a single event listener to the parent element for efficiency.
+    element.addEventListener('mouseover', handleWordEnter);
+    element.addEventListener('mouseout', handleWordLeave);
+    element.addEventListener('click', handleWordClick);
 }
 
+/**
+ * State variables for the hover-to-speak queue.
+ */
+let hoverSpeechQueue = [];
+let isSpeechQueueSpeaking = false;
+let lastQueuedWord = null;
+let lastQueuedElement = null; // Track the DOM element of the last queued word.
+let hoverIntentTimer = null; // Timer to detect user's intent to hover.
+const HOVER_INTENT_DELAY = 250; // ms. Only queue word if mouse rests for this long.
+
+/**
+ * Handles the mouse entering a speakable word.
+ * Starts a timer that, if not cleared, will add the word to the speech queue.
+ * @param {MouseEvent} event The mouseover event.
+ */
+function handleWordEnter(event) {
+    // This feature is only for 'very-easy' difficulty.
+    if (dom.difficultySelector.value !== 'very-easy') return;
+
+    const target = event.target;
+    if (!target.classList.contains('speakable-word')) return;
+
+    // When moving to a new word, clear any pending intent timer.
+    clearTimeout(hoverIntentTimer);
+
+    // Start a new timer. If the mouse stays on the word for the delay, queue it.
+    hoverIntentTimer = setTimeout(() => {
+        // --- Gap-filling logic ---
+        // If a previous word was queued and it's in the same text block as the current one...
+        if (lastQueuedElement && lastQueuedElement.parentElement === target.parentElement) {
+            const allWordsInParent = Array.from(target.parentElement.querySelectorAll('.speakable-word'));
+            const lastIndex = allWordsInParent.indexOf(lastQueuedElement);
+            const currentIndex = allWordsInParent.indexOf(target);
+
+            // ...and if there's a gap of one or more words between them...
+            if (currentIndex > lastIndex + 1) {
+                // ...iterate through the skipped words and add them to the queue.
+                for (let i = lastIndex + 1; i < currentIndex; i++) {
+                    hoverSpeechQueue.push(allWordsInParent[i].textContent);
+                }
+            }
+        }
+
+        const word = target.textContent;
+        // Prevent adding the same word consecutively to the queue.
+        if (target === lastQueuedElement) return;
+
+        lastQueuedWord = word;
+        lastQueuedElement = target; // Update the last queued element
+        hoverSpeechQueue.push(word);
+
+        // Attempt to process the queue.
+        processSpeechQueue();
+    }, HOVER_INTENT_DELAY);
+}
+
+/**
+ * Handles the mouse leaving a speakable word, canceling the intent timer.
+ */
+function handleWordLeave() {
+    clearTimeout(hoverIntentTimer);
+}
+
+/**
+ * Checks the speech queue and speaks the contents if the synthesizer is not busy.
+ */
+function processSpeechQueue() {
+    // If the synthesizer is already speaking a queued sentence, or the queue is empty, do nothing.
+    if (isSpeechQueueSpeaking || hoverSpeechQueue.length === 0) {
+        return;
+    }
+
+    isSpeechQueueSpeaking = true;
+    const sentenceToSpeak = hoverSpeechQueue.join(' ');
+    hoverSpeechQueue = []; // Clear the queue immediately to start collecting the next batch.
+
+    // Show a toast with the sentence for debugging purposes.
+    showToast(sentenceToSpeak, 'info');
+
+    // Use a polling mechanism (pinger) instead of relying on the unreliable onend event.
+    const pinger = setInterval(() => {
+        // Check if the speech synthesis engine is no longer speaking.
+        if (!window.speechSynthesis.speaking) {
+            clearInterval(pinger); // Stop checking.
+            isSpeechQueueSpeaking = false;
+            lastQueuedElement = null; // Reset element tracker when speech finishes.
+            lastQueuedWord = null; // Reset tracker when speech finishes.
+            processSpeechQueue(); // Check if new words were queued while speaking.
+        }
+    }, 250); // Check every 250ms.
+
+    // Pass the sentence string directly; speakText will create the utterance.
+    speakText(sentenceToSpeak, null, appState.soloGameState.currentAdventure?.pronunciations);
+}
+
+/**
+ * Handles a click on an individual word in any speakable text area.
+ * Uses the sentence context to speak just the clicked word accurately.
+ * @param {Event} event The click event.
+ */
+function handleWordClick(event) {
+	const target = event.target;
+	if (!target.classList.contains('speakable-word')) return;
+
+	event.stopPropagation(); // Prevent parent handlers from firing.
+
+	// Cancel any ongoing speech to prevent overlap.
+	window.speechSynthesis.cancel();
+
+	// Get the text of the clicked word, removing any punctuation.
+	const wordToSpeak = target.textContent.replace(/[.,!?;:]/g, '');
+
+	// Get the current adventure's specific pronunciation map, if it exists.
+	const pronunciationMap = appState.soloGameState?.currentAdventure?.pronunciations;
+
+	// Create a new utterance with only the desired word and speak it.
+	speakText(wordToSpeak, null, pronunciationMap);
+}
 /**
  * Checks if a single requirement is met.
  * @param {object} req - The requirement object.
@@ -588,6 +740,7 @@ function createNewAdventure() {
         startNodeId: 'start',
         nodes: {
             'start': {
+                // ... (node content)
                 id: 'start',
                 title: 'The Beginning',
                 color: '#00A0C0', // Default color
@@ -595,6 +748,7 @@ function createNewAdventure() {
                 choices: []
             }
         },
+        pronunciations: {}, // Add pronunciation map to new adventures
         _ui: { // Add UI state for the map view
             pan: { x: 0, y: 0 },
             zoom: 1
@@ -603,6 +757,7 @@ function createNewAdventure() {
     activeNodeId = 'start';
     renderStartInventoryEditor();
     document.getElementById('adventure-name-input').value = activeAdventure.name;
+    renderPronunciationEditor();
     renderAttributeEditor();
     renderNodeEditor();
     renderNodeMap();
@@ -621,6 +776,7 @@ function loadAdventureIntoCreator(adventureId) {
         activeAdventure = cleanAdventure;
         activeNodeId = activeAdventure.startNodeId;
         renderItemEditor();
+        renderPronunciationEditor();
         renderStartInventoryEditor();
         document.getElementById('adventure-name-input').value = activeAdventure.name;
         renderAttributeEditor();
@@ -647,6 +803,7 @@ async function loadPredefinedAdventureIntoCreator(path) {
         // Directly render the creator UI with the loaded adventure
         document.getElementById('adventure-name-input').value = activeAdventure.name;
         renderStartInventoryEditor();
+        renderPronunciationEditor();
         renderItemEditor();
         renderAttributeEditor();
         renderNodeEditor();
@@ -702,7 +859,12 @@ async function showLoadAdventureModal() {
     });
 }
 
-export async function showNewAdventureModal(isCreatorContext = true) {
+/**
+ * Shows the modal for starting a new adventure playthrough from a template.
+ * This is intended to be called from outside the creator (e.g., the main "New Game" button).
+ * @param {boolean} isCreatorContext - Should always be false here.
+ */
+export async function showNewAdventureModal(isCreatorContext = false) {
     let predefinedAdventures = [];
     try {
         const response = await fetch('./assets/adventures_manifest.json');
@@ -711,11 +873,7 @@ export async function showNewAdventureModal(isCreatorContext = true) {
         console.error("Could not load adventure manifest:", error);
     }
 
-    let allTemplates = [...predefinedAdventures];
-    if (isCreatorContext) {
-        const blankTemplate = { name: 'Blank Adventure', isBlank: true };
-        allTemplates.unshift(blankTemplate); // Add "Blank" to the beginning for the creator
-    }
+    const allTemplates = [...predefinedAdventures];
 
     showListModal({
         title: 'Start a New Adventure',
@@ -730,16 +888,41 @@ export async function showNewAdventureModal(isCreatorContext = true) {
             const modal = document.getElementById('generic-list-modal');
             if (!e.target.classList.contains('list-item-name')) return;
 
-            if (isCreatorContext) {
-                // In creator: load into editor
-                if (e.target.dataset.blank) createNewAdventure();
-                else if (e.target.dataset.path) loadPredefinedAdventureIntoCreator(e.target.dataset.path);
-            } else {
-                // Not in creator: start playing the adventure
-                if (e.target.dataset.path) startAdventure(e.target.dataset.path);
-            }
+            // Not in creator: start playing the adventure
+            if (e.target.dataset.path) startAdventure(e.target.dataset.path);
 
             if (modal) modal.remove();
+        }
+    });
+}
+
+/**
+ * Shows the modal for creating a new adventure inside the creator,
+ * including the "Blank Adventure" option.
+ */
+async function showNewAdventureCreatorModal() {
+    let predefinedAdventures = [];
+    try {
+        const response = await fetch('./assets/adventures_manifest.json');
+        if (response.ok) predefinedAdventures = await response.json();
+    } catch (error) {
+        console.error("Could not load adventure manifest:", error);
+    }
+
+    const blankTemplate = { name: 'Blank Adventure', isBlank: true };
+    const allTemplates = [blankTemplate, ...predefinedAdventures];
+
+    showListModal({
+        title: 'Create New Adventure From Template',
+        items: allTemplates,
+        renderItem: (template) => `
+            <div class="component-item theme-button" data-path="${template.path || ''}" data-blank="${template.isBlank || false}">
+                ${template.name} ${template.isBlank ? '<em style="color: var(--primary-cyan);">(Empty)</em>' : ''}
+            </div>`,
+        onItemClick: (e) => {
+            if (e.target.dataset.blank === 'true') createNewAdventure();
+            else if (e.target.dataset.path) loadPredefinedAdventureIntoCreator(e.target.dataset.path);
+            document.getElementById('generic-list-modal')?.remove();
         }
     });
 }
@@ -815,6 +998,7 @@ function deleteSavedAdventure(adventureId, isPredefined = false) {
             activeNodeId = null;
             document.getElementById('node-editor-area').innerHTML = '<p>Select or create an adventure to begin.</p>';
             document.getElementById('start-inventory-editor-area').innerHTML = '';
+            document.getElementById('pronunciation-editor-area').innerHTML = '';
             document.getElementById('item-editor-area').innerHTML = '';
             document.getElementById('node-map-preview').innerHTML = '';
             document.getElementById('adventure-name-input').value = '';
@@ -843,10 +1027,141 @@ function saveAdventureAs() {
         // Update the UI to reflect the new active adventure
         document.getElementById('adventure-name-input').value = activeAdventure.name;
         renderStartInventoryEditor();
+        renderPronunciationEditor();
         renderItemEditor();
         renderNodeEditor();
         renderNodeMap();
     }
+}
+
+/**
+ * Scans the active adventure and returns a sorted list of unique words.
+ * @param {string} [nodeId] - If provided, scans only this node. Otherwise, scans all nodes.
+ * @returns {string[]} An array of unique words.
+ */
+function getUniqueWords(nodeId) {
+    if (!activeAdventure) return [];
+    const words = new Set();
+    // This regex matches sequences of letters, optionally including an apostrophe.
+    const regex = /\b[a-zA-Z']+\b/g;
+
+    const nodesToScan = nodeId ? [activeAdventure.nodes[nodeId]] : Object.values(activeAdventure.nodes);
+
+    nodesToScan.forEach(node => {
+        if (!node) return;
+        // From node title and text
+        (node.title.match(regex) || []).forEach(word => words.add(word.toLowerCase()));
+        (node.text.match(regex) || []).forEach(word => words.add(word.toLowerCase()));
+        // From choice text
+        node.choices?.forEach(choice => {
+            (choice.text.match(regex) || []).forEach(word => words.add(word.toLowerCase()));
+        });
+    });
+
+    return Array.from(words).sort();
+}
+
+function renderPronunciationEditor() {
+    if (!activeAdventure) return;
+
+    const editorArea = document.getElementById('pronunciation-editor-area');
+    editorArea.innerHTML = ''; // Clear previous content
+
+    const pronunciations = activeAdventure.pronunciations || {};
+    activeAdventure.pronunciations = pronunciations; // Ensure it exists
+
+    // Render existing pronunciation overrides
+    Object.entries(pronunciations).forEach(([word, soundsLike]) => {
+        const itemRow = document.createElement('div');
+        itemRow.className = 'attribute-editor-row'; // Reuse styles
+        itemRow.dataset.word = word;
+        itemRow.innerHTML = `
+            <input type="text" class="designer-input word-input" value="${word}" readonly>
+            <div class="sounds-like-container">
+                <input type="text" class="designer-input sounds-like-input" value="${soundsLike}" placeholder="Sounds Like (e.g., wynds)">
+                <button class="speak-pronunciation-btn" title="Test Pronunciation">🔊</button>
+            </div>
+            <button class="remove-attribute-btn">&times;</button>
+        `;
+        // Add event listener for the 'sounds-like' input to update the model
+        itemRow.querySelector('.sounds-like-input').oninput = (e) => {
+            pronunciations[word] = e.target.value.trim();
+        };
+        editorArea.appendChild(itemRow);
+    });
+
+    // --- New "Add Pronunciation" UI ---
+    const addContainer = document.createElement('div');
+    addContainer.id = 'add-pronunciation-container';
+    editorArea.appendChild(addContainer);
+
+    const addBtn = document.createElement('button');
+    addBtn.textContent = 'Add Pronunciation';
+    addBtn.className = 'theme-button';
+    addBtn.onclick = () => {
+        addBtn.style.display = 'none'; // Hide the button
+        const wordsInNode = getUniqueWords(activeNodeId);
+        const knownHeteronymsSet = new Set(Object.keys(HETERONYMS));
+
+        // Filter the words in the node to only include those that are known heteronyms.
+        const allSelectableWords = wordsInNode.filter(word => knownHeteronymsSet.has(word)).sort();
+
+        const wordOptions = allSelectableWords.map(w => `<option value="${w}">${w}</option>`).join('');
+
+        addContainer.innerHTML = `
+            <div class="attribute-editor-row">
+                <select id="pronunciation-word-select" class="designer-input">
+                    <option value="">-- Select a word --</option>
+                    ${wordOptions}
+                </select>
+                <div id="pronunciation-choice-area"></div>
+                <button id="cancel-add-pronunciation" class="remove-attribute-btn">&times;</button>
+            </div>
+        `;
+
+        document.getElementById('cancel-add-pronunciation').onclick = renderPronunciationEditor;
+
+        document.getElementById('pronunciation-word-select').onchange = (e) => {
+            const selectedWord = e.target.value;
+            const choiceArea = document.getElementById('pronunciation-choice-area');
+            if (!selectedWord) {
+                choiceArea.innerHTML = '';
+                return;
+            }
+
+            if (HETERONYMS[selectedWord]) {
+                const options = HETERONYMS[selectedWord].map(p => `<option value="${p.value}">${p.display}</option>`).join('');
+                choiceArea.innerHTML = `<select id="pronunciation-value-select" class="designer-input">${options}</select>`;
+                document.getElementById('pronunciation-value-select').onchange = (ev) => {
+                    activeAdventure.pronunciations[selectedWord] = ev.target.value;
+                    renderPronunciationEditor();
+                };
+                // Set initial value
+                activeAdventure.pronunciations[selectedWord] = HETERONYMS[selectedWord][0].value;
+            } else {
+                choiceArea.innerHTML = `<input type="text" id="pronunciation-value-input" class="designer-input" placeholder="Sounds like...">`;
+                document.getElementById('pronunciation-value-input').onblur = (ev) => {
+                    if (ev.target.value) {
+                        activeAdventure.pronunciations[selectedWord] = ev.target.value;
+                        renderPronunciationEditor();
+                    }
+                };
+            }
+        };
+    };
+    editorArea.appendChild(addBtn);
+
+    // Event delegation for updates
+    editorArea.onclick = (e) => {
+        if (e.target.classList.contains('remove-attribute-btn')) {
+            const word = e.target.closest('.attribute-editor-row').dataset.word;
+            delete activeAdventure.pronunciations[word];
+            renderPronunciationEditor();
+        } else if (e.target.classList.contains('speak-pronunciation-btn')) {
+            const soundsLikeValue = e.target.closest('.sounds-like-container').querySelector('.sounds-like-input').value;
+            if (soundsLikeValue) speakText(soundsLikeValue);
+        }
+    };
 }
 
 function renderAttributeEditor() {
@@ -1259,10 +1574,23 @@ function renderNodeEditor() {
         <textarea class="adventure-creator-node-text" data-node-key="text" placeholder="Enter story text for this node...">${node.text}</textarea>
         <h5>Choices: <span class="info-icon" data-info="choices">ⓘ</span></h5>
         <div id="choices-container">
-            ${node.choices.map((choice, index) => `
+            ${node.choices.map((choice, index) => {
+                // Process choice text to add heteronym icons
+                const choiceTextWithIcons = choice.text.split(/(\s+)/).map(word => {
+                    const cleanWord = word.replace(/[.,!?;:]/g, '').toLowerCase();
+                    if (HETERONYMS[cleanWord]) {
+                        return `${word}<span class="heteronym-icon" data-word="${cleanWord}" data-context="choice" data-index="${index}">🔊</span>`;
+                    }
+                    return word;
+                }).join('');
+
+                return `
                 <div class="adventure-choice-editor" data-choice-index="${index}">
                     <div class="choice-main-controls">
-                        <input type="text" class="designer-input" data-choice-key="text" value="${choice.text}" placeholder="Choice Text">
+                        <div class="designer-input-with-icon">
+                            <input type="text" class="designer-input" data-choice-key="text" value="${choice.text}" placeholder="Choice Text">
+                            <div class="heteronym-icon-container">${choiceTextWithIcons.replace(choice.text, '')}</div>
+                        </div>
                         <select class="designer-input" data-choice-key="targetNodeId" value="${choice.targetNodeId}">${allNodesOptions}</select>
                         <button class="theme-button edit-choice-logic-btn">Rules</button>
                         <button class="remove-choice-btn">&times;</button>
@@ -1284,12 +1612,24 @@ function renderNodeEditor() {
                         </div>
                     </div>
                 </div>
-            `).join('')}
+            `}).join('')}
         </div>
         <button id="add-choice-btn" class="theme-button">Add Choice</button>
     `;
 
-    // Set the selected option for each dropdown after innerHTML is processed
+    // Process node text to add heteronym icons
+    const nodeTextArea = editorArea.querySelector('.adventure-creator-node-text');
+    const textWithIcons = node.text.split(/(\s+)/).map(word => {
+        const cleanWord = word.replace(/[.,!?;:]/g, '').toLowerCase();
+        if (HETERONYMS[cleanWord]) {
+            // This is a simplified approach. A more robust solution would use a rich text editor.
+            // For now, we'll just log that it's a known heteronym.
+            // A visual indicator would require more complex DOM manipulation within the textarea.
+            console.log(`Heteronym found in node text: ${cleanWord}`);
+        }
+        return word;
+    }).join('');
+
     editorArea.querySelectorAll('select[data-choice-key="targetNodeId"]').forEach((select, index) => {
         select.value = node.choices[index].targetNodeId;
     });
@@ -1330,6 +1670,10 @@ function renderNodeEditor() {
         if (nodeKey) {
             activeAdventure.nodes[activeNodeId][nodeKey] = target.value;
             // If color is changed, re-render the map to show it immediately
+            if (nodeKey === 'text') {
+                // Re-render to update heteronym icons if we were to implement them in the text area
+                renderNodeEditor();
+            }
             if (nodeKey === 'color') renderNodeMap(false);
         } else if (choiceKey) {
             const choiceIndex = target.closest('.adventure-choice-editor').dataset.choiceIndex;
@@ -1399,6 +1743,12 @@ function renderNodeEditor() {
         } else if (e.target.classList.contains('edit-choice-logic-btn')) {
             const editor = e.target.closest('.adventure-choice-editor').querySelector('.choice-logic-editor');
             editor.classList.toggle('collapsed');
+        } else if (e.target.classList.contains('heteronym-icon')) {
+            const word = e.target.dataset.word;
+            const context = e.target.dataset.context;
+            const index = e.target.dataset.index;
+            showPronunciationPicker(e.target, word, context, index);
+
         } else if (e.target.classList.contains('add-requirement-btn')) {
             const openEditors = getOpenEditorIndices(editorArea);
             const choiceIndex = e.target.closest('.adventure-choice-editor').dataset.choiceIndex;
@@ -1457,6 +1807,51 @@ function renderNodeEditor() {
         renderNodeEditor();
         restoreOpenEditorIndices(editorArea, openEditors);
     };
+}
+
+function showPronunciationPicker(targetElement, word, context, index) {
+    const options = HETERONYMS[word];
+    if (!options) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'confirmation-modal'; // Reuse styles
+    modal.style.position = 'absolute';
+
+    const rect = targetElement.getBoundingClientRect();
+    modal.style.top = `${rect.bottom + window.scrollY}px`;
+    modal.style.left = `${rect.left + window.scrollX}px`;
+
+    let listHTML = options.map(opt =>
+        `<li class="theme-button" data-value="${opt.value}">${opt.display}</li>`
+    ).join('');
+
+    modal.innerHTML = `
+        <h4 style="margin-top:0;">Pronounce '${word}' as:</h4>
+        <ul style="list-style: none; padding: 0; margin: 0;">${listHTML}</ul>
+    `;
+
+    document.body.appendChild(modal);
+
+    const closePicker = () => modal.remove();
+
+    modal.addEventListener('click', (e) => {
+        if (e.target.tagName === 'LI') {
+            const pronunciation = e.target.dataset.value;
+            if (!activeAdventure.pronunciations) {
+                activeAdventure.pronunciations = {};
+            }
+            // For now, we set a global override. A more complex system could
+            // handle per-instance overrides.
+            activeAdventure.pronunciations[word] = pronunciation;
+            showToast(`Set '${word}' to sound like '${pronunciation}'.`, 'info');
+            closePicker();
+        }
+    });
+
+    // Close if clicked outside
+    setTimeout(() => {
+        document.addEventListener('click', closePicker, { once: true });
+    }, 0);
 }
 
 function getOpenEditorIndices(editorArea) {

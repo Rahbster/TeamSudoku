@@ -6,17 +6,18 @@ This is a versatile, browser-based gaming platform that supports a variety of cl
 
 ### Core Features
 
-*   **Multiple Games:** Play Sudoku, Connect 4, Word Search, Spelling Bee, Memory Match, and Black Jack.
+*   **Multiple Games:** Play Sudoku, Connect 4, Word Search, Spelling Bee, Memory Match, Black Jack, Wordle, Crossword, Cosmic Balance, and a text-based Adventure game.
 *   **Real-time Multiplayer:** Connect with friends for cooperative or competitive gameplay.
 *   **Serverless Architecture:** Uses WebRTC for direct peer-to-peer data channels, eliminating the need for a game server.
 *   **Flexible Connection Methods:**
     *   **PeerJS (Recommended):** Connect easily using a simple Host ID.
     *   **QR Code:** A unique signaling method that chunks connection data into QR codes.
     *   **Manual:** A fallback for copy-pasting connection data.
-*   **Solo & AI Play:** Play games by yourself, or challenge a simple AI opponent in Connect 4.
+*   **Solo & AI Play:** Play games by yourself, or challenge AI opponents in Connect 4, Black Jack, and Cosmic Balance.
 *   **Team System:** In multiplayer, hosts can create multiple teams, and players can join them to compete.
 *   **PWA & Offline Support:** As a Progressive Web App, it can be "installed" on your device and works offline.
 *   **Customizable Themes:** Switch between multiple visual themes to customize your experience.
+*   **Game Creators:** Build your own levels with the built-in creators for Crossword and Adventure games. Design custom ships for Cosmic Balance.
 
 ---
 

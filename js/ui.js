@@ -44,6 +44,7 @@ export function showScreen(screenName) {
             if (dom.blackjackConfigContainerDecks) menu.appendChild(dom.blackjackConfigContainerDecks);
             if (dom.blackjackConfigContainerAICount) menu.appendChild(dom.blackjackConfigContainerAICount);
             if (dom.adventureConfigContainer) menu.appendChild(dom.adventureConfigContainer);
+            if (dom.adventureConfigVoice) menu.appendChild(dom.adventureConfigVoice);
             if (dom.cosmicbalanceConfigContainer) menu.appendChild(dom.cosmicbalanceConfigContainer);
             if (dom.themeSelectorConfig?.parentElement?.parentElement) menu.appendChild(dom.themeSelectorConfig.parentElement.parentElement);
             if (dom.newPuzzleButton?.parentElement) menu.appendChild(dom.newPuzzleButton.parentElement);
@@ -248,27 +249,60 @@ export function createTimerHTML() {
 
 /**
  * Speaks the given text using the Web Speech Synthesis API.
- * @param {string} text The text to speak.
+ * @param {string|SpeechSynthesisUtterance} textOrUtterance The text or pre-configured utterance to speak.
+ * @param {object} [callbacks] Optional callbacks for speech events like onstart, onend, onboundary.
+ * @param {Object<string, string>} [localPronunciations] An optional, context-specific pronunciation map.
  */
-export function speakText(text) {
-    if (!('speechSynthesis' in window) || !text) {
-        // showToast("Sorry, your browser does not support text-to-speech, or there is no text to speak.", 'error');
+export function speakText(textOrUtterance, callbacks, localPronunciations) {
+    console.log('[UI] speakText called with:', textOrUtterance);
+    if (!('speechSynthesis' in window)) {
         return;
     }
+    if (!textOrUtterance) return;
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    
+    let textToSpeak;
+    let utterance;
+
+    if (typeof textOrUtterance === 'string') {
+        // Check for a pronunciation override.
+        // The localPronunciations map is provided by the active game (e.g., Adventure).
+        const lookupWord = textOrUtterance.toLowerCase();
+        if (localPronunciations && localPronunciations[lookupWord]) {
+            textToSpeak = localPronunciations[lookupWord];
+        } else {
+            textToSpeak = textOrUtterance;
+        }
+        utterance = new SpeechSynthesisUtterance(textToSpeak);
+    } else {
+        // Use the pre-configured utterance object.
+        utterance = textOrUtterance;
+    }
+
     // Find the selected voice from the dropdown
     const voices = window.speechSynthesis.getVoices();
-    const selectedVoiceName = dom.voiceSelect.value;
+    // Determine which voice selector is currently visible and active
+    const activeVoiceSelect = dom.spellingbeeConfigVoice?.style.display !== 'none' ? dom.voiceSelect : dom.adventureVoiceSelect;
+
+    const selectedVoiceName = activeVoiceSelect ? activeVoiceSelect.value : null;
     const selectedVoice = voices.find(v => v.name === selectedVoiceName);
 
     if (selectedVoice) {
         utterance.voice = selectedVoice;
     }
 
+    // Attach any provided event listeners
+    if (callbacks) {
+        Object.keys(callbacks).forEach(eventName => {
+            console.log(`[UI] Attaching '${eventName}' callback.`);
+            if (typeof callbacks[eventName] === 'function') {
+                utterance[eventName] = callbacks[eventName];
+            }
+        });
+    }
+
     utterance.pitch = 1;
     utterance.rate = 0.8; // Speak a bit slower for clarity
+    console.log('[UI] Passing utterance to window.speechSynthesis.speak(). Utterance:', utterance);
     window.speechSynthesis.speak(utterance);
 }
 
@@ -278,13 +312,18 @@ export function speakText(text) {
  */
 export function populateVoiceList() {
     const voices = window.speechSynthesis.getVoices();
-    if (!dom.voiceSelect) return;
-    dom.voiceSelect.innerHTML = ''; // Clear existing options
+    if (!dom.voiceSelect || !dom.adventureVoiceSelect) return;
+
+    // Clear existing options from both dropdowns
+    dom.voiceSelect.innerHTML = '';
+    dom.adventureVoiceSelect.innerHTML = '';
 
     if (voices.length > 0) {
-        const badge = document.getElementById('voice-count-badge');
-        if (badge) {
-            badge.textContent = voices.length;
+        const spellingBeeBadge = document.getElementById('spellingbee-voice-count-badge');
+        const adventureBadge = document.getElementById('adventure-voice-count-badge');
+        if (spellingBeeBadge && adventureBadge) {
+            spellingBeeBadge.textContent = voices.length;
+            adventureBadge.textContent = voices.length;
         }
 
         voices.forEach(voice => {
@@ -293,13 +332,15 @@ export function populateVoiceList() {
             option.setAttribute('data-lang', voice.lang);
             option.value = voice.name; // Use the unique name as the value
             option.setAttribute('data-name', voice.name);
-            dom.voiceSelect.appendChild(option);
+            dom.voiceSelect.appendChild(option.cloneNode(true));
+            dom.adventureVoiceSelect.appendChild(option);
         });
 
         // Load and apply the saved voice preference
         const savedVoice = localStorage.getItem('sudokuVoice');
         if (savedVoice) {
             dom.voiceSelect.value = savedVoice;
+            dom.adventureVoiceSelect.value = savedVoice;
         }
     }
 }
@@ -945,6 +986,7 @@ export function initializeEventListeners() {
         const isSpellingBee = selectedGame === 'spellingbee';
         const isCosmicBalance = selectedGame === 'cosmicbalance';
         const isAdventure = selectedGame === 'adventure';
+        dom.adventureConfigVoice.style.display = isAdventure ? '' : 'none';
         dom.connect4ModeContainer.style.display = isConnect4 ? '' : 'none';
         dom.wordsearchConfigWordList.style.display = isWordSearch ? '' : 'none';
         dom.wordsearchConfigWordCount.style.display = isWordSearch ? '' : 'none';
@@ -1026,7 +1068,18 @@ export function initializeEventListeners() {
 
     // Event listener for the voice selector
     dom.voiceSelect.addEventListener('change', (event) => {
-        localStorage.setItem('sudokuVoice', event.target.value);
+        const newVoice = event.target.value;
+        localStorage.setItem('sudokuVoice', newVoice);
+        // Sync both dropdowns
+        if (dom.adventureVoiceSelect) dom.adventureVoiceSelect.value = newVoice;
+    });
+
+    // Add a separate listener for the adventure voice selector to sync changes
+    dom.adventureVoiceSelect.addEventListener('change', (event) => {
+        const newVoice = event.target.value;
+        localStorage.setItem('sudokuVoice', newVoice);
+        // Sync back to the spelling bee dropdown
+        if (dom.voiceSelect) dom.voiceSelect.value = newVoice;
     });
 
     // Event listener for the word search word list to auto-format on blur
