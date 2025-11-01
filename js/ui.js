@@ -280,6 +280,7 @@ export function speakText(textOrUtterance, callbacks, localPronunciations, speak
             const processedWords = words.map(word => {
                 const cleanWord = word.replace(/[.,!?;:]/g, '').toLowerCase();
                 if (localPronunciations[cleanWord]) {
+                    // The pronunciation map now correctly stores the desired "sounds-like" string.
                     return localPronunciations[cleanWord];
                 }
                 // Otherwise, use the original word.

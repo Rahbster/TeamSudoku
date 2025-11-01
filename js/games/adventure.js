@@ -498,7 +498,7 @@ function handleChoiceClick(choice) {
     // Process any effects of the choice
     if (choice.effects && Array.isArray(choice.effects)) {
         choice.effects.forEach(effect => {
-            try {
+            try { // The try block should wrap the entire logic inside the forEach
                 if (effect.type === 'item') {
                     if (effect.action === 'add') {
                         const item = gameState.player.inventory.find(i => i.id === effect.id);
@@ -538,7 +538,6 @@ function handleChoiceClick(choice) {
                 } else if (effect.type === 'node') {
                     const currentNode = gameState.currentAdventure.nodes[gameState.currentNodeId];
                     if (effect.action === 'addChoice') {
-                        // Add a new choice to the current node.
                         // The 'value' should be a complete choice object.
                         if (effect.value && effect.value.text && effect.value.targetNodeId) {
                             currentNode.choices.push(JSON.parse(JSON.stringify(effect.value)));
@@ -1111,10 +1110,7 @@ function renderAttributeEditor() {
 
         // A more robust check for colorable symbols. It's colorable if it's a single character
         // outside the main emoji range, OR if it's one of our special symbols with a text-variation selector.
-        const isColorable = attr.icon && (
-            (attr.icon.length === 1 && attr.icon.charCodeAt(0) < 0x2700) ||
-            (attr.icon.includes('\uFE0E')));
-        const iconStyle = isColorable ? `style="color: ${attr.iconColor || '#ffffff'};"` : '';
+        const iconStyle = isIconColorable(attr.icon) ? `style="color: ${attr.iconColor || '#ffffff'};"` : '';
 
         attrRow.innerHTML = `
             <div class="attribute-icon-group">
@@ -1631,6 +1627,15 @@ function addAttribute() {
     const newId = `attr-${Date.now()}`;
     activeAdventure.attributes.push({ id: newId, name: 'New Attribute', icon: '⚙️', type: 'stat', value: 10 });
     renderAttributeEditor();
+}
+
+/**
+ * Checks if an icon is a simple symbol that can be colored.
+ * @param {string} icon The icon character(s).
+ * @returns {boolean}
+ */
+function isIconColorable(icon) {
+    return icon && ((icon.length === 1 && icon.charCodeAt(0) < 0x2700) || icon.includes('\uFE0E'));
 }
 
 function renderNodeEditor() {
