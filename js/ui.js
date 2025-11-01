@@ -104,8 +104,8 @@ export function toggleSignalingUI() {
 
     // Hide all signaling areas first
     [dom.manualSignalingArea, dom.qrSignalingArea, dom.peerSignalingArea,
-     dom.p1ManualArea, dom.p2ManualArea, dom.p1QrArea, dom.p2QrArea,
-     dom.p1PeerArea, dom.p2PeerArea].forEach(el => el.classList.add('hidden'));
+    dom.p1ManualArea, dom.p2ManualArea, dom.p1QrArea, dom.p2QrArea,
+    dom.p1PeerArea, dom.p2PeerArea].forEach(el => el.classList.add('hidden'));
 
     // If the user is the host, always show the team selection area on the config screen
     dom.teamSelectionArea.classList.toggle('hidden', !appState.isInitiator);
@@ -252,8 +252,9 @@ export function createTimerHTML() {
  * @param {string|SpeechSynthesisUtterance} textOrUtterance The text or pre-configured utterance to speak.
  * @param {object} [callbacks] Optional callbacks for speech events like onstart, onend, onboundary.
  * @param {Object<string, string>} [localPronunciations] An optional, context-specific pronunciation map.
+ * @param {boolean} [speakAsIs=false] If true, speaks the string directly without looking up pronunciations.
  */
-export function speakText(textOrUtterance, callbacks, localPronunciations) {
+export function speakText(textOrUtterance, callbacks, localPronunciations, speakAsIs = false) {
     console.log('[UI] speakText called with:', textOrUtterance);
     if (!('speechSynthesis' in window)) {
         return;
@@ -263,16 +264,31 @@ export function speakText(textOrUtterance, callbacks, localPronunciations) {
     let textToSpeak;
     let utterance;
 
+    // Always create the utterance with the original text first.
+    // This ensures things like the toast notification show the correct original word.
     if (typeof textOrUtterance === 'string') {
-        // Check for a pronunciation override.
-        // The localPronunciations map is provided by the active game (e.g., Adventure).
-        const lookupWord = textOrUtterance.toLowerCase();
-        if (localPronunciations && localPronunciations[lookupWord]) {
-            textToSpeak = localPronunciations[lookupWord];
-        } else {
-            textToSpeak = textOrUtterance;
+        let textForSpeech = textOrUtterance;
+
+        if (speakAsIs) {
+            // If the flag is set, use the text directly without any processing.
+            // This is for the "Test Pronunciation" button.
+            textForSpeech = textOrUtterance;
+        } else if (localPronunciations) {
+            // If it's not a direct command and a pronunciation map exists, process the text.
+            // This handles both single words and full sentences.
+            const words = textOrUtterance.split(/(\s+)/); // Split but keep whitespace
+            const processedWords = words.map(word => {
+                const cleanWord = word.replace(/[.,!?;:]/g, '').toLowerCase();
+                if (localPronunciations[cleanWord]) {
+                    return localPronunciations[cleanWord];
+                }
+                // Otherwise, use the original word.
+                return word;
+            });
+            textForSpeech = processedWords.join('');
         }
-        utterance = new SpeechSynthesisUtterance(textToSpeak);
+
+        utterance = new SpeechSynthesisUtterance(textForSpeech);
     } else {
         // Use the pre-configured utterance object.
         utterance = textOrUtterance;
@@ -683,13 +699,9 @@ let rtcConnection = null;
  * Creates a WebRTC offer and displays it in a textarea for manual copy-pasting.
  */
 async function createOfferManual() {
-    // createOffer() initializes the connection and returns it.
     rtcConnection = await createOffer();
-    rtcConnection.onicegatheringstatechange = () => {
-        if (rtcConnection.iceGatheringState === 'complete') {
-            dom.offerTextarea.value = JSON.stringify(rtcConnection.localDescription);
-        }
-    };
+    // The offer is ready after createOffer resolves.
+    dom.offerTextarea.value = JSON.stringify(rtcConnection.localDescription);
 }
 
 /**
@@ -709,12 +721,8 @@ async function createAnswerManual() {
     const offerText = JSON.parse(dom.receivedOfferTextarea.value);
     rtcConnection = await createAnswer(offerText);
 
-    // Wait for ICE gathering to complete before displaying the answer.
-    rtcConnection.onicegatheringstatechange = () => {
-        if (rtcConnection.iceGatheringState === 'complete') {
-            dom.answerTextarea.value = JSON.stringify(rtcConnection.localDescription);
-        }
-    };
+    // The answer is ready after createAnswer resolves.
+    dom.answerTextarea.value = JSON.stringify(rtcConnection.localDescription);
 }
 //...Manual Connection=====
 
@@ -750,25 +758,21 @@ async function setupPeerHost() {
             peerJSConnection.on('open', async () => {
                 rtcConnection = await createOffer();
 
-                rtcConnection.onicegatheringstatechange = () => {
-                    if (rtcConnection.iceGatheringState === 'complete') {
-                        const offerData = JSON.stringify(rtcConnection.localDescription);
-                        // Step 4: Send the WebRTC offer to the Joiner.
-                        sendOffer(peerJSConnection, offerData);
-                        dom.p1PeerStatus.textContent = 'Status: Offer sent. Waiting for answer...';
+                const offerData = JSON.stringify(rtcConnection.localDescription);
+                // Step 4: Send the WebRTC offer to the Joiner.
+                sendOffer(peerJSConnection, offerData);
+                dom.p1PeerStatus.textContent = 'Status: Offer sent. Waiting for answer...';
 
-                        // Step 5: Listen for the WebRTC answer from the Joiner.
-                        peerJSConnection.on('data', async (data) => {
-                            const message = JSON.parse(data);
-                            if (message.type === 'answer') {
-                                dom.p1PeerStatus.textContent = 'Status: Answer received. WebRTC connection established.';
-                                await rtcConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(message.answer)));
-                                peerJSConnection.close();
-                                peerJSObject.destroy();
-                            }
-                        });
+                // Step 5: Listen for the WebRTC answer from the Joiner.
+                peerJSConnection.on('data', async (data) => {
+                    const message = JSON.parse(data);
+                    if (message.type === 'answer') {
+                        dom.p1PeerStatus.textContent = 'Status: Answer received. WebRTC connection established.';
+                        await rtcConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(message.answer)));
+                        peerJSConnection.close();
+                        peerJSObject.destroy();
                     }
-                };
+                });
             });
         });
     } catch (error) {
@@ -918,16 +922,12 @@ function onScanFailure(error) {
 async function createOfferQr() {
     rtcConnection = await createOffer();
 
-    rtcConnection.onicegatheringstatechange = () => {
-        if (rtcConnection.iceGatheringState === 'complete') {
-            const sdpString = JSON.stringify(rtcConnection.localDescription);
-            const base64Sdp = btoa(sdpString);
-            appState.offerChunks = createQrCodeChunks(base64Sdp);
-            appState.currentOfferChunkIndex = 0;
-            displayQrChunk(appState.offerChunks, appState.currentOfferChunkIndex);
-            dom.p1QrStatus.textContent = 'Status: Offer created. Show codes to Player 2.';
-        }
-    };
+    const sdpString = JSON.stringify(rtcConnection.localDescription);
+    const base64Sdp = btoa(sdpString);
+    appState.offerChunks = createQrCodeChunks(base64Sdp);
+    appState.currentOfferChunkIndex = 0;
+    displayQrChunk(appState.offerChunks, app_state.currentOfferChunkIndex);
+    dom.p1QrStatus.textContent = 'Status: Offer created. Show codes to Player 2.';
 }
 
 /**
@@ -937,17 +937,14 @@ async function createOfferQr() {
 async function createAnswerQr(connection) {
     appState.isAnswer = true;
     // The local description is already set by the createAnswer function.
-    // We just need to wait for ICE gathering to finish.
-    connection.onicegatheringstatechange = () => {
-        if (rtcConnection.iceGatheringState === 'complete') {
-            const answerSdp = JSON.stringify(rtcConnection.localDescription);
-            const base64Sdp = btoa(answerSdp);
-            appState.answerChunks = createQrCodeChunks(base64Sdp);
-            appState.currentAnswerChunkIndex = 0;
-            displayQrChunk(appState.answerChunks, appState.currentAnswerChunkIndex);
-            dom.p2QrStatus.textContent = 'Status: Answer created. Show QR code(s) to Player 1.';
-        }
-    };
+    // The createAnswer function now waits for ICE gathering to complete.
+    // We can use the localDescription immediately.
+    const answerSdp = JSON.stringify(connection.localDescription);
+    const base64Sdp = btoa(answerSdp);
+    appState.answerChunks = createQrCodeChunks(base64Sdp);
+    appState.currentAnswerChunkIndex = 0;
+    displayQrChunk(appState.answerChunks, appState.currentAnswerChunkIndex);
+    dom.p2QrStatus.textContent = 'Status: Answer created. Show QR code(s) to Player 1.';
 }
 //...QR functions=====
 
@@ -1250,14 +1247,14 @@ export function initializeEventListeners() {
                 const difficulty = dom.difficultySelector.value;
                 const gameMode = dom.connect4ModeSelect.value;
 
-                appState.teams[teamName] = { 
+                appState.teams[teamName] = {
                     gameType: gameType,
                     difficulty: difficulty,
                     gameState: null, // Will be initialized by the game-specific logic
                     gameMode: gameMode, // Store the selected mode
-                    members: [] 
+                    members: []
                 };
-                
+
                 const teamList = Object.entries(appState.teams).map(([name, data]) => ({ name, gameType: data.gameType }));
                 updateTeamList(teamList); // Update host's own list
 
@@ -1291,7 +1288,7 @@ export function initializeEventListeners() {
         if (event.target.classList.contains('join-team-btn')) {
             const teamName = event.target.dataset.teamName;
             const joinTeamMsg = { type: 'join-team', teamName: teamName, playerId: appState.playerId, sessionId: appState.sessionId };
-            
+
             appState.playerTeam = teamName;
             dom.teamDisplayArea.classList.remove('hidden');
             dom.playerNameDisplay.textContent = appState.playerId;

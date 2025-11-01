@@ -17,7 +17,7 @@ let activeNodeId = null; // Holds the ID of the node currently in the editor
  * Caches the result to avoid multiple fetches.
  */
 async function loadHeteronyms() {
-    if (Object.keys(HETERONYMS).length > 0) {
+    if (HETERONYMS && Object.keys(HETERONYMS).length > 0) {
         return; // Already loaded
     }
     try {
@@ -71,7 +71,7 @@ export async function loadPuzzle() {
     // If a current adventure is already set (e.g., by startAdventure), don't overwrite it.
     if (!appState.soloGameState?.currentAdventure) {
         appState.soloGameState = getInitialState();
-        const savedAdventures = appState.soloGameState.adventures;
+        const savedAdventures = appState.soloGameState.adventures || [];
         if (savedAdventures.length > 0) {
             const randomAdventure = savedAdventures[Math.floor(Math.random() * savedAdventures.length)];
             appState.soloGameState.currentAdventure = randomAdventure;
@@ -159,7 +159,7 @@ export function showAdventureCreator(isCreatorContext = false) {
     document.body.appendChild(modal);
 
     document.getElementById('creator-close-btn').onclick = closeAdventureCreator;
-    
+
     // Wire up the new header buttons using addEventListener for proper scoping    
     document.getElementById('creator-new-btn').addEventListener('click', showNewAdventureCreatorModal);
     document.getElementById('creator-load-btn').addEventListener('click', showLoadAdventureModal);
@@ -414,104 +414,7 @@ function makeElementSpeakable(element, text) {
     }).join('');
 
     // Add a single event listener to the parent element for efficiency.
-    element.addEventListener('mouseover', handleWordEnter);
-    element.addEventListener('mouseout', handleWordLeave);
     element.addEventListener('click', handleWordClick);
-}
-
-/**
- * State variables for the hover-to-speak queue.
- */
-let hoverSpeechQueue = [];
-let isSpeechQueueSpeaking = false;
-let lastQueuedWord = null;
-let lastQueuedElement = null; // Track the DOM element of the last queued word.
-let hoverIntentTimer = null; // Timer to detect user's intent to hover.
-const HOVER_INTENT_DELAY = 250; // ms. Only queue word if mouse rests for this long.
-
-/**
- * Handles the mouse entering a speakable word.
- * Starts a timer that, if not cleared, will add the word to the speech queue.
- * @param {MouseEvent} event The mouseover event.
- */
-function handleWordEnter(event) {
-    // This feature is only for 'very-easy' difficulty.
-    if (dom.difficultySelector.value !== 'very-easy') return;
-
-    const target = event.target;
-    if (!target.classList.contains('speakable-word')) return;
-
-    // When moving to a new word, clear any pending intent timer.
-    clearTimeout(hoverIntentTimer);
-
-    // Start a new timer. If the mouse stays on the word for the delay, queue it.
-    hoverIntentTimer = setTimeout(() => {
-        // --- Gap-filling logic ---
-        // If a previous word was queued and it's in the same text block as the current one...
-        if (lastQueuedElement && lastQueuedElement.parentElement === target.parentElement) {
-            const allWordsInParent = Array.from(target.parentElement.querySelectorAll('.speakable-word'));
-            const lastIndex = allWordsInParent.indexOf(lastQueuedElement);
-            const currentIndex = allWordsInParent.indexOf(target);
-
-            // ...and if there's a gap of one or more words between them...
-            if (currentIndex > lastIndex + 1) {
-                // ...iterate through the skipped words and add them to the queue.
-                for (let i = lastIndex + 1; i < currentIndex; i++) {
-                    hoverSpeechQueue.push(allWordsInParent[i].textContent);
-                }
-            }
-        }
-
-        const word = target.textContent;
-        // Prevent adding the same word consecutively to the queue.
-        if (target === lastQueuedElement) return;
-
-        lastQueuedWord = word;
-        lastQueuedElement = target; // Update the last queued element
-        hoverSpeechQueue.push(word);
-
-        // Attempt to process the queue.
-        processSpeechQueue();
-    }, HOVER_INTENT_DELAY);
-}
-
-/**
- * Handles the mouse leaving a speakable word, canceling the intent timer.
- */
-function handleWordLeave() {
-    clearTimeout(hoverIntentTimer);
-}
-
-/**
- * Checks the speech queue and speaks the contents if the synthesizer is not busy.
- */
-function processSpeechQueue() {
-    // If the synthesizer is already speaking a queued sentence, or the queue is empty, do nothing.
-    if (isSpeechQueueSpeaking || hoverSpeechQueue.length === 0) {
-        return;
-    }
-
-    isSpeechQueueSpeaking = true;
-    const sentenceToSpeak = hoverSpeechQueue.join(' ');
-    hoverSpeechQueue = []; // Clear the queue immediately to start collecting the next batch.
-
-    // Show a toast with the sentence for debugging purposes.
-    showToast(sentenceToSpeak, 'info');
-
-    // Use a polling mechanism (pinger) instead of relying on the unreliable onend event.
-    const pinger = setInterval(() => {
-        // Check if the speech synthesis engine is no longer speaking.
-        if (!window.speechSynthesis.speaking) {
-            clearInterval(pinger); // Stop checking.
-            isSpeechQueueSpeaking = false;
-            lastQueuedElement = null; // Reset element tracker when speech finishes.
-            lastQueuedWord = null; // Reset tracker when speech finishes.
-            processSpeechQueue(); // Check if new words were queued while speaking.
-        }
-    }, 250); // Check every 250ms.
-
-    // Pass the sentence string directly; speakText will create the utterance.
-    speakText(sentenceToSpeak, null, appState.soloGameState.currentAdventure?.pronunciations);
 }
 
 /**
@@ -520,22 +423,23 @@ function processSpeechQueue() {
  * @param {Event} event The click event.
  */
 function handleWordClick(event) {
-	const target = event.target;
-	if (!target.classList.contains('speakable-word')) return;
+    const target = event.target;
+    if (!target.classList.contains('speakable-word')) return;
 
-	event.stopPropagation(); // Prevent parent handlers from firing.
+    event.stopPropagation(); // Prevent parent handlers from firing.
+    const gameState = appState.soloGameState;
 
-	// Cancel any ongoing speech to prevent overlap.
-	window.speechSynthesis.cancel();
+    // Cancel any ongoing speech to prevent overlap.
+    window.speechSynthesis.cancel();
 
-	// Get the text of the clicked word, removing any punctuation.
-	const wordToSpeak = target.textContent.replace(/[.,!?;:]/g, '');
+    // Get the original word from the element.
+    const originalWord = target.textContent;
 
-	// Get the current adventure's specific pronunciation map, if it exists.
-	const pronunciationMap = appState.soloGameState?.currentAdventure?.pronunciations;
+    // Get the current adventure's specific pronunciation map, if it exists.
+    const pronunciationMap = appState.soloGameState?.currentAdventure?.pronunciations;
 
-	// Create a new utterance with only the desired word and speak it.
-	speakText(wordToSpeak, null, pronunciationMap);
+    // Pass the original word and the map to speakText, which will handle the lookup.
+    speakText(originalWord, null, pronunciationMap);
 }
 /**
  * Checks if a single requirement is met.
@@ -594,58 +498,63 @@ function handleChoiceClick(choice) {
     // Process any effects of the choice
     if (choice.effects && Array.isArray(choice.effects)) {
         choice.effects.forEach(effect => {
-            if (effect.type === 'item') {
-                if (effect.action === 'add') {
-                    const item = gameState.player.inventory.find(i => i.id === effect.id);
-                    if (item) {
-                        item.quantity += effect.quantity || 1;
-                    } else {
-                        // This part would need a proper item definition list, for now we'll create a basic one
-                        gameState.player.inventory.push({ id: effect.id, name: effect.id, quantity: effect.quantity || 1 });
+            try {
+                if (effect.type === 'item') {
+                    if (effect.action === 'add') {
+                        const item = gameState.player.inventory.find(i => i.id === effect.id);
+                        if (item) {
+                            item.quantity += effect.quantity || 1;
+                        } else {
+                            // This part would need a proper item definition list, for now we'll create a basic one
+                            gameState.player.inventory.push({ id: effect.id, name: effect.id, quantity: effect.quantity || 1 });
+                        }
+                        showToast(`You received ${effect.quantity || 1} ${effect.id}!`, 'info');
+                    } else if (effect.action === 'remove') {
+                        const itemIndex = gameState.player.inventory.findIndex(i => i.id === effect.id);
+                        if (itemIndex > -1) {
+                            gameState.player.inventory[itemIndex].quantity -= effect.quantity || 1;
+                            if (gameState.player.inventory[itemIndex].quantity <= 0) {
+                                gameState.player.inventory.splice(itemIndex, 1);
+                            }
+                        }
                     }
-                    showToast(`You received ${effect.quantity || 1} ${effect.id}!`, 'info');
-                } else if (effect.action === 'remove') {
-                    const itemIndex = gameState.player.inventory.findIndex(i => i.id === effect.id);
-                    if (itemIndex > -1) {
-                        gameState.player.inventory[itemIndex].quantity -= effect.quantity || 1;
-                        if (gameState.player.inventory[itemIndex].quantity <= 0) {
-                            gameState.player.inventory.splice(itemIndex, 1);
+                } else if (effect.type === 'attribute') {
+                    const attr = gameState.player.attributes[effect.id];
+                    if (attr) {
+                        const oldValue = attr.value;
+                        switch (effect.operator) {
+                            case '+': attr.value += effect.value; break;
+                            case '-': attr.value -= effect.value; break;
+                            case '=': attr.value = effect.value; break;
+                        }
+                        // Clamp value for pools with a max value
+                        if (attr.type === 'pool' && attr.max) {
+                            attr.value = Math.min(attr.value, attr.max);
+                        }
+                        attr.value = Math.max(0, attr.value); // Attributes can't go below 0
+                        const change = attr.value - oldValue;
+                        showToast(`${attr.name} ${change >= 0 ? '+' : ''}${change}`, 'info');
+                    }
+                } else if (effect.type === 'node') {
+                    const currentNode = gameState.currentAdventure.nodes[gameState.currentNodeId];
+                    if (effect.action === 'addChoice') {
+                        // Add a new choice to the current node.
+                        // The 'value' should be a complete choice object.
+                        if (effect.value && effect.value.text && effect.value.targetNodeId) {
+                            currentNode.choices.push(JSON.parse(JSON.stringify(effect.value)));
+                        }
+                    } else if (effect.action === 'removeChoice') {
+                        // Remove the choice that triggered this effect.
+                        const choiceIndex = currentNode.choices.findIndex(c => c.text === choice.text); // Simple find by text
+                        if (choiceIndex > -1) {
+                            currentNode.choices.splice(choiceIndex, 1);
+                            showToast('A new option has appeared...', 'info');
                         }
                     }
                 }
-            } else if (effect.type === 'attribute') {
-                const attr = gameState.player.attributes[effect.id];
-                if (attr) {
-                    const oldValue = attr.value;
-                    switch (effect.operator) {
-                        case '+': attr.value += effect.value; break;
-                        case '-': attr.value -= effect.value; break;
-                        case '=': attr.value = effect.value; break;
-                    }
-                    // Clamp value for pools with a max value
-                    if (attr.type === 'pool' && attr.max) {
-                        attr.value = Math.min(attr.value, attr.max);
-                    }
-                    attr.value = Math.max(0, attr.value); // Attributes can't go below 0
-                    const change = attr.value - oldValue;
-                    showToast(`${attr.name} ${change >= 0 ? '+' : ''}${change}`, 'info');
-                }
-            } else if (effect.type === 'node') {
-                const currentNode = gameState.currentAdventure.nodes[gameState.currentNodeId];
-                if (effect.action === 'addChoice') {
-                    // Add a new choice to the current node.
-                    // The 'value' should be a complete choice object.
-                    if (effect.value && effect.value.text && effect.value.targetNodeId) {
-                        currentNode.choices.push(JSON.parse(JSON.stringify(effect.value)));
-                        showToast('A new option has appeared...', 'info');
-                    }
-                } else if (effect.action === 'removeChoice') {
-                    // Remove the choice that triggered this effect.
-                    const choiceIndex = currentNode.choices.findIndex(c => c.text === choice.text); // Simple find by text
-                    if (choiceIndex > -1) {
-                        currentNode.choices.splice(choiceIndex, 1);
-                    }
-                }
+            } catch (err) {
+                console.error("Error processing node effect:", err);
+                showToast("Invalid format for node effect value.", "error");
             }
         });
     }
@@ -748,7 +657,7 @@ function createNewAdventure() {
                 choices: []
             }
         },
-        pronunciations: {}, // Add pronunciation map to new adventures
+        // Pronunciations are now per-node
         _ui: { // Add UI state for the map view
             pan: { x: 0, y: 0 },
             zoom: 1
@@ -865,6 +774,7 @@ async function showLoadAdventureModal() {
  * @param {boolean} isCreatorContext - Should always be false here.
  */
 export async function showNewAdventureModal(isCreatorContext = false) {
+    const savedAdventures = loadAdventuresFromStorage();
     let predefinedAdventures = [];
     try {
         const response = await fetch('./assets/adventures_manifest.json');
@@ -873,23 +783,31 @@ export async function showNewAdventureModal(isCreatorContext = false) {
         console.error("Could not load adventure manifest:", error);
     }
 
-    const allTemplates = [...predefinedAdventures];
+    const allTemplates = [
+        ...predefinedAdventures.map(adv => ({ ...adv, isPredefined: true })),
+        ...savedAdventures.map(adv => ({ ...adv, isPredefined: false }))
+    ];
 
     showListModal({
         title: 'Start a New Adventure',
         items: allTemplates,
         renderItem: (template) => `
             <div class="component-item theme-button">
-                <div class="list-item-name" ${template.isBlank ? 'data-blank="true"' : `data-path="${template.path}"`} style="flex-grow: 1; cursor: pointer;">
-                    ${template.name} ${template.isBlank ? '<em style="color: var(--primary-cyan);">(Empty)</em>' : ''}
+                <div class="list-item-name" 
+                     ${template.isPredefined ? `data-path="${template.path}"` : `data-id="${template.id}"`}
+                     style="flex-grow: 1; cursor: pointer;">
+                    ${template.name} ${template.isPredefined ? '<em style="color: var(--primary-cyan);">(Default)</em>' : ''}
                 </div>
             </div>`,
         onItemClick: (e) => {
             const modal = document.getElementById('generic-list-modal');
             if (!e.target.classList.contains('list-item-name')) return;
 
-            // Not in creator: start playing the adventure
-            if (e.target.dataset.path) startAdventure(e.target.dataset.path);
+            const path = e.target.dataset.path;
+            const id = e.target.dataset.id;
+
+            if (path) startAdventureByPath(path);
+            else if (id) startAdventureById(id);
 
             if (modal) modal.remove();
         }
@@ -931,13 +849,29 @@ async function showNewAdventureCreatorModal() {
  * Starts a new playthrough of a specific adventure.
  * @param {string} path - The path to the adventure's JSON file.
  */
-async function startAdventure(path) {
+async function startAdventureByPath(path) {
     try {
         const response = await fetch(path);
         if (!response.ok) throw new Error(`Failed to fetch adventure: ${path}`);
         const adventureToPlay = await response.json();
         appState.soloGameState.currentAdventure = adventureToPlay;
-        loadPuzzle(); // Reload the puzzle with the selected adventure
+        await loadPuzzle(); // Reload the puzzle with the selected adventure
+        showToast(`Starting: ${adventureToPlay.name}`, 'info');
+    } catch (error) {
+        console.error('Error starting adventure:', error);
+        showToast(error.message, 'error');
+    }
+}
+
+/**
+ * Starts a new playthrough of a saved adventure by its ID.
+ * @param {string} id - The ID of the saved adventure.
+ */
+async function startAdventureById(id) {
+    try {
+        const adventureToPlay = loadAdventuresFromStorage().find(adv => adv.id === id);
+        appState.soloGameState.currentAdventure = adventureToPlay;
+        await loadPuzzle(); // Reload the puzzle with the selected adventure
         showToast(`Starting: ${adventureToPlay.name}`, 'info');
     } catch (error) {
         console.error('Error starting adventure:', error);
@@ -1065,7 +999,10 @@ function renderPronunciationEditor() {
     if (!activeAdventure) return;
 
     const editorArea = document.getElementById('pronunciation-editor-area');
-    editorArea.innerHTML = ''; // Clear previous content
+    editorArea.innerHTML = ''; // Clear previous content before re-rendering
+
+    const node = activeAdventure.nodes[activeNodeId];
+    if (!node) return;
 
     const pronunciations = activeAdventure.pronunciations || {};
     activeAdventure.pronunciations = pronunciations; // Ensure it exists
@@ -1077,10 +1014,8 @@ function renderPronunciationEditor() {
         itemRow.dataset.word = word;
         itemRow.innerHTML = `
             <input type="text" class="designer-input word-input" value="${word}" readonly>
-            <div class="sounds-like-container">
-                <input type="text" class="designer-input sounds-like-input" value="${soundsLike}" placeholder="Sounds Like (e.g., wynds)">
-                <button class="speak-pronunciation-btn" title="Test Pronunciation">🔊</button>
-            </div>
+            <input type="text" class="designer-input sounds-like-input" value="${soundsLike}" placeholder="Sounds Like (e.g., wynds)">
+            <button class="speak-pronunciation-btn" title="Test Pronunciation">🔊</button>
             <button class="remove-attribute-btn">&times;</button>
         `;
         // Add event listener for the 'sounds-like' input to update the model
@@ -1101,51 +1036,41 @@ function renderPronunciationEditor() {
     addBtn.onclick = () => {
         addBtn.style.display = 'none'; // Hide the button
         const wordsInNode = getUniqueWords(activeNodeId);
-        const knownHeteronymsSet = new Set(Object.keys(HETERONYMS));
+        const knownHeteronymsSet = new Set(HETERONYMS);
 
         // Filter the words in the node to only include those that are known heteronyms.
-        const allSelectableWords = wordsInNode.filter(word => knownHeteronymsSet.has(word)).sort();
+        // Also check for simple plurals (e.g., story has 'wind', heteronyms has 'winds').
+        const allSelectableWords = wordsInNode.filter(word => {
+            return knownHeteronymsSet.has(word) || knownHeteronymsSet.has(word + 's');
+        }).sort();
 
         const wordOptions = allSelectableWords.map(w => `<option value="${w}">${w}</option>`).join('');
 
+        // Show both the word selector and the text input at the same time.
         addContainer.innerHTML = `
             <div class="attribute-editor-row">
-                <select id="pronunciation-word-select" class="designer-input">
-                    <option value="">-- Select a word --</option>
-                    ${wordOptions}
-                </select>
-                <div id="pronunciation-choice-area"></div>
+                <input list="pronunciation-word-datalist" id="pronunciation-word-input" class="designer-input" placeholder="Type or select a word">
+                <datalist id="pronunciation-word-datalist">
+                    ${allSelectableWords.map(w => `<option value="${w}"></option>`).join('')}
+                </datalist>
+                <input type="text" id="pronunciation-value-input" class="designer-input" placeholder="Sounds like...">
                 <button id="cancel-add-pronunciation" class="remove-attribute-btn">&times;</button>
             </div>
         `;
 
         document.getElementById('cancel-add-pronunciation').onclick = renderPronunciationEditor;
 
-        document.getElementById('pronunciation-word-select').onchange = (e) => {
-            const selectedWord = e.target.value;
-            const choiceArea = document.getElementById('pronunciation-choice-area');
-            if (!selectedWord) {
-                choiceArea.innerHTML = '';
-                return;
-            }
+        const wordInput = document.getElementById('pronunciation-word-input');
+        const valueInput = document.getElementById('pronunciation-value-input');
 
-            if (HETERONYMS[selectedWord]) {
-                const options = HETERONYMS[selectedWord].map(p => `<option value="${p.value}">${p.display}</option>`).join('');
-                choiceArea.innerHTML = `<select id="pronunciation-value-select" class="designer-input">${options}</select>`;
-                document.getElementById('pronunciation-value-select').onchange = (ev) => {
-                    activeAdventure.pronunciations[selectedWord] = ev.target.value;
-                    renderPronunciationEditor();
-                };
-                // Set initial value
-                activeAdventure.pronunciations[selectedWord] = HETERONYMS[selectedWord][0].value;
-            } else {
-                choiceArea.innerHTML = `<input type="text" id="pronunciation-value-input" class="designer-input" placeholder="Sounds like...">`;
-                document.getElementById('pronunciation-value-input').onblur = (ev) => {
-                    if (ev.target.value) {
-                        activeAdventure.pronunciations[selectedWord] = ev.target.value;
-                        renderPronunciationEditor();
-                    }
-                };
+        // When a word is selected and the text input loses focus, save the override.
+        valueInput.onblur = () => {
+            const selectedWord = wordInput.value.trim();
+            const soundsLike = valueInput.value.trim();
+
+            if (selectedWord && soundsLike) {
+                activeAdventure.pronunciations[selectedWord.toLowerCase()] = soundsLike;
+                renderPronunciationEditor(); // Re-render to show the new override in the list
             }
         };
     };
@@ -1153,13 +1078,18 @@ function renderPronunciationEditor() {
 
     // Event delegation for updates
     editorArea.onclick = (e) => {
-        if (e.target.classList.contains('remove-attribute-btn')) {
-            const word = e.target.closest('.attribute-editor-row').dataset.word;
+        // Use a more specific check to differentiate between removing an existing
+        // override and canceling the "add new" row.
+        if (e.target.classList.contains('remove-attribute-btn') && !e.target.id.includes('cancel')) {
+            const word = e.target.closest('.attribute-editor-row').querySelector('.word-input').value;
             delete activeAdventure.pronunciations[word];
             renderPronunciationEditor();
         } else if (e.target.classList.contains('speak-pronunciation-btn')) {
-            const soundsLikeValue = e.target.closest('.sounds-like-container').querySelector('.sounds-like-input').value;
-            if (soundsLikeValue) speakText(soundsLikeValue);
+            const soundsLikeValue = e.target.closest('.attribute-editor-row').querySelector('.sounds-like-input').value;
+            if (soundsLikeValue) {
+                // The `true` flag tells speakText to treat this as a direct phonetic spelling and not look it up.
+                speakText(soundsLikeValue, null, null, true);
+            }
         }
     };
 }
@@ -1179,10 +1109,16 @@ function renderAttributeEditor() {
         attrRow.className = 'attribute-editor-row';
         attrRow.dataset.index = index;
 
+        // A more robust check for colorable symbols. It's colorable if it's a single character
+        // outside the main emoji range, OR if it's one of our special symbols with a text-variation selector.
+        const isColorable = attr.icon && (
+            (attr.icon.length === 1 && attr.icon.charCodeAt(0) < 0x2700) ||
+            (attr.icon.includes('\uFE0E')));
+        const iconStyle = isColorable ? `style="color: ${attr.iconColor || '#ffffff'};"` : '';
+
         attrRow.innerHTML = `
             <div class="attribute-icon-group">
-                <input type="text" class="designer-input attribute-icon-input" data-key="icon" value="${attr.icon || ''}" placeholder="Icon" readonly>
-                <input type="color" class="designer-input attribute-color-input" data-key="iconColor" value="${attr.iconColor || '#ffffff'}" title="Set Icon Color">
+                <input type="text" class="designer-input attribute-icon-input" data-key="icon" value="${attr.icon || ''}" placeholder="Icon" readonly ${iconStyle}>
             </div>
             <input type="text" class="designer-input" data-key="name" value="${attr.name}" placeholder="Name">
             <select class="designer-input" data-key="type">
@@ -1219,12 +1155,11 @@ function renderAttributeEditor() {
             maxInput.classList.toggle('hidden', value !== 'pool');
         }
 
-        // Enable/disable color picker based on whether the icon is a simple symbol
+        // When an icon is updated (e.g., from the symbol picker), re-render the icon preview style.
         if (key === 'icon') {
-            const colorInput = row.querySelector('.attribute-color-input');
-            // A simple check: if the icon is a single character and not in the typical emoji range, it's likely colorable.
-            const isColorable = value.length === 1 && value.charCodeAt(0) < 0x2700;
-            colorInput.disabled = !isColorable;
+            const iconInput = row.querySelector('.attribute-icon-input');
+            // Re-render the entire attribute editor to correctly display the new icon and its color
+            renderAttributeEditor();
         }
     };
 
@@ -1243,10 +1178,12 @@ function renderAttributeEditor() {
 
 function showSymbolPicker(targetIconInput) {
     const SYMBOLS = {
+        // The \uFE0E is a variation selector that forces text rendering over emoji rendering,
+        // which is necessary for some symbols like the heart and cross to be colorable.
+        'Colorable Symbols': ['\u2764\uFE0E', '★', '♦', '♠', '♣', '▲', '▼', '●', '■', '◆', '\u271A\uFE0E', '†', '‡'],
         'Attributes': ['❤️', '✨', '⚡', '🔋', '💰', '💪', '🧠', '🍀', '🌀', '❤️‍🩹', '🔥', '💧', '🍃', '⛰️'],
         'Items': ['🔑', '🗝️', '🛡️', '⚔️', '🏹', '💣', '🗺️', '🧭', '💎', '📜', '📖', '🧪', '瓶', '🍎'],
         'Actions': ['💬', '👀', '👂', '🖐️', '🏃', '🚶', '👊', '🙏', '🤔', '😴'],
-        'Colorable Symbols': ['❤', '★', '♦', '♠', '♣', '▲', '▼', '●', '■', '◆', '✚', '†', '‡']
     };
 
     const modal = document.createElement('div');
@@ -1270,11 +1207,47 @@ function showSymbolPicker(targetIconInput) {
 
     modal.addEventListener('click', (e) => {
         if (e.target.classList.contains('symbol-item')) {
+            const row = targetIconInput.closest('.attribute-editor-row');
+            const index = parseInt(row.dataset.index, 10);
             const symbol = e.target.textContent;
-            targetIconInput.value = symbol;
-            // Trigger the input event to update the state and check for colorability
-            targetIconInput.dispatchEvent(new Event('input', { bubbles: true }));
-            modal.remove();
+            const category = e.target.closest('.symbol-grid').previousElementSibling.textContent;
+
+            if (category === 'Colorable Symbols') {
+                // Show color picker view
+                const colors = ['#ffffff', '#ff4d4d', '#ffad4d', '#f2f261', '#61f261', '#61f2f2', '#6161f2', '#f261f2', '#c0c0c0'];
+                modal.innerHTML = `
+                    <h3 style="margin-top: 0;">Pick a Color for ${symbol}</h3>
+                    <div class="symbol-grid">
+                        ${colors.map(color => `<div class="color-swatch" style="background-color: ${color};" data-color="${color}"></div>`).join('')}
+                        <input type="color" id="custom-color-picker" value="#ffffff" title="Custom Color">
+                    </div>
+                    <button id="symbol-picker-back-btn" class="theme-button" style="margin-top: 20px;">Back</button>
+                `;
+
+                modal.querySelector('#symbol-picker-back-btn').onclick = () => showSymbolPicker(targetIconInput);
+
+                const handleColorSelection = (color) => {
+                    targetIconInput.value = symbol;
+                    activeAdventure.attributes[index].icon = symbol;
+                    activeAdventure.attributes[index].iconColor = color;
+                    targetIconInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    modal.remove();
+                };
+
+                modal.querySelectorAll('.color-swatch').forEach(swatch => {
+                    swatch.onclick = () => handleColorSelection(swatch.dataset.color);
+                });
+
+                modal.querySelector('#custom-color-picker').oninput = (event) => handleColorSelection(event.target.value);
+
+            } else {
+                // Non-colorable symbol selected
+                targetIconInput.value = symbol;
+                activeAdventure.attributes[index].icon = symbol;
+                activeAdventure.attributes[index].iconColor = null; // Clear color for non-colorable icons
+                targetIconInput.dispatchEvent(new Event('input', { bubbles: true }));
+                modal.remove();
+            }
         }
     });
 }
@@ -1317,100 +1290,207 @@ function runNodeLayout(start) {
     stopOrganizeBtn.style.display = '';
 
     const mapArea = document.getElementById('node-map-preview');
-    // Use the container's width for both dimensions to force a square layout area.
-    // This creates a more circular and compact node arrangement, regardless of container aspect ratio.
     const layoutWidth = mapArea.clientWidth;
-    const layoutHeight = mapArea.clientWidth; // Use width for height to create a square
-    const K_REPEL = 60000; // Increased repulsion to spread nodes out more
-    const K_ATTRACT = 0.01; // Reduced attraction to prevent aggressive snapping
-    const IDEAL_LENGTH = 200;
-    const GRAVITY = 0.1; // Increased gravity to pull nodes towards the center more strongly
-    let temperature = 5.0; // Higher initial temperature for more aggressive initial movement
-    const COOLING_RATE = 0.995; // Slower cooling rate
+    const layoutHeight = mapArea.clientHeight;
+
+    // --- Force constants ---
+    const K_REPEL = 90000;      // Force pushing nodes away from each other
+    const K_ATTRACT = 0.03;     // Force pulling connected nodes together (spring)
+    const K_HIERARCHY = 0.05;   // Gentle downward force for child nodes
+    const K_EDGE_REPEL = 2000;  // Force to push non-connected edges apart
+    const IDEAL_LENGTH = 180;   // Ideal distance between connected nodes
+    const GRAVITY = 0.05;       // Force pulling nodes towards the center
+
+    // --- Simulation parameters ---
+    let temperature = 100.0;      // Initial "energy" of the system
+    const COOLING_RATE = 0.99;  // How quickly the system cools down
 
     let iterationCount = 0;
-    let lastTotalMovement = Infinity; // For adaptive cooling
+    const maxIterations = 200;
+
+    // --- Collect all edges for crossing-avoidance ---
+    const edges = [];
+    nodes.forEach(node => {
+        node.choices?.forEach(choice => {
+            edges.push({ source: node, target: activeAdventure.nodes[choice.targetNodeId] });
+        });
+    });
+
+    // --- Calculate Node Levels (for hierarchical layout) ---
+    const levels = {};
+    const calculateLevels = (nodeId, level) => {
+        if (!levels[nodeId] || levels[nodeId] > level) {
+            levels[nodeId] = level;
+            const node = activeAdventure.nodes[nodeId];
+            node.choices?.forEach(choice => {
+                calculateLevels(choice.targetNodeId, level + 1);
+            });
+        }
+    };
+    calculateLevels(activeAdventure.startNodeId, 0);
+    // Assign a high level to any unreached nodes
+    nodes.forEach(node => {
+        if (levels[node.id] === undefined) {
+            levels[node.id] = 100; // Place orphans at the bottom
+        }
+    });
+
+    // --- Identify Orphan Nodes ---
+    const orphanNodeIds = new Set(nodes.map(n => n.id));
+    edges.forEach(edge => {
+        if (edge.source) orphanNodeIds.delete(edge.source.id);
+        if (edge.target) orphanNodeIds.delete(edge.target.id);
+    });
+
 
     function step() {
         let totalMovement = 0;
 
         // --- 1. Calculate Forces ---
         for (const node of nodes) {
-            node._ui.vx = node._ui.vx || 0;
-            node._ui.vy = node._ui.vy || 0;
+            // Reset forces for this step
+            node._ui.fx = 0;
+            node._ui.fy = 0;
 
-            const centerDx = layoutWidth / 2 - node._ui.x;
-            const centerDy = layoutHeight / 2 - node._ui.y;
-            node._ui.vx += centerDx * GRAVITY * 0.01;
-            node._ui.vy += centerDy * GRAVITY * 0.01;
+            // --- Gravity / Orphan Force ---
+            if (orphanNodeIds.has(node.id)) {
+                // Special "Orphan Gravity" to pull disconnected nodes to the bottom-center
+                const orphanGravity = 0.02;
+                const orphanTargetX = layoutWidth / 2;
+                const orphanTargetY = layoutHeight - 50; // Target near the bottom
+                const odx = orphanTargetX - node._ui.x;
+                const ody = orphanTargetY - node._ui.y;
+                node._ui.fx += odx * orphanGravity;
+                node._ui.fy += ody * orphanGravity;
+            } else {
+                // --- Standard Gravity Force (pulls nodes towards their ideal level) ---
+                const targetY = (levels[node.id] * (IDEAL_LENGTH + 20)) + 50; // +50 for top padding
+                const gravityDx = layoutWidth / 2 - node._ui.x;
+                const gravityDy = targetY - node._ui.y;
+                node._ui.fx += gravityDx * GRAVITY;
+                node._ui.fy += gravityDy * GRAVITY;
+            }
 
+            // --- Hierarchical Force (pull children down) ---
+            node.choices?.forEach(choice => {
+                const targetNode = activeAdventure.nodes[choice.targetNodeId];
+                if (!targetNode) return;
+                const levelDiff = levels[targetNode.id] - levels[node.id];
+                if (levelDiff > 0) node._ui.fy -= K_HIERARCHY * levelDiff;
+            });
+
+            // --- Repulsion Force (from all other nodes) ---
             for (const otherNode of nodes) {
                 if (node === otherNode) continue;
                 const dx = node._ui.x - otherNode._ui.x;
                 const dy = node._ui.y - otherNode._ui.y;
                 const distance = Math.sqrt(dx * dx + dy * dy) || 1;
                 const repulsionForce = K_REPEL / (distance * distance);
-                node._ui.vx += (dx / distance) * repulsionForce;
-                node._ui.vy += (dy / distance) * repulsionForce;
+                node._ui.fx += (dx / distance) * repulsionForce;
+                node._ui.fy += (dy / distance) * repulsionForce;
 
-                // --- New: Collision Detection & Resolution ---
-                // Based on the principle of a "collision" force to prevent visual overlap.
-                const nodeRadius = 15; // As defined in the SVG rendering
-                const minDistance = nodeRadius * 2; // Minimum distance to prevent overlap
-
+                // --- Collision Force (prevent overlap) ---
+                const nodeRadius = 25; // A bit larger than the visual radius
+                const minDistance = nodeRadius * 2;
                 if (distance < minDistance) {
                     const overlap = minDistance - distance;
-                    const collisionForce = overlap * 0.1; // A gentle but firm push
-                    node._ui.vx += (dx / distance) * collisionForce;
-                    node._ui.vy += (dy / distance) * collisionForce;
+                    const collisionForce = overlap * 0.5; // Strong push
+                    node._ui.fx += (dx / distance) * collisionForce;
+                    node._ui.fy += (dy / distance) * collisionForce;
                 }
             }
 
+            // --- Attraction Force (springs between connected nodes) ---
             for (const choice of node.choices) {
                 const targetNode = activeAdventure.nodes[choice.targetNodeId];
                 if (!targetNode) continue;
                 const dx = targetNode._ui.x - node._ui.x;
                 const dy = targetNode._ui.y - node._ui.y;
                 const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+
+                // Spring force
                 const springForce = K_ATTRACT * (distance - IDEAL_LENGTH);
-                node._ui.vx += (dx / distance) * springForce;
-                node._ui.vy += (dy / distance) * springForce;
-                targetNode._ui.vx -= (dx / distance) * springForce;
-                targetNode._ui.vy -= (dy / distance) * springForce;
+                const fx = (dx / distance) * springForce;
+                const fy = (dy / distance) * springForce;
+                node._ui.fx += fx;
+                node._ui.fy += fy;
+                if (targetNode._ui) {
+                    targetNode._ui.fx -= fx;
+                    targetNode._ui.fy -= fy;
+                }
+            }
+        }
+
+        // --- Edge-Repulsion Force (to reduce crossings) ---
+        for (let i = 0; i < edges.length; i++) {
+            for (let j = i + 1; j < edges.length; j++) {
+                const edge1 = edges[i];
+                const edge2 = edges[j];
+
+                // Skip if edges share a node
+                if (!edge1.source || !edge1.target || !edge2.source || !edge2.target ||
+                    edge1.source === edge2.source || edge1.source === edge2.target ||
+                    edge1.target === edge2.source || edge1.target === edge2.target) continue;
+
+                const mid1_x = (edge1.source._ui.x + edge1.target._ui.x) / 2;
+                const mid1_y = (edge1.source._ui.y + edge1.target._ui.y) / 2;
+                const mid2_x = (edge2.source._ui.x + edge2.target._ui.x) / 2;
+                const mid2_y = (edge2.source._ui.y + edge2.target._ui.y) / 2;
+
+                const dx = mid1_x - mid2_x;
+                const dy = mid1_y - mid2_y;
+                const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+
+                const force = K_EDGE_REPEL / (distance * distance);
+                const fx = (dx / distance) * force;
+                const fy = (dy / distance) * force;
+
+                // Apply force to all 4 nodes involved
+                edge1.source._ui.fx += fx; edge1.source._ui.fy += fy;
+                edge1.target._ui.fx += fx; edge1.target._ui.fy += fy;
+                edge2.source._ui.fx -= fx; edge2.source._ui.fy -= fy;
+                edge2.target._ui.fx -= fx; edge2.target._ui.fy -= fy;
             }
         }
 
         // --- 2. Apply Forces and Update Positions ---
         for (const node of nodes) {
-            // Apply temperature to the velocity, and limit max movement per step
-            const dx = Math.max(-50, Math.min(50, node._ui.vx * 0.01 * temperature));
-            const dy = Math.max(-50, Math.min(50, node._ui.vy * 0.01 * temperature));
+            // Apply forces to velocity
+            node._ui.vx = (node._ui.vx + node._ui.fx * 0.01) * 0.9; // Damping
+            node._ui.vy = (node._ui.vy + node._ui.fy * 0.01) * 0.9; // Damping
 
-            node._ui.x += dx;
-            node._ui.y += dy;
+            // Limit velocity by temperature
+            const speed = Math.sqrt(node._ui.vx * node._ui.vx + node._ui.vy * node._ui.vy);
+            if (speed > temperature) {
+                node._ui.vx = (node._ui.vx / speed) * temperature;
+                node._ui.vy = (node._ui.vy / speed) * temperature;
+            }
+
+            // Update position
+            node._ui.x += node._ui.vx;
+            node._ui.y += node._ui.vy;
+
             totalMovement += Math.abs(node._ui.vx) + Math.abs(node._ui.vy);
-
-            // Apply damping to slow down movement over time
-            node._ui.vx *= 0.9;
-            node._ui.vy *= 0.9;
         }
 
-        // --- Adaptive Cooling ---
-        // Only cool down if the system's energy is decreasing.
-        // This allows the system to remain "hot" and make large changes for longer if it's still chaotic.
-        if (totalMovement < lastTotalMovement) {
-            temperature *= COOLING_RATE;
-        }
-        lastTotalMovement = totalMovement;
+        // --- 3. Cool Down ---
+        temperature *= COOLING_RATE;
         iterationCount++;
 
+        // --- 4. Render and Continue ---
         renderNodeMap(false);
-        if (temperature > 0.01 && iterationCount < 500) { // Stop when the system is "cool" or after max iterations
+        if (temperature > 0.1 && iterationCount < maxIterations) {
             layoutAnimationId = requestAnimationFrame(step);
         } else {
             runNodeLayout(false); // Automatically stop when stable
         }
     }
+
+    // Initialize velocities before starting
+    nodes.forEach(node => {
+        node._ui.vx = 0;
+        node._ui.vy = 0;
+    });
 
     step(); // Start the animation loop
 }
@@ -1571,20 +1651,20 @@ function renderNodeEditor() {
             <input type="text" class="designer-input" data-node-key="title" value="${node.title}" placeholder="Node Title">
             <input type="color" data-node-key="color" value="${node.color || '#00A0C0'}" title="Set Node Color">
         </div>
-        <textarea class="adventure-creator-node-text" data-node-key="text" placeholder="Enter story text for this node...">${node.text}</textarea>
+        <div id="adventure-node-text-editor" class="adventure-creator-node-text" contenteditable="true" data-node-key="text" placeholder="Enter story text for this node..."></div>
         <h5>Choices: <span class="info-icon" data-info="choices">ⓘ</span></h5>
         <div id="choices-container">
             ${node.choices.map((choice, index) => {
-                // Process choice text to add heteronym icons
-                const choiceTextWithIcons = choice.text.split(/(\s+)/).map(word => {
-                    const cleanWord = word.replace(/[.,!?;:]/g, '').toLowerCase();
-                    if (HETERONYMS[cleanWord]) {
-                        return `${word}<span class="heteronym-icon" data-word="${cleanWord}" data-context="choice" data-index="${index}">🔊</span>`;
-                    }
-                    return word;
-                }).join('');
+        // Process choice text to add heteronym icons
+        const choiceTextWithIcons = choice.text.split(/(\s+)/).map(word => {
+            const cleanWord = word.replace(/[.,!?;:]/g, '').toLowerCase();
+            if (HETERONYMS && Object.prototype.hasOwnProperty.call(HETERONYMS, cleanWord)) {
+                return `${word}<span class="heteronym-icon" data-word="${cleanWord}" data-context="choice" data-index="${index}">🔊</span>`;
+            }
+            return word;
+        }).join('');
 
-                return `
+        return `
                 <div class="adventure-choice-editor" data-choice-index="${index}">
                     <div class="choice-main-controls">
                         <div class="designer-input-with-icon">
@@ -1618,17 +1698,17 @@ function renderNodeEditor() {
     `;
 
     // Process node text to add heteronym icons
-    const nodeTextArea = editorArea.querySelector('.adventure-creator-node-text');
-    const textWithIcons = node.text.split(/(\s+)/).map(word => {
+    const nodeTextEditor = editorArea.querySelector('#adventure-node-text-editor');
+    nodeTextEditor.innerHTML = node.text.split(/(\s+)/).map(word => {
         const cleanWord = word.replace(/[.,!?;:]/g, '').toLowerCase();
-        if (HETERONYMS[cleanWord]) {
-            // This is a simplified approach. A more robust solution would use a rich text editor.
-            // For now, we'll just log that it's a known heteronym.
-            // A visual indicator would require more complex DOM manipulation within the textarea.
-            console.log(`Heteronym found in node text: ${cleanWord}`);
+        if (HETERONYMS && Object.prototype.hasOwnProperty.call(HETERONYMS, cleanWord)) {
+            return `${word}<span class="heteronym-icon" data-word="${cleanWord}" data-context="node">🔊</span>`;
         }
         return word;
     }).join('');
+
+    // Update the model when the contenteditable div is changed
+    nodeTextEditor.oninput = () => { activeAdventure.nodes[activeNodeId].text = nodeTextEditor.innerText; };
 
     editorArea.querySelectorAll('select[data-choice-key="targetNodeId"]').forEach((select, index) => {
         select.value = node.choices[index].targetNodeId;
@@ -1821,7 +1901,7 @@ function showPronunciationPicker(targetElement, word, context, index) {
     modal.style.top = `${rect.bottom + window.scrollY}px`;
     modal.style.left = `${rect.left + window.scrollX}px`;
 
-    let listHTML = options.map(opt =>
+    let listHTML = options.map(opt => // NOSONAR
         `<li class="theme-button" data-value="${opt.value}">${opt.display}</li>`
     ).join('');
 
@@ -1837,13 +1917,12 @@ function showPronunciationPicker(targetElement, word, context, index) {
     modal.addEventListener('click', (e) => {
         if (e.target.tagName === 'LI') {
             const pronunciation = e.target.dataset.value;
-            if (!activeAdventure.pronunciations) {
-                activeAdventure.pronunciations = {};
-            }
-            // For now, we set a global override. A more complex system could
-            // handle per-instance overrides.
+            // Ensure the pronunciations object exists
+            if (!activeAdventure.pronunciations) activeAdventure.pronunciations = {};
+
+            // Set the override and re-render the editor to show the change
             activeAdventure.pronunciations[word] = pronunciation;
-            showToast(`Set '${word}' to sound like '${pronunciation}'.`, 'info');
+            renderPronunciationEditor();
             closePicker();
         }
     });
@@ -2291,5 +2370,5 @@ function renderNodeMap(isInitialRender) {
 }
 
 // Multiplayer functions (placeholders)
-export function processMove(moveData) {}
-export function processUIUpdate(data) {}
+export function processMove(moveData) { }
+export function processUIUpdate(data) { }

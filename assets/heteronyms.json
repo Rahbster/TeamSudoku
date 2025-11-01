@@ -1,106 +1,262 @@
 {
   "abuse": [
-    { "display": "to misuse (verb)", "value": "abyooz" },
-    { "display": "misuse (noun)", "value": "abyoos" }
+    {
+      "display": "to misuse (verb)",
+      "value": "abyooz"
+    },
+    {
+      "display": "misuse (noun)",
+      "value": "abyoos"
+    }
   ],
   "advocate": [
-    { "display": "to support (verb)", "value": "ad-vo-kate" },
-    { "display": "a supporter (noun)", "value": "ad-vo-kit" }
+    {
+      "display": "to support (verb)",
+      "value": "ad-vo-kate"
+    },
+    {
+      "display": "a supporter (noun)",
+      "value": "ad-vo-kit"
+    }
   ],
   "alternate": [
-    { "display": "to switch between (verb)", "value": "awl-ter-nate" },
-    { "display": "a substitute (noun/adj)", "value": "awl-ter-nit" }
+    {
+      "display": "to switch between (verb)",
+      "value": "awl-ter-nate"
+    },
+    {
+      "display": "a substitute (noun/adj)",
+      "value": "awl-ter-nit"
+    }
   ],
   "attribute": [
-    { "display": "to credit to (verb)", "value": "uh-trib-yoot" },
-    { "display": "a quality (noun)", "value": "at-trib-yoot" }
+    {
+      "display": "to credit to (verb)",
+      "value": "uh-trib-yoot"
+    },
+    {
+      "display": "a quality (noun)",
+      "value": "at-trib-yoot"
+    }
   ],
   "close": [
-    { "display": "to shut (verb)", "value": "kloze" },
-    { "display": "nearby (adjective)", "value": "kloce" }
+    {
+      "display": "to shut (verb)",
+      "value": "kloze"
+    },
+    {
+      "display": "nearby (adjective)",
+      "value": "kloce"
+    }
   ],
   "conduct": [
-    { "display": "to lead or guide (verb)", "value": "kon-dukt" },
-    { "display": "behavior (noun)", "value": "kon-dukt" }
+    {
+      "display": "to lead or guide (verb)",
+      "value": "kon-dukt"
+    },
+    {
+      "display": "behavior (noun)",
+      "value": "kon-dukt"
+    }
   ],
   "conflict": [
-    { "display": "to clash (verb)", "value": "kun-flikt" },
-    { "display": "a disagreement (noun)", "value": "kon-flikt" }
+    {
+      "display": "to clash (verb)",
+      "value": "kun-flikt"
+    },
+    {
+      "display": "a disagreement (noun)",
+      "value": "kon-flikt"
+    }
   ],
   "console": [
-    { "display": "to comfort (verb)", "value": "kun-sole" },
-    { "display": "a panel or cabinet (noun)", "value": "kon-sole" }
+    {
+      "display": "to comfort (verb)",
+      "value": "kun-sole"
+    },
+    {
+      "display": "a panel or cabinet (noun)",
+      "value": "kon-sole"
+    }
   ],
   "content": [
-    { "display": "satisfied (adjective)", "value": "kun-tent" },
-    { "display": "things contained (noun)", "value": "kon-tent" }
+    {
+      "display": "satisfied (adjective)",
+      "value": "kun-tent"
+    },
+    {
+      "display": "things contained (noun)",
+      "value": "kon-tent"
+    }
   ],
   "contract": [
-    { "display": "to shrink (verb)", "value": "kun-tract" },
-    { "display": "an agreement (noun)", "value": "kon-tract" }
+    {
+      "display": "to shrink (verb)",
+      "value": "kun-tract"
+    },
+    {
+      "display": "an agreement (noun)",
+      "value": "kon-tract"
+    }
   ],
   "desert": [
-    { "display": "to abandon (verb)", "value": "dih-zurt" },
-    { "display": "arid region (noun)", "value": "deh-zert" }
+    {
+      "display": "to abandon (verb)",
+      "value": "dih-zurt"
+    },
+    {
+      "display": "arid region (noun)",
+      "value": "deh-zert"
+    }
   ],
   "escort": [
-    { "display": "to accompany (verb)", "value": "ess-kort" },
-    { "display": "an accompanier (noun)", "value": "ess-kort" }
+    {
+      "display": "to accompany (verb)",
+      "value": "ess-kort"
+    },
+    {
+      "display": "an accompanier (noun)",
+      "value": "ess-kort"
+    }
   ],
   "excuse": [
-    { "display": "to forgive (verb)", "value": "ek-skyooz" },
-    { "display": "a reason (noun)", "value": "ek-skyoos" }
+    {
+      "display": "to forgive (verb)",
+      "value": "ek-skyooz"
+    },
+    {
+      "display": "a reason (noun)",
+      "value": "ek-skyoos"
+    }
   ],
   "house": [
-    { "display": "to provide shelter (verb)", "value": "howz" },
-    { "display": "a dwelling (noun)", "value": "howce" }
+    {
+      "display": "to provide shelter (verb)",
+      "value": "howz"
+    },
+    {
+      "display": "a dwelling (noun)",
+      "value": "howce"
+    }
   ],
   "lead": [
-    { "display": "to guide (verb)", "value": "leed" },
-    { "display": "a metal (noun)", "value": "led" }
+    {
+      "display": "to guide (verb)",
+      "value": "leed"
+    },
+    {
+      "display": "a metal (noun)",
+      "value": "led"
+    }
   ],
   "live": [
-    { "display": "to exist (verb)", "value": "liv" },
-    { "display": "in person (adjective)", "value": "lyve" }
+    {
+      "display": "to exist (verb)",
+      "value": "liv"
+    },
+    {
+      "display": "in person (adjective)",
+      "value": "lyve"
+    }
   ],
   "minute": [
-    { "display": "60 seconds (noun)", "value": "min-it" },
-    { "display": "tiny (adjective)", "value": "my-noot" }
+    {
+      "display": "60 seconds (noun)",
+      "value": "min-it"
+    },
+    {
+      "display": "tiny (adjective)",
+      "value": "my-noot"
+    }
   ],
   "object": [
-    { "display": "to protest (verb)", "value": "ub-jekt" },
-    { "display": "a thing (noun)", "value": "ob-jekt" }
+    {
+      "display": "to protest (verb)",
+      "value": "ub-jekt"
+    },
+    {
+      "display": "a thing (noun)",
+      "value": "ob-jekt"
+    }
   ],
   "present": [
-    { "display": "to give (verb)", "value": "pree-zent" },
-    { "display": "a gift / here (noun/adj)", "value": "preh-zent" }
+    {
+      "display": "to give (verb)",
+      "value": "pree-zent"
+    },
+    {
+      "display": "a gift / here (noun/adj)",
+      "value": "preh-zent"
+    }
   ],
   "produce": [
-    { "display": "to make (verb)", "value": "pro-doos" },
-    { "display": "fruits & vegetables (noun)", "value": "pro-doos" }
+    {
+      "display": "to make (verb)",
+      "value": "pro-doos"
+    },
+    {
+      "display": "fruits & vegetables (noun)",
+      "value": "pro-doos"
+    }
   ],
   "project": [
-    { "display": "to cast forward (verb)", "value": "pro-jekt" },
-    { "display": "an undertaking (noun)", "value": "proj-ekt" }
+    {
+      "display": "to cast forward (verb)",
+      "value": "pro-jekt"
+    },
+    {
+      "display": "an undertaking (noun)",
+      "value": "proj-ekt"
+    }
   ],
   "read": [
-    { "display": "present tense (rhymes with reed)", "value": "reed" },
-    { "display": "past tense (rhymes with red)", "value": "red" }
+    {
+      "display": "present tense (rhymes with reed)",
+      "value": "reed"
+    },
+    {
+      "display": "past tense (rhymes with red)",
+      "value": "red"
+    }
   ],
   "refuse": [
-    { "display": "to decline (verb)", "value": "ri-fyooz" },
-    { "display": "garbage (noun)", "value": "ref-yoos" }
+    {
+      "display": "to decline (verb)",
+      "value": "ri-fyooz"
+    },
+    {
+      "display": "garbage (noun)",
+      "value": "ref-yoos"
+    }
   ],
   "subject": [
-    { "display": "to cause to undergo (verb)", "value": "sub-jekt" },
-    { "display": "a topic (noun)", "value": "sub-jekt" }
+    {
+      "display": "to cause to undergo (verb)",
+      "value": "sub-jekt"
+    },
+    {
+      "display": "a topic (noun)",
+      "value": "sub-jekt"
+    }
   ],
   "use": [
-    { "display": "to utilize (verb)", "value": "yooz" },
-    { "display": "the purpose of (noun)", "value": "yoos" }
+    {
+      "display": "to utilize (verb)",
+      "value": "yooz"
+    },
+    {
+      "display": "the purpose of (noun)",
+      "value": "yoos"
+    }
   ],
   "winds": [
-    { "display": "to turn or coil (verb)", "value": "wynds" },
-    { "display": "currents of air (noun)", "value": "winds" }
+    {
+      "display": "to turn or coil (verb)",
+      "value": "wineds"
+    },
+    {
+      "display": "currents of air (noun)",
+      "value": "winds"
+    }
   ]
 }
