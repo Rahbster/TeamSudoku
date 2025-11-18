@@ -53,23 +53,9 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         (async () => {
             const cache = await caches.open(CACHE_NAME);
-            console.log('Opened cache');
-
-            // Cache local files, which should succeed without issue
-            await cache.addAll(localUrlsToCache);
-
-            // Fetch and cache external resources one by one with a more robust method
-            await Promise.all(
-                externalUrlsToCache.map(async url => {
-                    try {
-                        const response = await fetch(url, { mode: 'no-cors' });
-                        await cache.put(url, response);
-                        console.log(`Successfully cached opaque response for: ${url}`);
-                    } catch (error) {
-                        console.error(`Failed to cache external resource: ${url}`, error);
-                    }
-                })
-            );
+            console.log('[Service Worker] Caching all: app shell and content');
+            // Use cache.addAll for all resources. It handles requests and responses correctly.
+            await cache.addAll([...localUrlsToCache, ...externalUrlsToCache]);
         })()
     );
 });
@@ -79,9 +65,29 @@ self.addEventListener('fetch', (event) => {
         caches.match(event.request)
             .then((response) => {
                 if (response) {
+                    // If the response is in the cache, return it.
                     return response;
                 }
-                return fetch(event.request);
+                // If it's not in the cache, fetch it from the network.
+                return fetch(event.request).then((networkResponse) => {
+                    // And cache the new response for future use.
+                    return caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, networkResponse.clone());
+                        return networkResponse;
+                    });
+                });
             })
+    );
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then((keyList) => {
+            return Promise.all(keyList.map((key) => {
+                if (key !== CACHE_NAME) {
+                    return caches.delete(key);
+                }
+            }));
+        })
     );
 });
