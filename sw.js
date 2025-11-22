@@ -1,8 +1,9 @@
-const CACHE_NAME = 'sudoku-pwa-cache-v2'; // Increment cache version to force update
+const CACHE_NAME = 'sudoku-pwa-cache-v3'; // Robust caching and added files
 const localUrlsToCache = [
     './',
     './index.html',
     './css/styles.css',
+    './css/games/adventure.css',
     './css/games/sudoku.css',
     './css/games/connect4.css',
     './css/games/wordsearch.css',
@@ -14,6 +15,7 @@ const localUrlsToCache = [
     './css/games/cosmicbalance.css',
     './js/scripts.js',
     './js/game_manager.js',
+    './js/games/adventure.js',
     './js/games/sudoku.js',
     './js/games/connect4.js',
     './js/games/wordsearch.js',
@@ -38,6 +40,11 @@ const localUrlsToCache = [
     './assets/ActiveSudoku.png',
     './assets/StageConnection.png',
     './assets/SudokuIcon.png',
+    './assets/adventures_manifest.json',
+    './assets/default_adventure.json',
+    './assets/dragons_lair.json',
+    './assets/heteronyms.json',
+    './assets/room_on_the_broom.json',
     './icons/icon-192x192.png',
     './icons/icon-512x512.png'
 ];
@@ -51,12 +58,18 @@ const externalUrlsToCache = [
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        (async () => {
-            const cache = await caches.open(CACHE_NAME);
-            console.log('[Service Worker] Caching all: app shell and content');
-            // Use cache.addAll for all resources. It handles requests and responses correctly.
-            await cache.addAll([...localUrlsToCache, ...externalUrlsToCache]);
-        })()
+        caches.open(CACHE_NAME)
+            .then((cache) => {
+                console.log('[Service Worker] Caching all: app shell and content');
+                const urlsToCache = [...localUrlsToCache, ...externalUrlsToCache];
+                const cachePromises = urlsToCache.map((url) => {
+                    return fetch(url, { cache: 'reload' }).then((response) => {
+                        if (!response.ok) throw new Error(`Request for ${url} failed with status ${response.status}`);
+                        return cache.put(url, response);
+                    });
+                });
+                return Promise.all(cachePromises);
+            })
     );
 });
 
