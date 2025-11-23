@@ -1,12 +1,12 @@
 //==============================
 // Sudoku Game Logic
 //==============================
-
 import { dom, appState, dataChannels } from '../scripts.js';
 import { startTimer } from '../timer.js';
 import { generatePuzzle } from '../generator.js';
 import { broadcastCellSelection, processAndBroadcastMove } from '../webrtc.js';
-import { showWinnerScreen, createTimerHTML } from '../ui.js';
+import { showWinnerScreen, createTimerHTML, showToast } from '../ui.js';
+import { getSudokuHint } from './hint.js';
 import { playBeepSound } from '../misc.js';
 
 export function initialize() {
@@ -39,23 +39,29 @@ export function createGrid() {
     dom.gameBoardArea.innerHTML = `
         <div id="sudoku-layout-container">
             <div id="sudoku-left-column">
-                <div id="sudoku-input-grid">
-                    <!-- Column 1 -->
-                    <button class="number-btn" id="number-btn-1">1</button>
-                    <button class="number-btn" id="number-btn-6">6</button>
-                    <button class="number-btn" id="number-btn-2">2</button>
-                    <button class="number-btn" id="number-btn-7">7</button>
-                    <button class="number-btn" id="number-btn-3">3</button>
-                    <button class="number-btn" id="number-btn-8">8</button>
-                    <button class="number-btn" id="number-btn-4">4</button>
-                    <button class="number-btn" id="number-btn-9">9</button>
-                    <button class="number-btn" id="number-btn-5">5</button>
-                    <button class="number-btn" id="empty-btn">X</button>
-                    <button class="theme-button" id="pencil-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                        <span id="pencil-status">OFF</span>
-                    </button>
-                    ${createTimerHTML()}
+                <div id="sudoku-controls-wrapper">
+                    <div id="sudoku-input-grid">
+                        <!-- Reordered for a more intuitive layout on all screen sizes -->
+                        <button class="number-btn" id="number-btn-1">1</button>
+                        <button class="number-btn" id="number-btn-2">2</button>
+                        <button class="number-btn" id="number-btn-3">3</button>
+                        <button class="number-btn" id="number-btn-4">4</button>
+                        <button class="number-btn" id="number-btn-5">5</button>
+                        <button class="number-btn" id="number-btn-6">6</button>
+                        <button class="number-btn" id="number-btn-7">7</button>
+                        <button class="number-btn" id="number-btn-8">8</button>
+                        <button class="number-btn" id="number-btn-9">9</button>
+                        <button class="number-btn" id="empty-btn">X</button>
+                        <button class="theme-button" id="pencil-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                            <span id="pencil-status">OFF</span>
+                        </button>
+                        <button class="theme-button" id="hint-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            <span>Hint</span>
+                        </button>
+                        ${createTimerHTML()}
+                    </div>
                 </div>
             </div>
             <div id="puzzle-area">
@@ -111,12 +117,70 @@ export function createGrid() {
 function attachSudokuControlListeners() {
     const pencilButton = document.getElementById('pencil-btn');
     const inputGrid = document.getElementById('sudoku-input-grid');
+    const hintButton = document.getElementById('hint-btn');
 
     if (pencilButton) {
         pencilButton.addEventListener('click', () => {
             appState.isPencilMode = !appState.isPencilMode;
             document.getElementById('pencil-status').textContent = appState.isPencilMode ? 'ON' : 'OFF';
             pencilButton.classList.toggle('pencil-active', appState.isPencilMode);
+        });
+    }
+
+    if (hintButton) {
+        hintButton.addEventListener('click', () => {
+            // Create both a board of final values and a map of candidates from the scratchpad.
+            const board = [];
+            const candidatesMap = [];
+
+            for (let r = 0; r < 9; r++) {
+                board[r] = [];
+                candidatesMap[r] = [];
+                for (let c = 0; c < 9; c++) {
+                    const cell = document.getElementById(`cell-${r}-${c}`);
+                    const value = cell.querySelector('.cell-value').textContent.trim();
+                    board[r][c] = value === '' ? 0 : parseInt(value, 10);
+
+                    // If the cell is empty, read its candidates from the scratchpad.
+                    if (board[r][c] === 0) {
+                        const candidates = new Set();
+                        const scratchDigits = cell.querySelectorAll('.scratch-pad-digit');
+                        scratchDigits.forEach(digitEl => {
+                            if (digitEl.style.visibility === 'visible') {
+                                candidates.add(parseInt(digitEl.dataset.digit, 10));
+                            }
+                        });
+                        candidatesMap[r][c] = candidates;
+                    } else {
+                        candidatesMap[r][c] = new Set(); // No candidates if a number is present.
+                    }
+                }
+            }
+
+            // Clear previous hint highlights
+            document.querySelectorAll('.hint-highlight, .hint-target').forEach(cell => {
+                cell.classList.remove('hint-highlight', 'hint-target');
+            });
+
+            // Pass both the board and the candidates map to the hint function.
+            const hint = getSudokuHint(board, candidatesMap);
+            showToast(hint.message, 'info');
+
+            if (hint.cells.length > 0) {
+                const highlightedElements = [];
+                hint.cells.forEach(({ row, col, isTarget }) => {
+                    const cellElement = document.getElementById(`cell-${row}-${col}`);
+                    if (cellElement) {
+                        cellElement.classList.add(isTarget ? 'hint-target' : 'hint-highlight');
+                        highlightedElements.push(cellElement);
+                    }
+                });
+
+                // Automatically remove the highlight after a few seconds
+                setTimeout(() => {
+                    highlightedElements.forEach(el => el.classList.remove('hint-highlight', 'hint-target'));
+                }, 4000); // 4 seconds
+            }
         });
     }
 
@@ -303,7 +367,7 @@ export function highlightConflictingCells(row, col, value) {
 export async function loadPuzzle(difficulty, puzzleData, resetTeams = false) {
     createGrid();
     const puzzle = puzzleData || generatePuzzle(dom.difficultySelector.value);
-    
+
     // This function is now primarily for generating a new puzzle for solo or host.
     // Team state updates should be handled separately.
     appState.winner = null;

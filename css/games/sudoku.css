@@ -103,7 +103,7 @@
     grid-template-columns: repeat(9, 1fr);
     grid-template-rows: repeat(9, 1fr);
     border: 3px solid black;
-    width: 100%;
+    width: 95%; /* Use 95% to give a little padding */
     max-width: 80dvh; /* Don't let it get bigger than 80% of the viewport height */
     aspect-ratio: 1 / 1;
 }
@@ -136,7 +136,7 @@ body.forerunner .sudoku-grid {
     align-items: stretch; /* Stretch children to fill height */
     gap: 2rem;
     width: 100%;
-    height: 100%;
+    height: 100%; /* This is fine for the default layout */
 }
 
 #sudoku-left-column {
@@ -145,11 +145,19 @@ body.forerunner .sudoku-grid {
     align-items: flex-start; /* Align controls to the left */
     gap: 1rem;
     flex-grow: 1;
-    flex-basis: 200px; /* Base width for the controls column */
-    padding-top: 1rem; /* Add padding to the top to match the bottom gap */
+    /* Portrait mode styles */
+    flex-direction: column;
+    flex-basis: 25dvh;
+    max-width: 250px;
+    padding-top: 1rem;
 }
 
-#sudoku-input-grid {
+/* New wrapper for controls */
+#sudoku-controls-wrapper {
+    width: 100%;
+}
+
+#sudoku-input-grid { /* Portrait mode grid */
     display: grid;
     /* Default to the 7x2 layout for portrait/square screens */
     grid-template-columns: repeat(2, 1fr);
@@ -159,15 +167,85 @@ body.forerunner .sudoku-grid {
     align-items: stretch; /* Stretch items to fill the cell height */
 }
 
-/* Make the pencil button and timer span 2 columns each */
-body.sudoku-layout-active #sudoku-input-grid > #pencil-btn,
+/* In portrait, timer spans 2 columns */
 body.sudoku-layout-active #sudoku-input-grid > #timer-area {
     grid-column: span 2;
 }
 
-/* When the screen is wider than it is tall (landscape), switch to a 2x7 grid */
-@media (orientation: landscape) {
-    #sudoku-input-grid {
-        max-width: 250px; /* Prevent controls from becoming too wide */
+/* When the screen is wider than it is tall (landscape), OR when it's too narrow
+   for a side-by-side layout, switch to the "controls on top" layout. */
+@media (max-width: 750px), (min-aspect-ratio: 1/1) and (max-height: 500px) {
+    #sudoku-layout-container {
+        flex-direction: column-reverse; /* Stack puzzle on top of controls (visually at bottom) */
+        /* Override the default height:100% to allow content to determine size */
+        height: auto;
+        width: 80%; /* Constrain the entire container */
+        margin: 0 auto; /* Center the constrained container */
     }
+
+    /* CRITICAL FIX: Prevent the main board area from growing and causing overflow.
+       This allows the container to shrink to the size of its content. */
+    .sudoku-layout-active #game-board-area {
+        flex-grow: 0;
+    }
+
+    #sudoku-left-column {
+        flex-basis: auto; /* Reset basis */
+        max-width: 100%; /* Constrain the width to prevent excessive stretching */
+        width: 100%;
+        padding-top: 0;
+        flex-grow: 0; /* Do not allow this container to grow vertically */
+    }
+
+    #sudoku-input-grid { /* Controls layout */
+        display: grid;
+        grid-template-columns: repeat(6, 1fr); /* 6 columns for the new layout */
+        grid-template-rows: repeat(2, 1fr); /* 2 rows */
+        gap: clamp(0.5rem, 1dvh, 1rem);
+        max-width: 100%;
+        margin: 0 auto; /* Center the control grid */
+    }
+
+    /* In landscape, the puzzle grid should not be based on viewport height, but on available space */
+    #puzzle-area {
+        flex-grow: 0; /* Do not grow; size is based on the grid inside */
+        width: 100%;
+    }
+
+    /* In landscape, the grid's max-width should be based on its container, not the viewport height */
+    #sudoku-grid {
+        width: 100%;
+    }
+
+    /* In landscape/narrow mode, control the size of the buttons in the flexbox */
+    #sudoku-input-grid > * { /* Target all direct children */
+        padding: 0.5rem;
+        max-width: 100px; /* Prevent buttons from getting excessively wide */
+        font-size: 1.2rem; /* Adjust font size for the new button shape */
+    }
+
+    /* Override for the timer in the top-controls layout */
+    #sudoku-input-grid > #timer-area {
+        grid-column: span 6; /* Make it span the full width */
+        aspect-ratio: auto; /* Remove the forced aspect ratio */
+        height: auto; /* Let content determine height */
+        padding: 0.25rem; /* Reduce padding for a shorter look */
+    }
+}
+
+/* ============================== */
+/* Sudoku Hint Highlighting       */
+/* ============================== */
+
+.grid-cell.hint-highlight {
+    background-color: rgba(0, 123, 255, 0.2); /* Fallback color */
+    background-color: rgba(var(--accent-color-rgb, 0, 123, 255), 0.2);
+    transition: background-color 0.3s ease-in-out;
+}
+
+.grid-cell.hint-target {
+    background-color: rgba(0, 123, 255, 0.5) !important; /* Fallback color, with !important */
+    background-color: rgba(var(--accent-color-rgb, 0, 123, 255), 0.5) !important;
+    box-shadow: 0 0 8px 2px var(--accent-color, #007bff);
+    transition: background-color 0.3s ease-in-out;
 }
